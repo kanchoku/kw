@@ -1,0 +1,253 @@
+/* -------------------------------------------------------------------
+ * link
+ */
+
+a { font-weight: bold; }
+
+a:link {
+  color: #336666;
+  background-color: white;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+a:visited {
+  color: #669999;
+  background-color: white;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+a:hover {
+  color: #003333;
+  background-color: white;
+  text-decoration: underline;
+  font-weight: bold;
+}
+
+/* -------------------------------------------------------------------
+ * headline
+ */
+
+h1 {
+  text-align: right;
+  padding: 8px;
+  color: gray;
+  border-bottom: solid gray 8px;
+}
+
+h2 {
+  padding: 4px;
+  color: gray;
+  border-bottom: solid 4px gray;
+}
+
+h3 {
+  padding: 4px;
+  color: gray;
+  border-bottom: solid 2px gray;
+}
+
+h4 {
+  padding: 2px;
+  color: gray;
+  border-bottom: dotted 2px gray;
+}
+
+h5 {
+  padding: 1px;
+  border-bottom: dashed 1px gray;
+  color: gray;
+}
+
+/* -------------------------------------------------------------------
+ * リスト
+ */
+
+ul p {
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
+
+ol p {
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
+
+dl p {
+  margin-top: 1ex;
+  margin-bottom: 1ex;
+}
+
+dl dt {
+  font: bold;
+}
+
+/* -------------------------------------------------------------------
+ * テキスト
+ */
+
+body {
+  line-height: 140%;
+}
+
+em {
+  font-weight: bold;
+  font-style: normal;
+}
+
+em em, strong /* dirty trick for ((*((*...*))*)) in RD */
+{
+  color: #ff0000;
+  background-color: white;
+  font-weight: bold;
+  font-style: normal;
+}
+
+pre {
+  padding: 4px;
+  margin: 1em;
+  color: #333333;
+  font-size: smaller;
+  border: solid 1px gray;
+  line-height: 120%;
+  /* 
+  overflow: auto;
+  /* */
+}
+
+kbd {
+  padding: 1px;
+  margin: 1px;
+  color: black;
+  background-color: #cccccc;
+  font-size: smaller;
+  font-weight: bold;
+  border: solid 2px;
+  border-color: white gray gray white;
+}
+
+code {
+  color: #333333;
+  padding: 1px;
+  margin: 1px;
+  font-size: smaller;
+  border: solid 1px gray;
+}
+
+/* -------------------------------------------------------------------
+ * もくじ
+ */
+
+.toc, .toc_frame {
+  padding: 4px;
+  margin: 0px;
+  font-size: smaller;
+  line-height: 120%;
+}
+
+.toc p, toc_frame p {
+  padding: 0px;
+  margin: 0px;
+}
+
+.toc {
+  border: solid 1px black;
+}
+
+.toc ul {
+  padding: 0px;
+  margin-left: 1.5em;
+}
+
+.toc_frame ul {
+  padding: 0px;
+  margin-left: 0px;
+  list-style-type: none;
+}
+
+.toc ul ul, .toc_frame ul ul {
+  padding: 0px;
+  margin-left: 1em;
+}
+
+.toc ul ul ul li, .toc_frame ul ul ul li {
+  display: inline;
+}
+
+.toc ul ul ul li:before, .toc_frame ul ul ul li:before {
+  content: "- ";
+}
+
+.toc a:link, .toc_frame a:link,
+.toc a:visited, .toc_frame a:visited,
+.toc a:hover, .toc_frame a:hover
+{
+  color: black;
+  background-color: white;
+  text-decoration: none;
+  font-weight: normal;
+}
+
+.toc a:hover, .toc_frame a:hover {
+  text-decoration: underline;
+}
+
+/* -------------------------------------------------------------------
+ * 図表
+ */
+ 
+table.vkeytbl0 {
+  border: solid 1px black;
+  margin-left:  auto;
+  margin-right: auto;
+}
+
+caption {
+  margin-left:  auto;
+  margin-right: auto;
+}
+
+table.vkeytbl td {
+  vertical-align: top;
+  line-height: 120%;
+}
+
+table.vkeytbl th {
+  vertical-align: top;
+  line-height: 120%;
+  background-color: #ccccff;
+}
+
+table.figure {
+  border: solid 0px white;
+  margin-left:  auto;
+  margin-right: auto;
+  caption-side: bottom;
+}
+
+/* -------------------------------------------------------------------
+ * その他
+ */
+
+.bgred { background-color: #ffcccc; }
+.bggrn { background-color: #ccffcc; }
+.bgyel { background-color: #ffffcc; }
+.bggry { background-color: #cccccc; }
+.bgblu { background-color: #ccccff; }
+.bgcyn { background-color: #ccffff; }
+
+.fgppl { color: #800080; }
+.fgtel { color: #008080; }
+.fgred { color: #ff0000; }
+
+.version {
+  text-align: right;
+}
+
+span.sup {
+  font-size: 80%;
+  position: relative;
+  bottom: 0.4em;
+  font-stretch: condensed;
+}

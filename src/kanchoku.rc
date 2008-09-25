@@ -1,0 +1,22 @@
+#include <windows.h>
+
+kanchoku ICON kanchoku.ico
+//kanmini  ICON kanmini.ico
+kanmini0 ICON kanmini0.ico
+kanmini1 ICON kanmini1.ico
+//bmOff BITMAP off.bmp
+//bmOn1 BITMAP on1.bmp
+//bmOn2 BITMAP on2.bmp
+
+// #define IDM_CONTROL 1
+// ControlBox DIALOG 20, 20, 160, 80
+//     STYLE WS_POPUP 1 WS_CAPTION
+//     CAPTION "äøíºWin ÇÃê›íË"
+//     {
+//         EDITTEXT 10, 10, 20, 32, 14
+//             CONTROL "HOGE", 10, "edit",
+//                 WS_CHILD | WS_VISIBLE, 10, 20, 32, 14
+//         CTEXT "äeéÌê›íË"   -1, 0, 12, 160, 8
+//         ICON "kanmini.ico" -1, 8, 8, 0, 0
+//         DEFPUSHBUTTON "OK" IDOK, 64, 60, 32, 14, WS_GROUP
+//     }

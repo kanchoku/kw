@@ -1,0 +1,4 @@
+#include <windows.h>
+
+kansaku  ICON kansaku.ico
+kansakum ICON kansakum.ico
