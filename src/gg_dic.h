@@ -3,12 +3,14 @@
 #define GG_H
 // -------------------------------------------------------------------
 
-#include <iostream.h>
-#include <fstream.h>
+#include <iostream>
+#include <fstream>
 #include <windows.h>
 //<gg-defg2>
 #include <stdlib.h>
 //</gg-defg2>
+
+using namespace std;
 
 #include "moji.h"
 

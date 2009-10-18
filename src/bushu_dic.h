@@ -2,9 +2,11 @@
 #define BUSHU_H
 // -------------------------------------------------------------------
 
-#include <iostream.h>
-#include <fstream.h>
+#include <iostream>
+#include <fstream>
 #include <windows.h>
+
+using namespace std;
 
 #include "moji.h"
 #include "tc.h"                 // TC_BUSHU_ALGO_{OKA,YAMANOBE}

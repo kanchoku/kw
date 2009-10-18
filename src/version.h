@@ -21,7 +21,8 @@
 //#define VERSION "1.27f-pre_f-conj-20060220"
 //#define VERSION "1.27f"         //2006-02-20
 //#define VERSION "1.27f (2006-03-03)"
-#define VERSION "1.27f (2006-03-25)"
+//#define VERSION "1.27f (2006-03-25)"
+#define VERSION "1.27f-fullshift-20091018"
 
 // -------------------------------------------------------------------
 // オリジナル版の value.c のコメント

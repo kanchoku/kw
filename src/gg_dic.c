@@ -151,12 +151,10 @@ void GgDic::readFile(ifstream *is) {
         ent[i][0][len-1] = c;
     }
     qsort((void *)ent, (size_t)nent, sizeof(ent[0]), firstbyteofkey);
-    for (i = 0; i < 256; i++) index[1] = -1;
-    if (ent[0][0][0] > 0) {
-        index[ent[0][0][0]] = 0;
-    }
+    for (i = 0; i < 256; i++) index[i] = -1;
+    index[ent[0][0][0]] = 0;
     for (i = 1; i < nent; i++) {
-        if (ent[i][0][0] > ent[i-1][0][0]) {
+        if ((unsigned char)ent[i][0][0] > (unsigned char)ent[i-1][0][0]) {
             index[ent[i][0][0]] = i;
         }
     }

@@ -4,8 +4,8 @@
 // class TableWindow
 // メインのウィンドウ関連の処理
 
-#include <iostream.h>
-#include <fstream.h>
+#include <iostream>
+#include <fstream>
 #include <windows.h>
 #include <imm.h>
 #include <stdio.h>
@@ -19,9 +19,12 @@
 //<v127a - gg>
 #include "gg_dic.h"
 //</v127a - gg>
+#include "st_table.h"
 #include "parser.h"
 #include "tcode.h"
 #include "version.h"
+
+using namespace std;
 
 /* -------------------------------------------------------------------
  * メッセージ
@@ -31,31 +34,30 @@
 /* -------------------------------------------------------------------
  * 横取りするキー
  *
- * キー番号 0 ～ 48 (== TC_NKEYS - 1) が漢直入力に用いるキーだが、
- * shiftkana オプションがオンの時は、シフト打鍵として、
- * (<キー番号> | 0x100) のキーも使われることになる。
+ * キー番号 0 ～ 97 (== TC_NKEYS * 2 - 1) が漢直入力に用いるキー。
+ * 0x100以降が機能キーとなっている。
  * 衝突しないように気をつけること。
  */
-#define ACTIVE_KEY (TC_NKEYS + 1) // ON/OFF の切り替えキー
+#define ACTIVE_KEY (0x100 + 1) // ON/OFF の切り替えキー
 //<OKA> support unmodified hot key
-#define ACTIVE2_KEY (TC_NKEYS + 2) // ON/OFF の切り替えキー、その2
+#define ACTIVE2_KEY (0x100 + 2) // ON/OFF の切り替えキー、その2
 //</OKA>
 
-#define ESC_KEY    (TC_NKEYS + 11) // ESC
-#define CG_KEY     (TC_NKEYS + 12) // C-g
+#define ESC_KEY    (0x100 + 11) // ESC
+#define CG_KEY     (0x100 + 12) // C-g
 
-#define BS_KEY     (TC_NKEYS + 21) // BS
-#define CH_KEY     (TC_NKEYS + 22) // C-h
+#define BS_KEY     (0x100 + 21) // BS
+#define CH_KEY     (0x100 + 22) // C-h
 
-#define RET_KEY    (TC_NKEYS + 31) // RET
-#define CM_KEY     (TC_NKEYS + 32) // C-m
-#define CJ_KEY     (TC_NKEYS + 33) // C-j
+#define RET_KEY    (0x100 + 31) // RET
+#define CM_KEY     (0x100 + 32) // C-m
+#define CJ_KEY     (0x100 + 33) // C-j
 
-#define TAB_KEY    (TC_NKEYS + 41) // TAB
-#define CI_KEY     (TC_NKEYS + 42) // C-i
+#define TAB_KEY    (0x100 + 41) // TAB
+#define CI_KEY     (0x100 + 42) // C-i
 
-#define LT_KEY     (TC_NKEYS + 51) // "<"
-#define GT_KEY     (TC_NKEYS + 52) // ">"
+#define LT_KEY     (0x100 + 51) // "<"
+#define GT_KEY     (0x100 + 52) // ">"
 
 
 /* -------------------------------------------------------------------
@@ -170,8 +172,12 @@ private:
 
     enum HOTKEYMODE { OFF, NORMAL, EDITCLAUSE };
     HOTKEYMODE hotKeyMode;
+    // 語幹伸ばし縮め用キー
+    // T-Codeキーとかぶっている場合のみ使用
     int tc_lt_key;
     int tc_gt_key;
+
+    bool isShift;
 
 public:
     // コンストラクタ
@@ -204,7 +210,7 @@ private:
     void drawFrameOFF(HDC hdc); // OFF 時の仮想鍵盤の枠
     void drawFrame50(HDC hdc);  // 通常時の仮想鍵盤の枠
     void drawFrame10(HDC hdc);  // 少数候補選択時の仮想鍵盤の枠
-    void drawVKB50(HDC);        // 通常時の仮想鍵盤
+    void drawVKB50(HDC hdc, bool isWithBothSide = false);        // 通常時の仮想鍵盤
     void drawVKB10(HDC);        // 少数候補選択時の仮想鍵盤
     void drawMiniBuffer(HDC, int, COLORREF, MojiBuffer *);
                                 // ミニバッファ

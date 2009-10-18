@@ -54,14 +54,14 @@ ControlBlock::ControlBlock() {
     //</v127a - gg>
     /* ぶらさがるブロックを格納する領域を確保し 0 に初期化
      */
-    block = new Block *[TC_NKEYS];
-    for (int i = 0; i < TC_NKEYS; i++) { block[i] = 0; }
+    block = new Block *[TC_NKEYS*2];
+    for (int i = 0; i < TC_NKEYS*2; i++) { block[i] = 0; }
 }
 
 ControlBlock::~ControlBlock() {
     /* ぶらさがってるブロックを全部消す
      */
-    for (int i = 0; i < TC_NKEYS; i++) { delete(block[i]); }
+    for (int i = 0; i < TC_NKEYS*2; i++) { delete(block[i]); }
 }
 
 // -------------------------------------------------------------------

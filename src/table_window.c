@@ -1,3 +1,6 @@
+#ifdef _MSC_VER //<OKA>
+#define for if(0);else for
+#endif          //</OKA>
 #include "table_window.h"
 #include "debug.h"
 // -------------------------------------------------------------------
@@ -29,10 +32,22 @@ int TableWindow::wndProc(HWND w, UINT msg, WPARAM wp, LPARAM lp) {
     wParam = wp;
     lParam = lp;
 
+    bool isShiftNow;
     // 各メッセージの handler を呼ぶ
     switch (msg) {
     case WM_CREATE:
+#define ID_MYTIMER 32767
+        SetTimer(w, ID_MYTIMER, 500, NULL);
+        isShift = !!(GetKeyState(VK_SHIFT) & 0x8000);
         return handleCreate();
+
+    case WM_TIMER:
+        isShiftNow = !!(GetKeyState(VK_SHIFT) & 0x8000);
+        if (tc->mode == TCode::NORMAL && !tc->helpMode 
+            && tc->isAnyShiftKana
+            && isShiftNow != isShift) InvalidateRect(w, NULL, FALSE);
+        isShift = isShiftNow;
+        return 0;
 
     case WM_PAINT:
         return handlePaint();
@@ -46,6 +61,7 @@ int TableWindow::wndProc(HWND w, UINT msg, WPARAM wp, LPARAM lp) {
         return handleLButtonDown();
 
     case WM_DESTROY:
+        KillTimer(w, ID_MYTIMER);
         return handleDestroy();
 
     //<record>
@@ -99,7 +115,7 @@ void TableWindow::activate() {
         RegisterHotKey(hwnd, i, 0, tc->vkey[i]);
     }
     // HotKey の割付 (シフト打鍵)
-    if (tc->OPT_shiftKana != 0) {
+    if (tc->OPT_shiftKana != 0 || tc->isAnyShiftKana) {
         for (int i = 0; i < TC_NKEYS; i++) {
             //<v127a - shiftcheck>
             //RegisterHotKey(hwnd, TC_SHIFT(i), MOD_SHIFT, tc->vkey[i]);
@@ -151,7 +167,7 @@ void TableWindow::inactivate() {
         UnregisterHotKey(hwnd, i);
     }
     // HotKey の解放 (シフト打鍵)
-    if (tc->OPT_shiftKana != 0) {
+    if (tc->OPT_shiftKana != 0 || tc->isAnyShiftKana) {
         for (int i = 0; i < TC_NKEYS; i++) {
             //<v127a - shiftcheck>
             //UnregisterHotKey(hwnd, TC_SHIFT(i));
@@ -198,17 +214,17 @@ void TableWindow::setMazeHotKey(int onoff) {
     if (!onoff) {
         if (hotKeyMode != EDITCLAUSE) return;
         hotKeyMode = NORMAL;
-        if (tc->OPT_shiftKana == 0 || !tc->isShiftKana[tc_lt_key])
-            UnregisterHotKey(hwnd, TC_SHIFT(tc_lt_key));
-        if (tc->OPT_shiftKana == 0 || !tc->isShiftKana[tc_gt_key])
-            UnregisterHotKey(hwnd, TC_SHIFT(tc_gt_key));
+        if (tc_lt_key == -1 || !tc->isShiftKana[tc_lt_key])
+            UnregisterHotKey(hwnd, LT_KEY);
+        if (tc_gt_key == -1 || !tc->isShiftKana[tc_gt_key])
+            UnregisterHotKey(hwnd, GT_KEY);
     } else {
         if (hotKeyMode == EDITCLAUSE) return;
         hotKeyMode = EDITCLAUSE;
-        if (tc->OPT_shiftKana == 0 || !tc->isShiftKana[tc_lt_key])
-            RegisterHotKey(hwnd, TC_SHIFT(tc_lt_key), MOD_SHIFT, tc->vkey[tc_lt_key]);
-        if (tc->OPT_shiftKana == 0 || !tc->isShiftKana[tc_gt_key])
-            RegisterHotKey(hwnd, TC_SHIFT(tc_gt_key), MOD_SHIFT, tc->vkey[tc_gt_key]);
+        if (tc_lt_key == -1 || !tc->isShiftKana[tc_lt_key])
+            RegisterHotKey(hwnd, LT_KEY, MOD_SHIFT, 0xbc);  //VK_OEM_COMMA
+        if (tc_gt_key == -1 || !tc->isShiftKana[tc_gt_key])
+            RegisterHotKey(hwnd, GT_KEY, MOD_SHIFT, 0xbe);  //VK_OEM_PERIOD
     }
 }
 
@@ -516,7 +532,7 @@ int TableWindow::handlePaint() {
     if (tc->mode == TCode::CAND && 10 < tc->currentCand->size()) {
         drawFrame50(hdc);
         drawMiniBuffer(hdc, 4, COL_LT_BLUE, tc->preBuffer);
-        drawVKB50(hdc);
+        drawVKB50(hdc, tc->isAnyShiftKana);
         goto END_PAINT;
     }
 
@@ -783,6 +799,11 @@ void TableWindow::initTC() {
                             OPT_defg, sizeof(OPT_defg), iniFile);
     //</gg-defg>
 
+    // 
+    char prefixautoassign[255];
+    GetPrivateProfileString("kanchoku", "prefixautoassign", "",
+                            prefixautoassign, sizeof(prefixautoassign), iniFile);
+
     //<record>
     // record
     char OPT_record[255];
@@ -898,25 +919,27 @@ void TableWindow::initTC() {
     fclose(fp);
 
     if (OPT_conjugationalMaze == 2) {
+        tc_lt_key = tc_gt_key = -1;
         for (int i = 0; i < TC_NKEYS; i++) {
-            if (vkey[i] == 0xbc) tc_lt_key = i;
-            if (vkey[i] == 0xbe) tc_gt_key = i;
+            if (vkey[i] == 0xbc) tc_lt_key = i;  //VK_OEM_COMMA
+            if (vkey[i] == 0xbe) tc_gt_key = i;  //VK_OEM_PERIOD
         }
     }
 
     // テーブルファイルの読み込み
-    is->open(tableFile, is->nocreate);
+    is->open(tableFile/*, is->nocreate*/);
     if (is->fail()) { error("テーブルファイルが開けません"); }
     // パーズする
     Parser *parser = new Parser(is, hwnd);
     ControlBlock *table = parser->parse();
     is->close();
+	is->clear();
     delete(parser);
 
     // 部首合成変換辞書の読み込み (使用する場合のみ)
     BushuDic *bushuDic = 0;
     if (bushuReady) {
-        is->open(bushuFile,is->nocreate);
+        is->open(bushuFile/*,is->nocreate*/);
         if (is->fail()) {
             warn("部首合成変換辞書が開けませんでした。\n"
                  "部首合成変換の機能は使えません。");
@@ -925,13 +948,14 @@ void TableWindow::initTC() {
             bushuDic = new BushuDic;
             bushuDic->readFile(is);
             is->close();
+			is->clear();
         }
     }
 
     // 交ぜ書き辞書の読み込み (使用する場合のみ)
     MgTable *mgTable = 0;
     if (mazeReady) {
-        is->open(mazegakiFile, is->nocreate);
+        is->open(mazegakiFile/*, is->nocreate*/);
         if (is->fail()) {
             warn("交ぜ書き変換辞書が開けませんでした。\n"
                  "交ぜ書き変換の機能は使えません。");
@@ -940,6 +964,7 @@ void TableWindow::initTC() {
             mgTable = new MgTable(hwnd);
             mgTable->readFile(is);
             is->close();
+			is->clear();
         }
     }
 
@@ -947,7 +972,7 @@ void TableWindow::initTC() {
     // 熟語ガイド辞書の読み込み (使用する場合のみ)
     GgDic *ggDic = 0;
     if (ggReady) {
-        is->open(ggFile, is->nocreate);
+        is->open(ggFile/*, is->nocreate*/);
         if (is->fail()) {
             warn("熟語ガイド辞書が開けませんでした。\n"
                  "熟語ガイドの機能は使えません。");
@@ -956,6 +981,7 @@ void TableWindow::initTC() {
             ggDic = new GgDic;
             ggDic->readFile(is);
             is->close();
+			is->clear();
         }
     }
     //</v127a - gg>
@@ -988,10 +1014,11 @@ void TableWindow::initTC() {
     //</v127a - gg>
     //<multishift2>
     {
-        is->open(tableFile, is->nocreate);
+        is->open(tableFile/*, is->nocreate*/);
         if (!is->fail()) {
             TCode::readDir(&tc->dirTable, is);
             is->close();
+			is->clear();
         }
     }
     tc->stTable->setupPref(tc->dirTable[DIR_prefix]);
@@ -1004,6 +1031,20 @@ void TableWindow::initTC() {
         STRDUP(tc->OPT_defg, tc->dirTable[DIR_defguide]);
     }
     //</multishift2>
+    tc->OPT_prefixautoassign = 0;
+    if (prefixautoassign[0]) {
+        tc->OPT_prefixautoassign = new STROKE[strlen(prefixautoassign)+1];
+        char *p = prefixautoassign;
+        int i;
+        for (i = 0; ; i++) {
+            int k, n = 1;
+            if (sscanf(p, "-%d>%n", &k, &n) > 0) tc->OPT_prefixautoassign[i] = k;
+            else if (sscanf(p, "-S%d>%n", &k, &n) > 0) tc->OPT_prefixautoassign[i] = TC_SHIFT(k);
+            else break;
+            p += n;
+        }
+        tc->OPT_prefixautoassign[i] = EOST;
+    }
 //#undef STRDUP
     //<record>
     if (OPT_record[0]) {
@@ -1021,6 +1062,10 @@ void TableWindow::initTC() {
     if (OPT_shiftKana)
         tc->checkShiftKana(tc->table);
     //</v127a - shiftcheck>
+    tc->checkShiftSeq(tc->table);
+    for (int i = 0; i < TC_NKEYS; i++) {
+        if (tc->isShiftKana[i]) tc->isAnyShiftKana = true;
+    }
     tc->OPT_enableHankakuKana = OPT_enableHankakuKana;
     tc->OPT_useWMIMECHAR = OPT_useWMIMECHAR;
     //<v127a - outputsleep>
@@ -1508,13 +1553,17 @@ void TableWindow::drawFrame10(HDC hdc) {
 
 // -------------------------------------------------------------------
 // 仮想鍵盤のキー (50 鍵)
-void TableWindow::drawVKB50(HDC hdc) {
+void TableWindow::drawVKB50(HDC hdc, bool isWithBothSide) {
     HBRUSH brR = CreateSolidBrush(COL_LT_RED);
     HBRUSH brG = CreateSolidBrush(COL_LT_GREEN);
     HBRUSH brB = CreateSolidBrush(COL_LT_BLUE);
     HBRUSH brC = CreateSolidBrush(COL_LT_CYAN);
     HBRUSH brY = CreateSolidBrush(COL_LT_YELLOW);
     HBRUSH brL = CreateSolidBrush(COL_LT_GRAY);
+    HBRUSH brW = CreateSolidBrush(COL_ON_K1);
+    HBRUSH brSP = CreateSolidBrush(COL_DK_CYAN);
+    HBRUSH brGG = CreateSolidBrush(COL_DK_MAGENTA);
+    HBRUSH brNO = CreateSolidBrush(COL_BLACK);
 
     HGDIOBJ brSave = SelectObject(hdc, GetStockObject(NULL_BRUSH));
     HGDIOBJ pnSave = SelectObject(hdc, GetStockObject(NULL_PEN));
@@ -1550,7 +1599,61 @@ void TableWindow::drawVKB50(HDC hdc) {
             }
             Rectangle(hdc, px + 2, py + 2, px + BLOCK_SIZE, py + BLOCK_SIZE);
 
-            switch (tc->vkbFG[k]) {
+            if (tc->vkbCorner[k] & TC_MK_SH1) {
+                SelectObject(hdc, brW);
+                POINT tri[3];
+                tri[0].x = tri[1].x = px + 2;
+                tri[1].y = tri[2].y = py + BLOCK_SIZE-1;
+                tri[2].x = px + 2 + 8;
+                tri[0].y = py + BLOCK_SIZE-1 - 8;
+                Polygon(hdc, tri, 3);
+            }
+            if (isWithBothSide && isShift && tc->vkbFace[k]) {
+                switch (tc->vkbFG[k]) {
+                case TC_FG_SPECIAL: SelectObject(hdc, brSP); break;
+                case TC_FG_GG: SelectObject(hdc, brGG); break;
+                case TC_FG_NORMAL: SelectObject(hdc, brNO); break;
+                }
+                POINT tri[3];
+                tri[0].x = tri[1].x = px + 2;
+                tri[1].y = tri[2].y = py + BLOCK_SIZE-1;
+                tri[2].x = px + 2 + 6;
+                tri[0].y = py + BLOCK_SIZE-1 - 6;
+                Polygon(hdc, tri, 3);
+            }
+            if (tc->vkbCorner[k] & TC_MK_SH2) {
+                SelectObject(hdc, brW);
+                POINT tri[3];
+                tri[2].x = tri[1].x = px + BLOCK_SIZE-1;
+                tri[1].y = tri[0].y = py + BLOCK_SIZE-1;
+                tri[0].x = px + BLOCK_SIZE-1 - 8;
+                tri[2].y = py + BLOCK_SIZE-1 - 8;
+                Polygon(hdc, tri, 3);
+            }
+            if (tc->vkbCorner[k] & TC_MK_SH3) {
+                SelectObject(hdc, brW);
+                POINT tri[3];
+                tri[0].x = tri[1].x = px + BLOCK_SIZE-1;
+                tri[1].y = tri[2].y = py + 2;
+                tri[2].x = px + BLOCK_SIZE-1 - 8;
+                tri[0].y = py + 2 + 8;
+                Polygon(hdc, tri, 3);
+            }
+            if (isWithBothSide && !isShift && tc->vkbFace[TC_SHIFT(k)]) {
+                switch (tc->vkbFG[TC_SHIFT(k)]) {
+                case TC_FG_SPECIAL: SelectObject(hdc, brSP); break;
+                case TC_FG_GG: SelectObject(hdc, brGG); break;
+                case TC_FG_NORMAL: SelectObject(hdc, brNO); break;
+                }
+                POINT tri[3];
+                tri[0].x = tri[1].x = px + BLOCK_SIZE-1;
+                tri[1].y = tri[2].y = py + 2;
+                tri[2].x = px + BLOCK_SIZE-1 - 6;
+                tri[0].y = py + 2 + 6;
+                Polygon(hdc, tri, 3);
+            }
+
+            switch (tc->vkbFG[isWithBothSide&&isShift?TC_SHIFT(k):k]) {
             case TC_FG_SPECIAL: SetTextColor(hdc, COL_DK_CYAN); break;
             case TC_FG_STROKE:  SetTextColor(hdc, COL_DK_CYAN); break;
             //<v127a - gg>
@@ -1559,7 +1662,7 @@ void TableWindow::drawVKB50(HDC hdc) {
             case TC_FG_NORMAL:
             default:            SetTextColor(hdc, COL_BLACK); break;
             }
-            char *s = tc->vkbFace[k];
+            char *s = tc->vkbFace[isWithBothSide&&isShift?TC_SHIFT(k):k];
             if (s && *s) {
                 int dx = tc->OPT_win95 ? 0 : 1;
                 if (strlen(s) <= 1) {
@@ -1581,6 +1684,10 @@ void TableWindow::drawVKB50(HDC hdc) {
     DeleteObject(brC);
     DeleteObject(brY);
     DeleteObject(brL);
+    DeleteObject(brW);
+    DeleteObject(brSP);
+    DeleteObject(brGG);
+    DeleteObject(brNO);
 }
 
 // -------------------------------------------------------------------

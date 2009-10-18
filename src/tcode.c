@@ -126,6 +126,7 @@ TCode::TCode(int *v, ControlBlock *t, MgTable *m, BushuDic *b, GgDic *g) {
     isShiftKana = new bool[TC_NKEYS];
     for (int i = 0; i < TC_NKEYS; i++)
         isShiftKana[i] = false;
+	isAnyShiftKana = false;
     //</v127a - shiftcheck>
     //<v127a - gg>
     ggDic = g;
@@ -136,6 +137,7 @@ TCode::TCode(int *v, ControlBlock *t, MgTable *m, BushuDic *b, GgDic *g) {
     helpBuffer = new MojiBuffer(TC_BUFFER_SIZE);
     currentStroke = new std::vector<STROKE>;
     stTable = new StTable(table);
+    assignedsBuffer = new MojiBuffer(TC_BUFFER_SIZE);
 
     OPT_keyboard = 0;
     OPT_tableFile = 0;
@@ -271,9 +273,9 @@ void TCode::keyinNormal(int key) {
     helpMode = 0;
 
     // シフト打鍵
-    currentShift |= TC_ISSHIFTED(key);
+    if (OPT_shiftKana) currentShift |= TC_ISSHIFTED(key);
     /* currentShift &= TC_ISSHIFTED(key); 8 */
-    key = TC_UNSHIFT(key);
+    int justCurShift = TC_ISSHIFTED(key);
 
     int vk;
     switch (key) {
@@ -338,7 +340,7 @@ void TCode::keyinNormal(int key) {
                 addToHistMaybe(preBuffer->string());
             }
         } else {
-            preBuffer->pushSoft(MV(vkey[currentStroke->at(0)]));
+            preBuffer->pushSoft(MV(vkey[TC_UNSHIFT(currentStroke->at(0))]));
         }
         reset();
         return;
@@ -358,6 +360,7 @@ void TCode::keyinNormal(int key) {
      */
     currentStroke->push_back(key);
     Block *nextBlock = (currentBlock->block)[key];
+    if (OPT_shiftKana && !nextBlock) nextBlock = (currentBlock->block)[TC_UNSHIFT(key)];
     //<record>
     record.nstroke += 1;
     //</record>
@@ -533,7 +536,7 @@ void TCode::keyinNormal(int key) {
             return;
 
         case F_VERB_FIRST:
-            preBuffer->pushSoft(MV(vkey[currentStroke->at(0)]));
+            preBuffer->pushSoft(MV(vkey[TC_UNSHIFT(currentStroke->at(0))]));
             //<record>
             // XXX: ?
             //record.nspecial += 1;
@@ -1336,6 +1339,7 @@ void TCode::makeGG(char *strGG) {
         m = s->pop();
         int check = stTable->look(m);
     //</gg-defg>
+        if (check == 0) { assignStroke(m); check = stTable->look(m); }
         if (check == 0) { continue; }
         int stlen = strokelen(stTable->stroke);
         ControlBlock *p = table;
@@ -1367,7 +1371,8 @@ void TCode::makeGG(char *strGG) {
 
 //<v127a - gg>
 void TCode::clearGG(ControlBlock *p) {
-    for (int i = 0; i < TC_NKEYS; i++) {
+    clearAssignStroke();
+    for (int i = 0; i < TC_NKEYS*2; i++) {
         Block *np = (p->block)[i];
         if (np == NULL) { continue; }
         switch (np->kind()) {
@@ -1386,12 +1391,65 @@ void TCode::clearGG(ControlBlock *p) {
 
 //</v127a - gg>
 
+void TCode::assignStroke(MOJI m) {
+    if (!OPT_prefixautoassign) return;
+    int len = strokelen(OPT_prefixautoassign);
+    STROKE *st = new STROKE[len + 2];
+    memcpy(st, OPT_prefixautoassign, len + 1);
+    st[len+1] = EOST;
+    ControlBlock *p = table;
+    for (int i = 0; i < len; i++) {
+        if (!(p->block)[st[i]]) (p->block)[st[i]] = new ControlBlock();
+        Block *np = (p->block)[st[i]];
+        if (np->kind() != CONTROL_BLOCK) { delete st; return; }
+        p = (ControlBlock *)np;
+    }
+    for (int oc = 0; oc < candSkip; oc++) {
+        int i;
+        for (i = 0; i < TC_NKEYS; i++) {
+            if (candOrder[i] == oc) break;
+        }
+        if (i >= TC_NKEYS) continue;
+        if ((p->block)[i]) continue;
+        st[len] = i;
+        (*stTable->stMap)[m] = st;
+        char c[3];
+        c[0] = 0; moji2strcat(c, m);
+        (p->block)[i] = new StringBlock(c);
+        assignedsBuffer->pushSoft(m);
+        return;
+    }
+    delete st;
+}
+
+void TCode::clearAssignStroke() {
+    while (!assignedsBuffer->isEmpty()) {
+        MOJI m = assignedsBuffer->pop();
+        int check = stTable->look(m);
+        if (check == 0) continue;
+        int stlen = strokelen(stTable->stroke);
+        ControlBlock *p = table;
+        for (int i = 0; i < stlen-1; i++) {
+            Block *np = (p->block)[stTable->stroke[i]];
+            p = (ControlBlock *)np;
+        }
+        Block *np = (p->block)[stTable->stroke[stlen-1]];
+        if (np->kind() != STRING_BLOCK) continue;
+        delete np;
+        (p->block)[stTable->stroke[stlen-1]] = 0;
+        delete (*stTable->stMap)[m];
+        stTable->stMap->erase(m);
+    }
+
+}
+
 void TCode::makeVKB() {
     // 初期化
     for (int i = 0; i < TC_NKEYS; i++) {
-        vkbFace[i] = NULL;
-        vkbFG[i] = TC_FG_NIL;
+        vkbFace[i] = vkbFace[TC_SHIFT(i)] = NULL;
+        vkbFG[i] = vkbFG[TC_SHIFT(i)] = TC_FG_NIL;
         vkbBG[i] = TC_BG_NIL;
+        vkbCorner[i] = 0;
     }
 
     // OFF mode
@@ -1491,7 +1549,7 @@ void TCode::makeVKB() {
         //    makeGG(strGG);
         if (currentBlock == table) {
             if (OPT_defg && !strGG) strGG = OPT_defg;
-            if (OPT_defg || ggReady) {
+            if (OPT_defg || ggReady || strGG) {
                 clearGG(table);
                 if (strGG) makeGG(strGG);
             }
@@ -1499,7 +1557,7 @@ void TCode::makeVKB() {
         //</gg-defg>
         }
         //</v127a - gg>
-        for (int i = 0; i < TC_NKEYS; i++) {
+        for (int i = 0; i < TC_NKEYS*2; i++) {
             Block *block = currentBlock->block[i];
             if (block == 0) { continue; }
             switch (block->kind()) {
@@ -1609,37 +1667,54 @@ void TCode::makeVKBBG(STROKE *st) {
     int needX = 0;
     for (int th = 0; th < stlen; th++) {
         int k = st[th];
+        int isShift = TC_ISSHIFTED(k);
+        k = TC_UNSHIFT(k);
         switch (th) {
         case 0:                 // 1st stroke
+            if (isShift) vkbCorner[k] |= TC_MK_SH1;
             vkbBG[k] = TC_BG_ST1;
             break;
         case 1:                 // 2nd stroke
             if (vkbBG[k] != TC_BG_NIL) {
+                if (isShift) vkbCorner[k] |= TC_MK_SH2;
                 vkbBG[k] = TC_BG_STW;
                 needX = 1;
             } else {
+                if (isShift) vkbCorner[k] |= TC_MK_SH1;
                 vkbBG[k] = TC_BG_ST2;
             }
             break;
         case 2:                 // 3rd stroke
             if (vkbBG[k] != TC_BG_NIL) {
-                if (needX) { vkbBG[k] = TC_BG_STX; }
-                else {
+                if (needX) {
+                    if (isShift) vkbCorner[k] |= TC_MK_SH3;
+                    vkbBG[k] = TC_BG_STX;
+                } else {
+                    if (isShift) vkbCorner[k] |= TC_MK_SH2;
                     vkbBG[k] = TC_BG_STW;
                     needX = 1;
                 }
             } else {
+                if (isShift) vkbCorner[k] |= TC_MK_SH1;
                 vkbBG[k] = TC_BG_ST3;
             }
             break;
         default:                // forth stroke(s)
             if (vkbBG[k] != TC_BG_NIL) {
-                if (needX) { vkbBG[k] = TC_BG_STX; }
-                else {
+                if (needX) {
+                    if (vkbBG[k] == TC_BG_STW || vkbBG[k] == TC_BG_STX) {
+                        if (isShift) vkbCorner[k] |= TC_MK_SH3;
+                    } else {
+                        if (isShift) vkbCorner[k] |= TC_MK_SH2;
+                    }
+                    vkbBG[k] = TC_BG_STX;
+                } else {
+                    if (isShift) vkbCorner[k] |= TC_MK_SH2;
                     vkbBG[k] = TC_BG_STW;
                     needX = 1;
                 }
             } else {
+                if (isShift) vkbCorner[k] |= TC_MK_SH1;
                 vkbBG[k] = TC_BG_STF;
             }
             break;
@@ -1677,6 +1752,20 @@ bool TCode::checkShiftKana(ControlBlock *block) {
     return ret;
 }
 //</v127a - shiftcheck>
+// 任意の文字でシフトと組み合わせられたストロークとなるキー番号iに対する
+// isShiftKana[i]の値をtrueにする。
+void TCode::checkShiftSeq(ControlBlock *block) {
+    for (int i = 0; i < TC_NKEYS; i++) {
+        if ((block->block)[TC_SHIFT(i)]) isShiftKana[i] = true;
+        Block *nextBlock = (block->block)[i];
+        if (nextBlock && nextBlock->kind() == CONTROL_BLOCK)
+            checkShiftSeq((ControlBlock *)nextBlock);
+        nextBlock = (block->block)[TC_SHIFT(i)];
+        if (nextBlock && nextBlock->kind() == CONTROL_BLOCK)
+            checkShiftSeq((ControlBlock *)nextBlock);
+    }
+    return ;
+}
 
 //<multishift2>
 #define STRCPY(q, p)                                            \

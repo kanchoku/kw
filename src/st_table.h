@@ -6,8 +6,8 @@
 // ストローク列の逆引き表
 
 //<multishift>
-#include <iostream.h>
-#include <fstream.h>
+#include <iostream>
+#include <fstream>
 #include <windows.h>
 //</multishift>
 #include <map>
@@ -70,7 +70,7 @@ public:
 
     void init(Block *);
     void initSub(Block *, STROKE *);
-    look(MOJI);
+    int look(MOJI);
 
     //<multishift>
     /* readFile()  : 「*.tbl」から prefix 定義を読みこむ。

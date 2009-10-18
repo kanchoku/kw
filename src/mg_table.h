@@ -6,11 +6,13 @@
 #define MG_TABLE_H
 // -------------------------------------------------------------------
 
-#include <iostream.h>
-#include <fstream.h>
+#include <iostream>
+#include <fstream>
 #include <vector>
 #include <map>
 #include <windows.h>
+
+using namespace std;
 
 // •¶š—ñ”äŠrŠÖ” (STL ‚Ìƒ}ƒjƒ…ƒAƒ‹‚Ü‚ñ‚Ü)
 struct ltstr {

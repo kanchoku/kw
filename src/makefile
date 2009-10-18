@@ -131,7 +131,7 @@ st_table.obj: st_table.c st_table.h block.h moji.h tc.h debug.h
 ##<v127a - gg>
 ##table_window.obj: table_window.c table_window.h block.h bushu_dic.h mg_table.h moji.h parser.h tcode.h version.h debug.h
 ##tcode.obj: tcode.c tcode.h tc.h block.h bushu_dic.h mg_table.h moji.h st_table.h table_window.h debug.h
-table_window.obj: table_window.c table_window.h block.h bushu_dic.h mg_table.h moji.h parser.h tcode.h version.h debug.h gg_dic.h
+table_window.obj: table_window.c table_window.h block.h bushu_dic.h mg_table.h moji.h parser.h tcode.h version.h debug.h gg_dic.h st_table.h
 tcode.obj: tcode.c tcode.h tc.h block.h bushu_dic.h mg_table.h moji.h st_table.h table_window.h debug.h gg_dic.h
 ##</v127a - gg>
 debug.obj: debug.c debug.h

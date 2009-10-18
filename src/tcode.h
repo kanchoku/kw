@@ -66,6 +66,7 @@ public:
     bool *isShiftKana;          // Shift状態のRegisterHotKeyが必要なキーか
                                 // どうかを示すフラグを格納する配列
     //</v127a - shiftcheck>
+    bool isAnyShiftKana;
     //<multishift2>
     DIR_TABLE dirTable;
     static void readDir(DIR_TABLE *, ifstream *);
@@ -93,6 +94,7 @@ public:
     //</v127a - gg>
     int OPT_bushuAlgo;          // 部首合成変換のアルゴリズム
     int OPT_conjugationalMaze;  // 活用語の交ぜ書き変換
+    STROKE *OPT_prefixautoassign; // 熟語ガイド中の外字にストローク割り振り
 
     int OPT_shiftKana;          // シフト打鍵でかたかな
     int OPT_enableHankakuKana;  // 半角かな変換
@@ -233,15 +235,20 @@ public:
     int histRef[TC_NHIST];
     int histPtr;
 
+    /* 熟語ガイド
+	 */
+    MojiBuffer *assignedsBuffer;
+
     /* 仮想鍵盤
      * --------
      * - vkbFace[]  : 仮想鍵盤の各キーのフェイス
      * - vkbFG[]    : 仮想鍵盤の各キーの前景色。上記 TC_FG_* を参照。
      * - vkbBG[]    : 仮想鍵盤の各キーの背景色。上記 TC_BG_* を参照。
      */
-    char *vkbFace[TC_NKEYS];
-    int vkbFG[TC_NKEYS];
+    char *vkbFace[TC_NKEYS*2];
+    int vkbFG[TC_NKEYS*2];
     int vkbBG[TC_NKEYS];
+    int vkbCorner[TC_NKEYS];
 
     /* コンストラクタとデストラクタ
      */
@@ -323,6 +330,8 @@ public:
     //</gg-defg>
     void clearGG(ControlBlock *);
     //</v127a - gg>/
+    void assignStroke(MOJI);
+    void clearAssignStroke();
     void makeVKB();
     void makeVKBBG(vector<STROKE> *);
     void makeVKBBG(STROKE *);
@@ -331,6 +340,7 @@ public:
     /* isShiftKana[]をセットする */
     bool checkShiftKana(ControlBlock *block);
     //</v127a - shiftcheck>
+    void checkShiftSeq(ControlBlock *block);
 };
 
 // -------------------------------------------------------------------

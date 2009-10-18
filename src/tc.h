@@ -27,9 +27,9 @@
  * - TC_UNSHIFT(k)  : キー k のアンシフト時のキー番号
  * - TC_ISSHIFTED(k): キー k がシフト打鍵かどうか
  */
-#define TC_SHIFT(k) ((k) | 0x100)
-#define TC_UNSHIFT(k) ((k) & 0xff)
-#define TC_ISSHIFTED(k) ((k) & 0x100)
+#define TC_SHIFT(k) ((k) + ((k)<TC_NKEYS?TC_NKEYS:0))
+#define TC_UNSHIFT(k) ((k) - ((k)>=TC_NKEYS&&(k)<TC_NKEYS*2?TC_NKEYS:0))
+#define TC_ISSHIFTED(k) ((k)>=TC_NKEYS&&(k)<TC_NKEYS*2)
 
 /* 仮想鍵盤 (の描画) に関する定数類
  * --------------------------------
@@ -73,6 +73,10 @@
 #define TC_MK_STW       "◎"    // 二重打鍵
 #define TC_MK_STX       "☆"    // 二重打鍵 (その 2)
 //</multishift>
+
+#define TC_MK_SH1       1
+#define TC_MK_SH2       2
+#define TC_MK_SH3       4
 
 
 //<multishift2>

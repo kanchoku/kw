@@ -4,39 +4,74 @@
 #include "debug.h"
 
 // モードひとつ分読む
+//ただし現状はファイル末尾まで同じモードとみなしている
 ControlBlock *Parser::parse() {
+	ControlBlock *node = new ControlBlock();
     setNextToken();
-    return parseControl();      // モードは control block ひとつからなる
+    while (currentToken) {
+        switch(currentToken) {
+        case LBRACE:
+            parseControl(node);
+            break;
+        case ARROW:
+            parseRoute(node);
+            break;
+        default:
+            parseError();
+        }
+        setNextToken();
+    }
+    return node;
 }
 
 // control block をひとつ読む
-ControlBlock *Parser::parseControl() {
+void Parser::parseControl(ControlBlock *node) {
     checkToken(LBRACE);         // 最初の '{'
     setNextToken();
 
-    ControlBlock *node = new ControlBlock(); // control block を用意
     for (int i = 0; i < TC_NKEYS; i++) {
+      for (int j = 0; j < 2; j++) {
+        int k = (j?TC_SHIFT(i):i);
+        if (currentToken == LBRACE || currentToken == ARROW) {
+            if (!node->block[k]) node->block[k] = new ControlBlock();
+            if (node->block[k]->kind() != CONTROL_BLOCK) {
+                delete(node->block[k]);
+                node->block[k] = new ControlBlock();
+            }
+        }
         switch(currentToken) {
         case LBRACE:            // '{' : ネストした control block
-            node->block[i] = parseControl();
+            parseControl((ControlBlock *)node->block[k]);
+            setNextToken();
+            break;
+        case ARROW:             // '-n>' : control block の指定位置に移動
+            parseRoute((ControlBlock *)node->block[k]);
             setNextToken();
             break;
         case RBRACE:            // '}' が来たらブランク
         case COMMA:             // ',' が来てもブランク
-            node->block[i] = 0;
+		case SLASH:             // '/' が来てもブランク
             break;
         case STRING:            // "str" : 文字列ブロック
-            node->block[i] = new StringBlock(buffer);
+            if (node->block[k]) delete(node->block[k]);
+            node->block[k] = new StringBlock(buffer);
             setNextToken();
             break;
         case SPECIAL:           // @c : 特殊ブロック
-            node->block[i] = new SpecialBlock(buffer[0]);
+            if (node->block[k]) delete(node->block[k]);
+            node->block[k] = new SpecialBlock(buffer[0]);
             setNextToken();
             break;
         case 0:                 // 途中でファイルが終わった場合 : エラー
             parseError();
             break;
         }
+        if (currentToken == SLASH) {
+            setNextToken();
+            continue;
+        }
+        break;
+      }
 
         if (i != (TC_NKEYS - 1)) {
             // control ブロックの最後のひとつでない限り、次にはコンマが必要
@@ -46,7 +81,46 @@ ControlBlock *Parser::parseControl() {
     }
 
     checkToken(RBRACE);         // 最初の '}'
-    return node;
+    return ;
+}
+
+// control block の中に移動
+void Parser::parseRoute(ControlBlock *node) {
+    checkToken(ARROW);
+    int k = buffer[0];
+    setNextToken();
+
+        if (currentToken == LBRACE || currentToken == ARROW) {
+            if (!node->block[k]) node->block[k] = new ControlBlock();
+            if (node->block[k]->kind() != CONTROL_BLOCK) {
+                delete(node->block[k]);
+                node->block[k] = new ControlBlock();
+            }
+        }
+        switch(currentToken) {
+        case LBRACE:            // '{' : ネストした control block
+            parseControl((ControlBlock *)node->block[k]);
+            break;
+        case ARROW:             // -n> : control block の指定位置に移動
+            parseRoute((ControlBlock *)node->block[k]);
+            break;
+        case STRING:            // "str" : 文字列ブロック
+            if (node->block[k]) delete(node->block[k]);
+            node->block[k] = new StringBlock(buffer);
+            break;
+        case SPECIAL:           // @c : 特殊ブロック
+            if (node->block[k]) delete(node->block[k]);
+            node->block[k] = new SpecialBlock(buffer[0]);
+            break;
+        case RBRACE:            // '}' が来たらエラー
+        case COMMA:             // ',' が来てもエラー
+        case SLASH:             // '/' が来てもエラー
+        case 0:                 // 途中でファイルが終わった場合 : エラー
+            parseError();
+            break;
+        }
+
+    return ;
 }
 
 // 現在のトークンを決め打ち
@@ -66,12 +140,14 @@ int Parser::getToken() {
     char c;
 
     is->get(c);
+    if (is->eof()) return NULL;
 
     // '#' または ';' 以降、行末までコメント
     if (c == '#' || c == ';') {
         do {
             is ->get(c);
-        } while (c != 0 && c != '\n' && c != '\r');
+        } while (!is->eof() && c != 0 && c != '\n' && c != '\r');
+        if (is->eof()) return NULL;
     }
 
     // 一文字のトークンシリーズ
@@ -79,6 +155,7 @@ int Parser::getToken() {
     case '{': return LBRACE;
     case '}': return RBRACE;
     case ',': return COMMA;
+    case '/': return SLASH;
 
     case '\n':                  // ^J  : スキップだけど行番号を増やす
         lineNumber++;
@@ -91,6 +168,27 @@ int Parser::getToken() {
 
     case 0:
         return NULL;
+    }
+
+    // 矢印
+    if (c == '-') {
+        is->get(c);
+        int count = 0;
+        while (!is->eof() && count < BUFFER_SIZE && c != '>') {
+            if (is->eof() || c == 0) {
+                parseError();
+            }
+            buffer[count] = c;
+            count++;
+            is->get(c);
+        }
+        buffer[count] = 0;
+        int k;
+        if (1 <= sscanf(buffer, "%d", &k)) ;
+        else if (1 <= sscanf(buffer, "S%d", &k)) k = TC_SHIFT(k);
+        else parseError();
+        buffer[0] = k;
+        return ARROW;
     }
 
     // 特殊
@@ -112,9 +210,9 @@ int Parser::getToken() {
     // 「"\n"」「"\t"」「"\ooo"」は未対応。
     is->get(c);
     int count = 0;
-    while (c != '"') {
-        if (c == 0) {
-            exit(1);            // 後でちゃんとエラーに
+    while (!is->eof() && count < BUFFER_SIZE && c != '"') {
+        if (is->eof() || c == 0) {
+            parseError();
         }
         if (IS_ZENKAKU(c)) {      // 先頭の 1 バイトを見て判断
             // Shift-JIS の 2 バイト文字

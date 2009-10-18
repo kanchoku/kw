@@ -1,24 +1,24 @@
-# Microsoft Developer Studio Project File - Name="Kanchoku" - Package Owner=<4>
+# Microsoft Developer Studio Project File - Name="kansaku" - Package Owner=<4>
 # Microsoft Developer Studio Generated Build File, Format Version 6.00
 # ** 編集しないでください **
 
 # TARGTYPE "Win32 (x86) Application" 0x0101
 
-CFG=Kanchoku - Win32 Debug
+CFG=kansaku - Win32 Debug
 !MESSAGE これは有効なﾒｲｸﾌｧｲﾙではありません。 このﾌﾟﾛｼﾞｪｸﾄをﾋﾞﾙﾄﾞするためには NMAKE を使用してください。
 !MESSAGE [ﾒｲｸﾌｧｲﾙのｴｸｽﾎﾟｰﾄ] ｺﾏﾝﾄﾞを使用して実行してください
 !MESSAGE 
-!MESSAGE NMAKE /f "Kanchoku.mak".
+!MESSAGE NMAKE /f "kansaku.mak".
 !MESSAGE 
 !MESSAGE NMAKE の実行時に構成を指定できます
 !MESSAGE ｺﾏﾝﾄﾞ ﾗｲﾝ上でﾏｸﾛの設定を定義します。例:
 !MESSAGE 
-!MESSAGE NMAKE /f "Kanchoku.mak" CFG="Kanchoku - Win32 Debug"
+!MESSAGE NMAKE /f "kansaku.mak" CFG="kansaku - Win32 Debug"
 !MESSAGE 
 !MESSAGE 選択可能なﾋﾞﾙﾄﾞ ﾓｰﾄﾞ:
 !MESSAGE 
-!MESSAGE "Kanchoku - Win32 Release" ("Win32 (x86) Application" 用)
-!MESSAGE "Kanchoku - Win32 Debug" ("Win32 (x86) Application" 用)
+!MESSAGE "kansaku - Win32 Release" ("Win32 (x86) Application" 用)
+!MESSAGE "kansaku - Win32 Debug" ("Win32 (x86) Application" 用)
 !MESSAGE 
 
 # Begin Project
@@ -29,7 +29,7 @@ CPP=cl.exe
 MTL=midl.exe
 RSC=rc.exe
 
-!IF  "$(CFG)" == "Kanchoku - Win32 Release"
+!IF  "$(CFG)" == "kansaku - Win32 Release"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 0
@@ -43,7 +43,8 @@ RSC=rc.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /c
-# ADD CPP /nologo /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /FR /YX /FD /TP /c
+# ADD CPP /nologo /W3 /Gi- /vd1 /GX /O2 /Ob1 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /TP /c
+# SUBTRACT CPP /Fr
 # ADD BASE MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "NDEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x411 /d "NDEBUG"
@@ -53,9 +54,10 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386 /out:"../kanchoku.exe"
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /machine:I386 /out:"../../kansaku.exe" /FORCE:UNRESOLVED
+# SUBTRACT LINK32 /pdb:none
 
-!ELSEIF  "$(CFG)" == "Kanchoku - Win32 Debug"
+!ELSEIF  "$(CFG)" == "kansaku - Win32 Debug"
 
 # PROP BASE Use_MFC 0
 # PROP BASE Use_Debug_Libraries 1
@@ -69,7 +71,7 @@ LINK32=link.exe
 # PROP Ignore_Export_Lib 0
 # PROP Target_Dir ""
 # ADD BASE CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /GZ /c
-# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /FR /YX /FD /GZ /TP /c
+# ADD CPP /nologo /W3 /Gm /GX /ZI /Od /D "WIN32" /D "_DEBUG" /D "_WINDOWS" /D "_MBCS" /YX /FD /GZ /TP /c
 # ADD BASE MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD MTL /nologo /D "_DEBUG" /mktyplib203 /win32
 # ADD BASE RSC /l 0x411 /d "_DEBUG"
@@ -79,68 +81,49 @@ BSC32=bscmake.exe
 # ADD BSC32 /nologo
 LINK32=link.exe
 # ADD BASE LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /debug /machine:I386 /pdbtype:sept
-# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /debug /machine:I386 /out:"../kanchoku.exe" /pdbtype:sept
+# ADD LINK32 kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /debug /machine:I386 /out:"../../kansaku.exe" /pdbtype:sept /FORCE:UNRESOLVED
+# SUBTRACT LINK32 /pdb:none
 
 !ENDIF 
 
 # Begin Target
 
-# Name "Kanchoku - Win32 Release"
-# Name "Kanchoku - Win32 Debug"
+# Name "kansaku - Win32 Release"
+# Name "kansaku - Win32 Debug"
 # Begin Group "Source Files"
 
 # PROP Default_Filter "cpp;c;cxx;rc;def;r;odl;idl;hpj;bat"
 # Begin Source File
 
-SOURCE=.\block.c
+SOURCE=..\block.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\bushu_dic.c
+SOURCE=..\debug.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\control_window.c
+SOURCE=..\kansaku.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\debug.c
+SOURCE=..\kansaku.rc
 # End Source File
 # Begin Source File
 
-SOURCE=.\gg_dic.c
+SOURCE=..\moji.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\kanchoku.rc
+SOURCE=..\parser.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\main.c
+SOURCE=..\st_table.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\mg_table.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\moji.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\parser.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\st_table.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\table_window.c
-# End Source File
-# Begin Source File
-
-SOURCE=.\tcode.c
+SOURCE=..\tcode.c
 # End Source File
 # End Group
 # Begin Group "Header Files"
@@ -148,55 +131,31 @@ SOURCE=.\tcode.c
 # PROP Default_Filter "h;hpp;hxx;hm;inl"
 # Begin Source File
 
-SOURCE=.\block.h
+SOURCE=..\block.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\bushu_dic.h
+SOURCE=..\debug.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\control_window.h
+SOURCE=..\kansaku.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\debug.h
+SOURCE=..\moji.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\gg_dic.h
+SOURCE=..\parser.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\mg_table.h
+SOURCE=..\st_table.h
 # End Source File
 # Begin Source File
 
-SOURCE=.\moji.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\parser.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\st_table.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\table_window.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\tc.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\tcode.h
-# End Source File
-# Begin Source File
-
-SOURCE=.\version.h
+SOURCE=..\tcode.h
 # End Source File
 # End Group
 # Begin Group "Resource Files"
@@ -204,15 +163,11 @@ SOURCE=.\version.h
 # PROP Default_Filter "ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe"
 # Begin Source File
 
-SOURCE=.\kanchoku.ico
+SOURCE=..\kansaku.ico
 # End Source File
 # Begin Source File
 
-SOURCE=.\kanmini0.ico
-# End Source File
-# Begin Source File
-
-SOURCE=.\kanmini1.ico
+SOURCE=..\kansakum.ico
 # End Source File
 # End Group
 # End Target

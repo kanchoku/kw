@@ -7,9 +7,11 @@
 // -------------------------------------------------------------------
 
 #include <windows.h>
-#include <iostream.h>
+#include <iostream>
 #include <stdio.h>
 #include "block.h"
+
+using namespace std;
 
 // トークンの種類
 #define LBRACE  (1)             // {
@@ -17,6 +19,8 @@
 #define COMMA   (3)             // ,
 #define STRING  (4)             // "str"
 #define SPECIAL (5)             // @c
+#define SLASH   (6)             // /
+#define ARROW   (7)             // -n>
 
 // バッファの大きさ
 #define BUFFER_SIZE 8192
@@ -44,7 +48,8 @@ class Parser {
     }
 
     ControlBlock *parse();      // モードひとつ分読む
-    ControlBlock *parseControl(); // control block をひとつ読む
+    void parseControl(ControlBlock *); // control block をひとつ読む
+    void parseRoute(ControlBlock *); // control block の中に移動
 
     int getToken();             // トークンひとつ読む
     void setNextToken();        // トークンひとつ読んで currentToken にセット

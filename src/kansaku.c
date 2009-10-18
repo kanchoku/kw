@@ -2,8 +2,8 @@
 
 #include <ctype.h>
 #include <string.h>
-#include <iostream.h>
-#include <fstream.h>
+#include <iostream>
+#include <fstream>
 #include <windows.h>
 
 #include "kansaku.h"
@@ -243,7 +243,7 @@ void initialize(HWND hwnd) {
 
     // テーブルファイルの読み込み
     ifstream *is = new ifstream();
-    is->open(tableFile, is->nocreate);
+    is->open(tableFile/*, is->nocreate*/);
     if (is->fail()) { error(hwnd, "テーブルファイルが開けません"); }
     // パーズする
     Parser *parser = new Parser(is, hwnd);
@@ -258,7 +258,7 @@ void initialize(HWND hwnd) {
     //<multishift>
     // (多段シフト) prefix とヘルプ用の文字
     {
-        is->open(tableFile, is->nocreate);
+        is->open(tableFile/*, is->nocreate*/);
         if (!is->fail()) {
             TCode::readDir(&dirTable, is);
             is->close();
@@ -273,7 +273,7 @@ void initialize(HWND hwnd) {
     // CERTAIN 文字
     certainMoji = new std::vector<MOJI>();
     if (certainFile[0] != 0) {
-        is->open(certainFile, is->nocreate);
+        is->open(certainFile/*, is->nocreate*/);
         if (is->fail()) {
             warn(hwnd, "CERTAIN ファイルが開けません");
             certainFile[0] = 0;
@@ -491,7 +491,7 @@ void makeVKB(STROKE *st) {
     // 通常のストローク
     int needX = 0;
     for (int th = 0; th < stlen; th++) {
-        int k = st[th];
+        int k = TC_UNSHIFT(st[th]);
         switch (th) {
         case 0:                 // 1st stroke
             vkb[k] = TC_BG_ST1;

@@ -84,7 +84,7 @@ void StTable::initSub(Block *currentBlock, STROKE *currentSt) {
 
     case CONTROL_BLOCK:     // コントロールブロックの場合
         // ネストに入る
-        for (int key = 0; key < TC_NKEYS; key++) {
+        for (int key = 0; key < TC_NKEYS*2; key++) {
             Block *nextBlock = (((ControlBlock *)currentBlock)->block)[key];
             // 新しいストローク列を一時的に生成
             len = strokelen(currentSt);
@@ -158,8 +158,11 @@ void StTable::setupPref(const char *src) {
         // 解析しやすいように「,」を付加
         sst[strlen(sst) + 1] = '\0'; sst[strlen(sst)] = ',';
         for (q->stlen = 0, p = sst;
-             1 <= sscanf(p, "%d,%n", &k, &n) && q->stlen < MAXPREFLEN;
+             q->stlen < MAXPREFLEN;
              p += n, q->stlen++) {
+            if (1 <= sscanf(p, "%d,%n", &k, &n)) ;
+            else if (1 <= sscanf(p, "S%d,%n", &k, &n)) k = TC_SHIFT(k);
+            else break;
             q->st[q->stlen] = k;
         }
 
