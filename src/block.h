@@ -26,6 +26,7 @@
 #define F_HANZEN        12      // @Z 全 半角/全角
 #define F_PUNCT         13      // @p 句 句読点切り替え
 //#define F_HANKANA     14      // @k 半 半角かたかな
+#define F_MAZE2GG       16      // @g 習 強制練習モード
 /* 前置型 */
 #define F_BUSHU_PRE     21      // @b ◆ 前置型の部首合成
 #define F_MAZE_PRE      22      // @m ◇ 前置型の交ぜ書き変換

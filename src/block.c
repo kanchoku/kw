@@ -76,6 +76,8 @@ SpecialBlock::SpecialBlock(char c) {
         function = F_HANZEN; break;
     case 'p':                   // 句読点切り替え
         function = F_PUNCT; break;
+    case 'g':                   // 強制練習モード切り替え
+        function = F_MAZE2GG; break;
 
     case 'b':                   // 前置型の部首合成変換
         function = F_BUSHU_PRE; break;
@@ -122,6 +124,7 @@ char *SpecialBlock::getFace() {
     case F_HIRAKATA:    return "ア";
     case F_HANZEN:      return "全";
     case F_PUNCT:       return "句";
+    case F_MAZE2GG:     return "習";
 
     case F_BUSHU_PRE:   return "◆";
     case F_MAZE_PRE:    return "◇";

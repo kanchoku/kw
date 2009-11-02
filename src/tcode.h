@@ -94,6 +94,7 @@ public:
     //</v127a - gg>
     int OPT_bushuAlgo;          // 部首合成変換のアルゴリズム
     int OPT_conjugationalMaze;  // 活用語の交ぜ書き変換
+    int OPT_maze2gg;            // 強制練習モード
     STROKE *OPT_prefixautoassign; // 熟語ガイド中の外字にストローク割り振り
 
     int OPT_shiftKana;          // シフト打鍵でかたかな
@@ -235,8 +236,12 @@ public:
     int histRef[TC_NHIST];
     int histPtr;
 
-    /* 熟語ガイド
+    /* 熟語ガイド、強制練習モード、外字自動割り振り
 	 */
+    std::vector<char *> *ggCand;
+    int ggCInc;
+    int ittaku;  // 一択
+    char *explicitGG;
     MojiBuffer *assignedsBuffer;
 
     /* 仮想鍵盤
@@ -296,6 +301,10 @@ public:
     void cancelPostInPre(int);
     //</v127c>
 
+    void setCandGGHeader();
+    void goCandGG();  // finishCand()相当
+    void makeCandGG();  // output()後に呼ぶ
+    void clearCandGG();
 
     /* 文字ヘルプ
      * ----------
@@ -326,10 +335,11 @@ public:
     //<v127a - gg>
     //<gg-defg>
     //void makeGG(MOJI *);
-    void makeGG(char *);
+    void makeGG(char *strGG, int start = 0, int protectOnConflict = 0);
     //</gg-defg>
     void clearGG(ControlBlock *);
     //</v127a - gg>/
+    void assignStroke(char *);
     void assignStroke(MOJI);
     void clearAssignStroke();
     void makeVKB();

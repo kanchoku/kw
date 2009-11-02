@@ -43,7 +43,8 @@ int TableWindow::wndProc(HWND w, UINT msg, WPARAM wp, LPARAM lp) {
 
     case WM_TIMER:
         isShiftNow = !!(GetKeyState(VK_SHIFT) & 0x8000);
-        if (tc->mode == TCode::NORMAL && !tc->helpMode 
+        if ((tc->mode == TCode::NORMAL || tc->mode == TCode::CAND1)
+            && !tc->helpMode 
             && tc->isAnyShiftKana
             && isShiftNow != isShift) InvalidateRect(w, NULL, FALSE);
         isShift = isShiftNow;
@@ -509,14 +510,18 @@ int TableWindow::handlePaint() {
 
     // óBàÍåÛï‚ï\é¶ÉÇÅ[Éh
     if (tc->mode == TCode::CAND1) {
-        drawFrame10(hdc);
-        MojiBuffer mb(strlen((*tc->currentCand)[0])+tc->okuriLen);
-        mb.pushSoft((*tc->currentCand)[0]);
-        if (tc->okuriLen) mb.pushSoft(tc->preBuffer->string(-tc->okuriLen));
-        int ov = mb.length() - 5;
-        if (ov > 0) mb.popN(ov);
-        drawMiniBuffer(hdc, 5, COL_LT_BLUE, &mb);
-        drawVKB10(hdc);
+        drawFrame50(hdc);
+        if (tc->currentCand->size() == 1) {
+            MojiBuffer mb(strlen((*tc->currentCand)[0])+tc->okuriLen);
+            mb.pushSoft((*tc->currentCand)[0]);
+            if (tc->okuriLen) mb.pushSoft(tc->preBuffer->string(-tc->okuriLen));
+            int ov = mb.length() - 4;
+            if (ov > 0) mb.popN(ov);
+            drawMiniBuffer(hdc, 4, COL_LT_BLUE, &mb);
+        } else {
+            drawMiniBuffer(hdc, 4, COL_LT_BLUE, tc->preBuffer);
+        }
+        drawVKB50(hdc, tc->isAnyShiftKana);
         goto END_PAINT;
     }
 
@@ -532,7 +537,7 @@ int TableWindow::handlePaint() {
     if (tc->mode == TCode::CAND && 10 < tc->currentCand->size()) {
         drawFrame50(hdc);
         drawMiniBuffer(hdc, 4, COL_LT_BLUE, tc->preBuffer);
-        drawVKB50(hdc, tc->isAnyShiftKana);
+        drawVKB50(hdc);
         goto END_PAINT;
     }
 
@@ -542,7 +547,7 @@ int TableWindow::handlePaint() {
         if (0 < tc->preBuffer->length()) {
             drawMiniBuffer(hdc, 4, COL_LT_GREEN, tc->preBuffer);
         }
-        drawVKB50(hdc);
+        drawVKB50(hdc, tc->isAnyShiftKana);
         goto END_PAINT;
     }
 
@@ -566,6 +571,7 @@ int TableWindow::handleHotKey() {
         tc->postInPre = 0;
         tc->postDelete = 0;
         //</v127c>
+        tc->clearCandGG();
         if (tc->mode == TCode::OFF) {
             tc->mode = TCode::NORMAL;
             activate();
@@ -622,7 +628,8 @@ int TableWindow::handleHotKey() {
         if (tc->mode == TCode::OFF
             || tc->mode == TCode::NORMAL
             && tc->helpMode == 0    // helpMode Ç∆ mode ÇÕì∆óß
-            && tc->preBuffer->length() == 0) { // ï‚èïïœä∑íÜÇ≈Ç»Ç¢
+            && tc->preBuffer->length() == 0 // ï‚èïïœä∑íÜÇ≈Ç»Ç¢
+            && tc->explicitGG == 0) { // ã≠êßó˚èKíÜÇ≈Ç»Ç¢
             ShowWindow(hwnd, SW_HIDE);
         } else {
             ShowWindow(hwnd, SW_SHOWNA);
@@ -800,6 +807,9 @@ void TableWindow::initTC() {
     //</gg-defg>
 
     // 
+    int OPT_maze2gg =
+        GetPrivateProfileInt("kanchoku", "maze2gg", 0, iniFile);
+
     char prefixautoassign[255];
     GetPrivateProfileString("kanchoku", "prefixautoassign", "",
                             prefixautoassign, sizeof(prefixautoassign), iniFile);
@@ -1036,7 +1046,7 @@ void TableWindow::initTC() {
         tc->OPT_prefixautoassign = new STROKE[strlen(prefixautoassign)+1];
         char *p = prefixautoassign;
         int i;
-        for (i = 0; ; i++) {
+        for (i = 0; i < 255; i++) {
             int k, n = 1;
             if (sscanf(p, "-%d>%n", &k, &n) > 0) tc->OPT_prefixautoassign[i] = k;
             else if (sscanf(p, "-S%d>%n", &k, &n) > 0) tc->OPT_prefixautoassign[i] = TC_SHIFT(k);
@@ -1066,6 +1076,7 @@ void TableWindow::initTC() {
     for (int i = 0; i < TC_NKEYS; i++) {
         if (tc->isShiftKana[i]) tc->isAnyShiftKana = true;
     }
+    tc->OPT_maze2gg = OPT_maze2gg;
     tc->OPT_enableHankakuKana = OPT_enableHankakuKana;
     tc->OPT_useWMIMECHAR = OPT_useWMIMECHAR;
     //<v127a - outputsleep>

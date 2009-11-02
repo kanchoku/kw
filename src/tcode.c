@@ -138,6 +138,10 @@ TCode::TCode(int *v, ControlBlock *t, MgTable *m, BushuDic *b, GgDic *g) {
     currentStroke = new std::vector<STROKE>;
     stTable = new StTable(table);
     assignedsBuffer = new MojiBuffer(TC_BUFFER_SIZE);
+    explicitGG = 0;
+    ggCand = 0;
+    ggCInc = 0;
+    ittaku = 0;
 
     OPT_keyboard = 0;
     OPT_tableFile = 0;
@@ -227,6 +231,9 @@ void TCode::reset() {
     currentStroke->clear();
     currentShift = 0;
     helpModeSave = 0;
+    clearGG(table);
+    clearAssignStroke();
+    if (!explicitGG) clearCandGG();  // ë≈Çøä‘à·Ç¢ã~çœ
 }
 
 /* -------------------------------------------------------------------
@@ -300,13 +307,22 @@ void TCode::keyinNormal(int key) {
         case BS_KEY:
         default: vk = VK_BACK; break;
         }
+        if (ggCand && ggCInc == 0 && ISRESET) {
+            clearCandGG();
+            return;
+        }
         if (ISEMPTY) {
             if (ISRESET || OPT_hardBS) {
                 preBuffer->pushSoft(MV(vk));
+                if (ggCand) ggCInc -= 1;
             }
         } else {
-            if (ISRESET || OPT_hardBS) { preBuffer->pop(); }
+            if (ISRESET || OPT_hardBS) {
+                preBuffer->pop();
+                if (ggCand) ggCInc -= 1;
+            }
         }
+        if (ggCand && !explicitGG) explicitGG = new char[1];  // ë≈Çøä‘à·Ç¢ã~çœ
         reset();
         return;
 
@@ -412,6 +428,7 @@ void TCode::keyinNormal(int key) {
             }
             //</record>
             preBuffer->pushSoft(str);
+            if (ggCand) { ggCInc += mb.length(); }
         }
         reset(); return;
 
@@ -455,6 +472,14 @@ void TCode::keyinNormal(int key) {
 
         case F_PUNCT:
             punctMode ^= 1;
+            //<record>
+            record.nspecial += 1;
+            //</record>
+            reset(); return;
+
+        case F_MAZE2GG:
+            OPT_maze2gg ^= 1;
+            clearCandGG();
             //<record>
             record.nspecial += 1;
             //</record>
@@ -841,11 +866,13 @@ void TCode::keyinCand1(int key) {
     case LT_KEY:
         if (OPT_conjugationalMaze != 2) return;
         makeMazeYomiLonger();
+        if (OPT_maze2gg) { ggCand = currentCand; setCandGGHeader(); }
         return;
 
     case GT_KEY:
         if (OPT_conjugationalMaze != 2) return;
         makeMazeYomiShorter();
+        if (OPT_maze2gg) { ggCand = currentCand; setCandGGHeader(); }
         return;
 
     default:
@@ -1042,6 +1069,12 @@ void TCode::reduceByMaze() {
     }
     currentCand = mgTable->cand; candOffset = 0;
 
+    if (OPT_maze2gg) {
+        mode = CAND1;
+        ggCand = currentCand;
+        setCandGGHeader();
+        return;
+    }
     if (currentCand->size() == 1) {
         if (OPT_conjugationalMaze == 2) {
             mode = CAND1;
@@ -1055,6 +1088,16 @@ void TCode::reduceByMaze() {
 }
 
 void TCode::finishCand(char *cand) {
+    if (OPT_maze2gg) {
+        goCandGG();
+        return;
+    }
+    MojiBuffer candBuffer(strlen(cand));
+    int headerLen;
+    candBuffer.pushSoft(cand);
+    for (headerLen = 0; headerLen < yomiLen && headerLen < candBuffer.length(); headerLen++) {
+        if (candBuffer.moji(headerLen) != preBuffer->moji(-yomiLen+headerLen)) break;
+    }
     MojiBuffer okuri(okuriLen);
     if (OPT_conjugationalMaze == 2 && okuriLen > 0) {
         okuri.pushSoft(preBuffer->string(-okuriLen));
@@ -1065,7 +1108,9 @@ void TCode::finishCand(char *cand) {
     if (postInPre) {
         postInPre = 0;
     } else if (postDelete > 0 && preBuffer->length() == 0) {
-        preBuffer->pushSoftN(MV(VK_BACK), postDelete);
+        //preBuffer->pushSoftN(MV(VK_BACK), postDelete);
+        preBuffer->pushSoftN(MV(VK_BACK), postDelete-headerLen);
+        cand = candBuffer.string(headerLen);
         postDelete = 0;
     }
     //</v127c>
@@ -1105,6 +1150,7 @@ void TCode::makeMazeYomiLonger() {
         okuriLen = oL;
     }
     currentCand = mgTable->cand; candOffset = 0;
+    if (OPT_maze2gg) { return; }
     if (currentCand->size() == 1) mode = CAND1;
     else mode = CAND;
 }
@@ -1127,6 +1173,7 @@ void TCode::makeMazeYomiShorter() {
         okuriLen = oL;
     }
     currentCand = mgTable->cand; candOffset = 0;
+    if (OPT_maze2gg) { return; }
     if (currentCand->size() == 1) mode = CAND1;
     else mode = CAND;
 }
@@ -1198,6 +1245,106 @@ void TCode::cancelPostInPre(int n) {
     postInPre = 0;
 }
 //</v127c>
+
+void TCode::setCandGGHeader()
+{
+    MojiBuffer ggBuffer(TC_BUFFER_SIZE);
+    int i, j;
+    ggBuffer.pushSoft((*ggCand)[0]);
+    for (i = 1; i < ggCand->size(); i++) {
+        MojiBuffer ccand(strlen((*ggCand)[i]));
+        ccand.pushSoft((*ggCand)[i]);
+        for (j = 0; j < ccand.length(); j++) {
+            if (j == ggBuffer.length()) break;
+            if (ccand.moji(j) != ggBuffer.moji(j)) {
+                ggBuffer.popN(ggBuffer.length()-j);
+                break;
+            }
+        }
+    }
+    for (i = 0; i < ggBuffer.length(); i++) {
+        if (!stTable->look(ggBuffer.moji(i))) continue;
+        for (j = 0; j < yomiLen; j++) {
+            if (ggBuffer.moji(i) == preBuffer->moji(-yomiLen+j)) break;
+        }
+        if (j < yomiLen) continue;
+        break;
+    }
+    ggCInc = i;
+}
+
+void TCode::goCandGG() {
+    MojiBuffer candBuffer(strlen((*currentCand)[0])); // ì™Ç©ÇÁggCIncÇ‹Ç≈ÇÕëSåÛï‚ìØÇ∂
+    int headerLen;
+    candBuffer.pushSoft((*currentCand)[0]);
+    for (headerLen = 0; headerLen < ggCInc; headerLen++) {
+        if (candBuffer.moji(headerLen) != preBuffer->moji(-yomiLen+headerLen)) break;
+    }
+    preBuffer->popN(yomiLen + 1);
+    if (postInPre) {        // ëOíuíÜÇÃå„íu
+        postInPre = 0;
+        preBuffer->pushSoft(candBuffer.string(0, ggCInc));
+    } else if (postDelete > 0 && preBuffer->length() == 0) {
+                            // å„íu
+        preBuffer->pushSoftN(MV(VK_BACK), postDelete-headerLen);
+        preBuffer->pushSoft(candBuffer.string(headerLen, ggCInc-headerLen));
+        postDelete = 0;
+    } else {                // ëOíu
+        preBuffer->pushSoft(candBuffer.string(0, ggCInc));
+    }
+}
+
+void TCode::makeCandGG() {
+    MojiBuffer ggBuffer(TC_BUFFER_SIZE+ggCand->size()), ggBuffer2(ggCand->size());
+    int i, j;
+    if (explicitGG) delete [] explicitGG;
+    explicitGG = 0;
+    for (i = 0; i < ggCand->size(); i++) {
+        MojiBuffer ccand(strlen((*ggCand)[i]));
+        ccand.pushSoft((*ggCand)[i]);
+        for (j = 0; j < ccand.length(); j++) {
+            if (ggBuffer.isEmpty()) {
+                if (j < ggCInc) {
+                    if (preBuffer->length() > 0) {
+                        if (preBuffer->moji(-ggCInc+j) != ccand.moji(j)) break;
+                    } else {
+                        if (postBuffer->moji(-ggCInc+j) != ccand.moji(j)) break;
+                    }
+                } else if (j == ggCInc) {
+                    if (ggBuffer2.isEmpty()) ggBuffer.pushSoft(ccand.string());
+                    else ggBuffer2.pushSoft(ccand.moji(j));
+                }
+            } else if (j < ggCInc) {
+                if (ccand.moji(j) != ggBuffer.moji(j)) break;
+            } else {
+                if (j == ggBuffer.length()) {
+                    ggBuffer2.pushSoft(ccand.moji(j));
+                    break;
+                }
+                if (ccand.moji(j) != ggBuffer.moji(j)) {
+                    ggBuffer2.clear();
+                    ggBuffer2.pushSoft(ggBuffer.moji(j));
+                    ggBuffer2.pushSoft(ccand.moji(j));
+                    ggBuffer.popN(ggBuffer.length()-j);
+                    break;
+                }
+            }
+        }
+    }
+    ittaku = ggBuffer.length();
+    ggBuffer.pushSoft(ggBuffer2.string());
+    if (ggBuffer.isEmpty()) { return; }
+    explicitGG = new char[ggBuffer.length()*2+1];
+    strcpy(explicitGG, ggBuffer.string());
+}
+
+void TCode::clearCandGG() {
+    ggCand = 0;
+    ggCInc = 0;
+    ittaku = 0;
+    if (explicitGG) delete [] explicitGG;
+    explicitGG = 0;
+}
 
 #undef MS
 #undef MC
@@ -1323,10 +1470,10 @@ void TCode::addToHistMaybe(MOJI m) {
  */
 
 //<v127a - gg>
-// Ç±ÇÃ2ä÷êîÇÕblock.cÇ≈é¿ëïÇ∑ÇÈÇÃÇ™ê≥ÇµÇ¢
+// Ç±ÇÃ2ä÷êîÇÕblock.cÇ≈é¿ëïÇ∑ÇÈÇÃÇ™ê≥ÇµÇ¢?
 //<gg-defg>
 //void TCode::makeGG(MOJI *strGG) {
-void TCode::makeGG(char *strGG) {
+void TCode::makeGG(char *strGG, int start, int protectOnConflict) {
 //</gg-defg>
     char *nums = "ÇQ\0ÇR\0ÇS\0ÇT\0ÇU\0ÇV\0ÇW\0ÇX";
     //<gg-defg>
@@ -1337,13 +1484,16 @@ void TCode::makeGG(char *strGG) {
     MOJI m;
     for (; !s->isEmpty();) {
         m = s->pop();
+        if (s->length() < start) break;
+        int i;
+        for (i = 0; i < s->length(); i++) if (s->moji(i) == m) break;
+        if (i < s->length()) continue;
         int check = stTable->look(m);
     //</gg-defg>
-        if (check == 0) { assignStroke(m); check = stTable->look(m); }
         if (check == 0) { continue; }
         int stlen = strokelen(stTable->stroke);
         ControlBlock *p = table;
-        for (int i = 0; i < stlen-1; i++) {
+        for (i = 0; i < stlen-1; i++) {
             Block *np = (p->block)[stTable->stroke[i]];
             p = (ControlBlock *)np;
         }
@@ -1354,7 +1504,7 @@ void TCode::makeGG(char *strGG) {
         for (int i = 0; i < stlen-1; i++) {
             Block *np = (p->block)[stTable->stroke[i]];
             p = (ControlBlock *)np;
-            if (!p->faceGG) {  // åÛï‚1å¬ñ⁄
+            if (!p->faceGG || s->length() < protectOnConflict) {  // åÛï‚1å¬ñ⁄
                 p->faceGG = face1;
             } else if (p->faceGG >= nums && p->faceGG < nums+21) {
                 p->faceGG += 3;
@@ -1371,7 +1521,6 @@ void TCode::makeGG(char *strGG) {
 
 //<v127a - gg>
 void TCode::clearGG(ControlBlock *p) {
-    clearAssignStroke();
     for (int i = 0; i < TC_NKEYS*2; i++) {
         Block *np = (p->block)[i];
         if (np == NULL) { continue; }
@@ -1390,6 +1539,18 @@ void TCode::clearGG(ControlBlock *p) {
 }
 
 //</v127a - gg>
+
+void TCode::assignStroke(char *strGG) {
+    MojiBuffer *s = new MojiBuffer(strlen(strGG));
+    s->pushSoft(strGG);
+    MOJI m;
+    for (; !s->isEmpty();) {
+        m = s->pop();
+        int check = stTable->look(m);
+        if (check == 0) { assignStroke(m); }
+    }
+    delete s;
+}
 
 void TCode::assignStroke(MOJI m) {
     if (!OPT_prefixautoassign) return;
@@ -1507,8 +1668,7 @@ void TCode::makeVKB() {
     } // if helpMode
 
     // NORMAL mode
-    if (mode == NORMAL) {
-        makeVKBBG(currentStroke);
+    if (mode == NORMAL || mode == CAND1) {
         //<v127a - gg>
         //<gg-defg>
         char *strGG = NULL;
@@ -1536,6 +1696,7 @@ void TCode::makeVKB() {
             } else if (postBuffer->length() > 0) {
                 strGG = ggDic->look(postBuffer);
             }
+            if (strGG) assignStroke(strGG);
         //<gg-defg>
             //clearGG(table);
             //if (strGG) {
@@ -1548,15 +1709,26 @@ void TCode::makeVKB() {
         //if (strGG) {
         //    makeGG(strGG);
         if (currentBlock == table) {
+            if (ggCand) makeCandGG();
             if (OPT_defg && !strGG) strGG = OPT_defg;
-            if (OPT_defg || ggReady || strGG) {
+            if (OPT_defg || ggReady || strGG || explicitGG) {
                 clearGG(table);
-                if (strGG) makeGG(strGG);
+                if (explicitGG) makeGG(explicitGG, ggCInc, ittaku);
+                else if (strGG) makeGG(strGG);
             }
         //</gg-defg2>
         //</gg-defg>
         }
         //</v127a - gg>
+        int check = 0;
+        if (explicitGG && ggCInc < ittaku) {
+            MojiBuffer hoge(strlen(explicitGG));
+            hoge.pushSoft(explicitGG);
+            MOJI moji = hoge.moji(ggCInc);
+            check = stTable->look(moji);
+        }
+        if (check) makeVKBBG(stTable->stroke);
+        else makeVKBBG(currentStroke);
         for (int i = 0; i < TC_NKEYS*2; i++) {
             Block *block = currentBlock->block[i];
             if (block == 0) { continue; }
@@ -1566,7 +1738,7 @@ void TCode::makeVKB() {
                 vkbFace[i] = block->getFace();
                 vkbFG[i] = TC_FG_NORMAL;
                 //<v127a - gg>
-                if (ggReady && ((StringBlock *)block)->flagGG)
+                if (((StringBlock *)block)->flagGG)
                     vkbFG[i] = TC_FG_GG;
                 //</v127a - gg>
                 break;
@@ -1576,7 +1748,7 @@ void TCode::makeVKB() {
                     vkbFG[i] = TC_FG_SPECIAL;
                 }
                 //<v127a - gg>
-                if (ggReady && ((ControlBlock *)block)->faceGG) {
+                if (((ControlBlock *)block)->faceGG) {
                     vkbFace[i] = ((ControlBlock *)block)->faceGG;
                     vkbFG[i] = TC_FG_GG;
                 }
@@ -1619,10 +1791,6 @@ void TCode::makeVKB() {
         return;
     } // if mode CAND
 
-    // CAND1 mode
-    if (mode == CAND1) {
-        return;
-    } // if mode CAND1
 }
 
 void TCode::makeVKBBG(vector<STROKE> *vst) {
