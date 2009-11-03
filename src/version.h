@@ -23,7 +23,7 @@
 //#define VERSION "1.27f (2006-03-03)"
 //#define VERSION "1.27f (2006-03-25)"
 //#define VERSION "1.27f-fullshift-20091018"
-#define VERSION "1.27f-maze2gg-20091102"
+#define VERSION "1.27f-maze2gg-20091103"
 
 // -------------------------------------------------------------------
 // オリジナル版の value.c のコメント

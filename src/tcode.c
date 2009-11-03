@@ -1306,9 +1306,9 @@ void TCode::makeCandGG() {
             if (ggBuffer.isEmpty()) {
                 if (j < ggCInc) {
                     if (preBuffer->length() > 0) {
-                        if (preBuffer->moji(-ggCInc+j) != ccand.moji(j)) break;
+                        if (preBuffer->moji(-(mode==CAND1?yomiLen:ggCInc)+j) != ccand.moji(j)) break;
                     } else {
-                        if (postBuffer->moji(-ggCInc+j) != ccand.moji(j)) break;
+                        if (postBuffer->moji(-(mode==CAND1?yomiLen:ggCInc)+j) != ccand.moji(j)) break;
                     }
                 } else if (j == ggCInc) {
                     if (ggBuffer2.isEmpty()) ggBuffer.pushSoft(ccand.string());
@@ -1711,7 +1711,7 @@ void TCode::makeVKB() {
         if (currentBlock == table) {
             if (ggCand) makeCandGG();
             if (OPT_defg && !strGG) strGG = OPT_defg;
-            if (OPT_defg || ggReady || strGG || explicitGG) {
+            if (OPT_defg || ggReady || OPT_maze2gg) {
                 clearGG(table);
                 if (explicitGG) makeGG(explicitGG, ggCInc, ittaku);
                 else if (strGG) makeGG(strGG);

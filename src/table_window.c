@@ -252,17 +252,19 @@ void TableWindow::setTitleText() {
         //strcpy(str, "漢直窓 - ON");
         strcat(str, " - ON");
         //</multishift2>
-        if (tc->hirakataMode || tc->hanzenMode || tc->punctMode) {
+        if (tc->hirakataMode || tc->hanzenMode || tc->punctMode || tc->OPT_maze2gg) {
             strcat(str, " [");
             //<hankana>
             //strcat(str, (tc->hirakataMode ? "ア" : "―"));
             //strcat(str, (tc->hanzenMode   ? "全" : "―"));
             //strcat(str, (tc->punctMode    ? "句" : "―"));
-            strcat(str, (tc->hirakataMode ? "カナ" : "――"));
+            strcat(str, (tc->hirakataMode ? "カ" : "―"));
             strcat(str, "|");
             strcat(str, (tc->hanzenMode   ? "全半" : "――"));
             strcat(str, "|");
             strcat(str, (tc->punctMode    ? "句読" : "――"));
+            strcat(str, "|");
+            strcat(str, (tc->OPT_maze2gg  ? "習" : "―"));
             //</hankana>
             strcat(str, "]");
         }
