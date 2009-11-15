@@ -79,9 +79,9 @@ using namespace std;
  * ：‥‥‥‥‥‥‥‥‥‥‥‥‥‥‥‥‥‥‥‥‥‥‥： ↓
  * ←────────── WIDTH  ─────────→
  */
-#define CHAR_SIZE (12)          // 文字の大きさ
-#define LARGE_CHAR_SIZE (16)    // 大きい文字の大きさ
-#define BLOCK_SIZE (18)         // 仮想鍵盤のキーの大きさ
+#define CHAR_SIZE (styleFontSize)          // 文字の大きさ
+#define LARGE_CHAR_SIZE (CHAR_SIZE+4)    // 大きい文字の大きさ
+#define BLOCK_SIZE (CHAR_SIZE+6)         // 仮想鍵盤のキーの大きさ
 #define MARGIN_SIZE (4)         // 仮想鍵盤の天地左右の余白
 #define WIDTH  (MARGIN_SIZE * 2 + BLOCK_SIZE * 11 + 1)  // 仮想鍵盤の横幅
 #define HEIGHT (MARGIN_SIZE * 2 + BLOCK_SIZE * 5 + 1)   // 仮想鍵盤の縦幅
@@ -96,15 +96,17 @@ using namespace std;
 #define GRAYTONE(x) PALETTERGB((x), (x), (x))
 //</v127c>
 // モード ON 時の仮想鍵盤
-#define COL_ON_LN GRAYTONE(0x00) // 枠
-#define COL_ON_K1 GRAYTONE(0xf0) // キー
-#define COL_ON_K2 GRAYTONE(0xc0) // キー (影)
-#define COL_ON_M1 GRAYTONE(0xe0) // 余白
-#define COL_ON_M2 GRAYTONE(0xb0) // 余白 (影)
+#define COL_ON_LN styleCol[3] // 枠
+#define COL_ON_K1 styleCol[4] // キー
+#define COL_ON_K2 styleCol[5] // キー (影)
+#define COL_ON_K3 styleCol[6] // キー (ハイライト)
+#define COL_ON_M1 styleCol[7] // 余白
+#define COL_ON_M2 styleCol[8] // 余白 (影)
+#define COL_ON_M3 styleCol[9] // 余白 (ハイライト)
 // モード OFF 時の仮想鍵盤
-#define COL_OFF_LN GRAYTONE(0x60) // 枠
-#define COL_OFF_K1 GRAYTONE(0xf8) // キー
-#define COL_OFF_M1 GRAYTONE(0xe8) // 余白
+#define COL_OFF_LN styleCol[0] // 枠
+#define COL_OFF_K1 styleCol[1] // キー
+#define COL_OFF_M1 styleCol[2] // 余白
 //<v127c>
 // 文字色と背景色
 //#define COL_BLACK       (RGB(0x00, 0x00, 0x00)) // 黒
@@ -123,18 +125,18 @@ using namespace std;
 ////</v127a - gg>
 //#define COLORDEF(r, g, b) RGB((r), (g), (b))
 #define COLORDEF(r, g, b) PALETTERGB((r), (g), (b))
-#define COL_BLACK       (COLORDEF(0x00, 0x00, 0x00)) // 黒
+#define COL_BLACK       styleCol[18] // 黒
 #define COL_WHITE       (COLORDEF(0xff, 0xff, 0xff)) // 白
 #define COL_GRAY        (COLORDEF(0x80, 0x80, 0x80)) // 灰
-#define COL_LT_GRAY     (COLORDEF(0xc0, 0xc0, 0xc0)) // 薄灰
-#define COL_LT_RED      (COLORDEF(0xff, 0xc0, 0xc0)) // 薄赤
-#define COL_LT_GREEN    (COLORDEF(0xc0, 0xff, 0xc0)) // 薄緑
-#define COL_LT_BLUE     (COLORDEF(0xc0, 0xc0, 0xff)) // 薄青
-#define COL_LT_YELLOW   (COLORDEF(0xff, 0xff, 0xc0)) // 薄黄
-#define COL_LT_CYAN     (COLORDEF(0xc0, 0xff, 0xff)) // 薄水
-#define COL_RED         (COLORDEF(0xff, 0x00, 0x00)) // 赤
-#define COL_DK_CYAN     (COLORDEF(0x00, 0x80, 0x80)) // 深水
-#define COL_DK_MAGENTA  (COLORDEF(0x80, 0x00, 0x80)) // 深紫
+#define COL_LT_GRAY     styleCol[13] // 薄灰
+#define COL_LT_RED      styleCol[10] // 薄赤
+#define COL_LT_GREEN    styleCol[11] // 薄緑
+#define COL_LT_BLUE     styleCol[14] // 薄青
+#define COL_LT_YELLOW   styleCol[12] // 薄黄
+#define COL_LT_CYAN     styleCol[15] // 薄水
+#define COL_RED         styleCol[19] // 赤
+#define COL_DK_CYAN     styleCol[16] // 深水
+#define COL_DK_MAGENTA  styleCol[17] // 深紫
 // !!! see also table_window.c--handleCreate()--palent
 //</v127c>
 
@@ -179,6 +181,11 @@ private:
 
     bool isShift;
 
+    // スタイル設定
+    COLORREF styleCol[20];
+    char styleFontName[LF_FACESIZE];
+    int styleFontSize;
+
 public:
     // コンストラクタ
     TableWindow(HINSTANCE i);
@@ -221,6 +228,9 @@ private:
 
     void readTargetWindowSetting(char *); // 出力先ウィンドウごとの設定の読込
     int getOutputMethod(HWND);  // 指定したウィンドウに対するoutputMethodを取得
+
+    void makeStyle();
+    void readStyleSetting();
 };
 
 // -------------------------------------------------------------------

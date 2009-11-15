@@ -25,7 +25,7 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prevInstance,
     wndclass.hIcon = LoadIcon(instance, "kanchoku");
     wndclass.hIcon = NULL;
     wndclass.hCursor = LoadCursor(NULL, IDC_ARROW);
-    wndclass.hbrBackground = CreateSolidBrush(COL_LT_GRAY);
+    wndclass.hbrBackground = (HBRUSH)GetStockObject(LTGRAY_BRUSH);
     wndclass.lpszMenuName = NULL;
     wndclass.lpszClassName = appName;
     ////wndclass.hIconSm = LoadIcon(instance, "kanmini");

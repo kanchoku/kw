@@ -14,6 +14,29 @@ TableWindow::TableWindow(HINSTANCE i) {
     hLFont = 0;
     instance = i;
     tc = 0;
+    COLORREF defStyleCol[20] = {
+    /*"off_BtnFrame", "COL_OFF_LN"*/ GRAYTONE(0x60),
+    /*"off_BtnFace", "COL_OFF_K1"*/ GRAYTONE(0xf8),
+    /*"off_Window", "COL_OFF_M1"*/ GRAYTONE(0xe8),
+    /*"on_BtnFrame", "COL_ON_LN"*/ GRAYTONE(0x00),
+    /*"on_BtnFace", "COL_ON_K1"*/ GRAYTONE(0xf0),
+    /*"on_BtnShadow", "COL_ON_K2"*/ GRAYTONE(0xc0),
+    /*"on_BtnHilight", "COL_ON_K3"*/ GRAYTONE(0xff),
+    /*"on_Window", "COL_ON_M1"*/ GRAYTONE(0xe0),
+    /*"on_WndShadow", "COL_ON_M2"*/ GRAYTONE(0xb0),
+    /*"on_WndHilight", "COL_ON_M3"*/ GRAYTONE(0xff),
+    /*"BG_ST1", "COL_LT_RED"*/      (COLORDEF(0xff, 0xc0, 0xc0)),
+    /*"BG_ST2(norm)", "COL_LT_GREEN"*/    (COLORDEF(0xc0, 0xff, 0xc0)),
+    /*"BG_ST3(help)", "COL_LT_YELLOW"*/   (COLORDEF(0xff, 0xff, 0xc0)),
+    /*"BG_STF", "COL_LT_GRAY"*/     (COLORDEF(0xc0, 0xc0, 0xc0)),
+    /*"BG_STW(cand)", "COL_LT_BLUE"*/     (COLORDEF(0xc0, 0xc0, 0xff)),
+    /*"BG_STX(Hilight)", "COL_LT_CYAN"*/     (COLORDEF(0xc0, 0xff, 0xff)),
+    /*"SpecialText", "COL_DK_CYAN"*/     (COLORDEF(0x00, 0x80, 0x80)),
+    /*"GuideText", "COL_DK_MAGENTA"*/  (COLORDEF(0x80, 0x00, 0x80)),
+    /*"Text", "COL_BLACK"*/       (COLORDEF(0x00, 0x00, 0x00)),
+    /*"HilightText", "COL_RED"*/         (COLORDEF(0xff, 0x00, 0x00)),
+    };
+    for (int i=0; i < 20; i++) styleCol[i] = defStyleCol[i];
 }
 
 // -------------------------------------------------------------------
@@ -40,6 +63,15 @@ int TableWindow::wndProc(HWND w, UINT msg, WPARAM wp, LPARAM lp) {
         SetTimer(w, ID_MYTIMER, 500, NULL);
         isShift = !!(GetKeyState(VK_SHIFT) & 0x8000);
         return handleCreate();
+
+    case WM_SYSCOLORCHANGE:
+        readStyleSetting();
+        DeleteObject(hFont);
+        DeleteObject(hLFont);
+        DeleteObject(hPalette);
+        makeStyle();
+        InvalidateRect(w, NULL, FALSE);
+        return 0;
 
     case WM_TIMER:
         isShiftNow = !!(GetKeyState(VK_SHIFT) & 0x8000);
@@ -293,6 +325,23 @@ int TableWindow::handleCreate() {
     strcpy(nid.szTip, "漢直窓");
     Shell_NotifyIcon(0 /* NIM_ADD */, &nid);
 
+    makeStyle();
+
+    // 起動のための HotKey を登録
+    //<OKA> support unmodified hot key
+    if (tc->OPT_hotKey)
+        RegisterHotKey(hwnd, ACTIVE_KEY, MOD_CONTROL, tc->OPT_hotKey);
+    if (tc->OPT_unmodifiedHotKey)
+        RegisterHotKey(hwnd, ACTIVE2_KEY, 0, tc->OPT_unmodifiedHotKey);
+    //</OKA>
+
+    // 待機状態に
+    inactivate();
+
+    return 0;
+}
+
+void TableWindow::makeStyle() {
     // 外枠の大きさを取得
     RECT winRect;
     GetWindowRect(hwnd, &winRect);
@@ -318,7 +367,7 @@ int TableWindow::handleCreate() {
 
     // フォントを設定
     LOGFONT lf;
-    lf.lfHeight = CHAR_SIZE;
+    lf.lfHeight = -CHAR_SIZE;
     lf.lfWidth = 0;
     lf.lfEscapement = 0;
     lf.lfOrientation = 0;
@@ -331,11 +380,11 @@ int TableWindow::handleCreate() {
     lf.lfClipPrecision = 0;
     lf.lfQuality = 0;
     lf.lfPitchAndFamily = 0;
-    strcpy(lf.lfFaceName, "ＭＳ ゴシック");
+    strcpy(lf.lfFaceName, styleFontName);
     hFont = CreateFontIndirect(&lf);
 
     // 大きいフォントを設定
-    lf.lfHeight = LARGE_CHAR_SIZE;
+    lf.lfHeight = -LARGE_CHAR_SIZE;
     hLFont = CreateFontIndirect(&lf);
 
     //<v127c>
@@ -352,8 +401,8 @@ int TableWindow::handleCreate() {
 //        COL_OFF_K1,
 //        COL_OFF_M1,
         COL_BLACK       ,
-        COL_WHITE       ,
-        COL_GRAY        ,
+//        COL_WHITE       ,
+//        COL_GRAY        ,
         COL_LT_GRAY     ,
         COL_LT_RED      ,
         COL_LT_GREEN    ,
@@ -380,19 +429,6 @@ int TableWindow::handleCreate() {
     hPalette = CreatePalette(lpPalette);
     delete [] work;
     //</v127c>
-
-    // 起動のための HotKey を登録
-    //<OKA> support unmodified hot key
-    if (tc->OPT_hotKey)
-        RegisterHotKey(hwnd, ACTIVE_KEY, MOD_CONTROL, tc->OPT_hotKey);
-    if (tc->OPT_unmodifiedHotKey)
-        RegisterHotKey(hwnd, ACTIVE2_KEY, 0, tc->OPT_unmodifiedHotKey);
-    //</OKA>
-
-    // 待機状態に
-    inactivate();
-
-    return 0;
 }
 
 // -------------------------------------------------------------------
@@ -891,6 +927,9 @@ void TableWindow::initTC() {
     int OPT_xLoc = GetPrivateProfileInt("kanchoku", "xloc", -1, iniFile);
     int OPT_yLoc = GetPrivateProfileInt("kanchoku", "yloc", -1, iniFile);
 
+    // style
+    readStyleSetting();
+
     /* ---------------------------------------------------------------
      * 個人的な趣味、および実験コード
      */
@@ -1184,6 +1223,53 @@ void TableWindow::readTargetWindowSetting(char *iniFile) {
     }
 }
 
+
+// -------------------------------------------------------------------
+// スタイル設定の読み込み
+void TableWindow::readStyleSetting() {
+    char iniFile[MAX_PATH + 1];
+    GetCurrentDirectory(sizeof(iniFile), iniFile);
+    strcat(iniFile, "\\kanchoku.ini");
+
+    char style[255];
+    GetPrivateProfileString("kanchoku", "style_base", "",
+                            style, sizeof(style), iniFile);
+    if (*style) {
+        int i;
+        char work[10];
+        for (i=0; i < 10; i++) {
+            *work = 0;
+            strncat(work, style+i*8, 8);
+            if (lstrlen(work) < 8) break;
+            styleCol[i+0] = 0x02000000 | strtoul(work, NULL, 16);  // cf. definition of PALETTERGB
+        }
+    }
+    GetPrivateProfileString("kanchoku", "style_info", "",
+                            style, sizeof(style), iniFile);
+    if (*style) {
+        int i;
+        char work[10];
+        for (i=0; i < 10; i++) {
+            *work = 0;
+            strncat(work, style+i*8, 8);
+            if (lstrlen(work) < 8) break;
+            styleCol[i+10] =  0x02000000 | strtoul(work, NULL, 16);
+        }
+    }
+    GetPrivateProfileString("kanchoku", "style_fontname", "",
+                            style, sizeof(style), iniFile);
+    if (*style) {
+        *styleFontName = 0;
+        strncat(styleFontName, style, LF_FACESIZE-1);
+    } else {
+        strcpy(styleFontName, "ＭＳ ゴシック");
+    }
+    int fs = GetPrivateProfileInt("kanchoku", "style_fontsize", 0,
+                            iniFile);
+    if (!fs) fs = 12;
+    styleFontSize = fs;
+}
+
 // -------------------------------------------------------------------
 // 出力
 void TableWindow::output() {
@@ -1389,8 +1475,10 @@ void TableWindow::drawFrame50(HDC hdc) {
     HBRUSH brM1 = CreateSolidBrush(COL_ON_M1);
     HPEN pnLN = CreatePen(PS_SOLID, 1, COL_ON_LN);
     HPEN pnK2 = CreatePen(PS_SOLID, 1, COL_ON_K2);
+    HPEN pnK3 = CreatePen(PS_SOLID, 1, COL_ON_K3);
     HPEN pnM1 = CreatePen(PS_SOLID, 1, COL_ON_M1);
     HPEN pnM2 = CreatePen(PS_SOLID, 1, COL_ON_M2);
+    HPEN pnM3 = CreatePen(PS_SOLID, 1, COL_ON_M3);
     int x, y;
 
     // 保存
@@ -1402,7 +1490,7 @@ void TableWindow::drawFrame50(HDC hdc) {
     SelectObject(hdc, brM1);
     Rectangle(hdc, 0, 0, WIDTH, HEIGHT);
     // ハイライト
-    SelectObject(hdc, GetStockObject(WHITE_PEN));
+    SelectObject(hdc, pnM3);
     x = MARGIN_SIZE; y = MARGIN_SIZE + BLOCK_SIZE * 4;
     MoveToEx(hdc, x, y + 1, NULL);
     LineTo(hdc, x + BLOCK_SIZE / 2 - 1, y + 1);
@@ -1436,7 +1524,7 @@ void TableWindow::drawFrame50(HDC hdc) {
     y = MARGIN_SIZE;
     Rectangle(hdc, x, y, x + BLOCK_SIZE + 1, y + BLOCK_SIZE * 4 + 1);
     // ハイライト
-    SelectObject(hdc, GetStockObject(WHITE_PEN));
+    SelectObject(hdc, pnM3);
     MoveToEx(hdc, x + BLOCK_SIZE - 2, y + 1, NULL);
     LineTo(hdc, x + 1, y + 1);
     LineTo(hdc, x + 1, y + BLOCK_SIZE * 4 - 1);
@@ -1457,7 +1545,7 @@ void TableWindow::drawFrame50(HDC hdc) {
             SelectObject(hdc, brK1);
             Rectangle(hdc, x, y, x + BLOCK_SIZE + 1, y + BLOCK_SIZE + 1);
             // ハイライト
-            SelectObject(hdc, GetStockObject(WHITE_PEN));
+            SelectObject(hdc, pnK3);
             MoveToEx(hdc, x + BLOCK_SIZE - 2, y + 1, NULL);
             LineTo(hdc, x + 1, y + 1);
             LineTo(hdc, x + 1, y + BLOCK_SIZE - 1);
@@ -1476,8 +1564,10 @@ void TableWindow::drawFrame50(HDC hdc) {
     DeleteObject(brM1);
     DeleteObject(pnLN);
     DeleteObject(pnK2);
+    DeleteObject(pnK3);
     DeleteObject(pnM1);
     DeleteObject(pnM2);
+    DeleteObject(pnM3);
 }
 
 // -------------------------------------------------------------------
@@ -1487,8 +1577,10 @@ void TableWindow::drawFrame10(HDC hdc) {
     HBRUSH brM1 = CreateSolidBrush(COL_ON_M1);
     HPEN pnLN = CreatePen(PS_SOLID, 1, COL_ON_LN);
     HPEN pnK2 = CreatePen(PS_SOLID, 1, COL_ON_K2);
+    HPEN pnK3 = CreatePen(PS_SOLID, 1, COL_ON_K3);
     HPEN pnM1 = CreatePen(PS_SOLID, 1, COL_ON_M1);
     HPEN pnM2 = CreatePen(PS_SOLID, 1, COL_ON_M2);
+    HPEN pnM3 = CreatePen(PS_SOLID, 1, COL_ON_M3);
     int x, y;
 
     // 保存
@@ -1500,7 +1592,7 @@ void TableWindow::drawFrame10(HDC hdc) {
     SelectObject(hdc, brM1);
     Rectangle(hdc, 0, 0, WIDTH, HEIGHT);
     // ハイライト
-    SelectObject(hdc, GetStockObject(WHITE_PEN));
+    SelectObject(hdc, pnM3);
     x = MARGIN_SIZE; y = MARGIN_SIZE + BLOCK_SIZE * 5;
     MoveToEx(hdc, x, y + 1, NULL);
     x = MARGIN_SIZE + BLOCK_SIZE * 11;
@@ -1523,7 +1615,7 @@ void TableWindow::drawFrame10(HDC hdc) {
     y = MARGIN_SIZE;
     Rectangle(hdc, x, y, x + BLOCK_SIZE + 1, y + BLOCK_SIZE * 5 + 1);
     // ハイライト
-    SelectObject(hdc, GetStockObject(WHITE_PEN));
+    SelectObject(hdc, pnM3);
     MoveToEx(hdc, x + BLOCK_SIZE - 2, y + 1, NULL);
     LineTo(hdc, x + 1, y + 1);
     LineTo(hdc, x + 1, y + BLOCK_SIZE * 5 - 1);
@@ -1542,7 +1634,7 @@ void TableWindow::drawFrame10(HDC hdc) {
         SelectObject(hdc, brK1);
         Rectangle(hdc, x, y, x + BLOCK_SIZE + 1, y + BLOCK_SIZE * 5 + 1);
         // ハイライト
-        SelectObject(hdc, GetStockObject(WHITE_PEN));
+        SelectObject(hdc, pnK3);
         MoveToEx(hdc, x + BLOCK_SIZE - 2, y + 1, NULL);
         LineTo(hdc, x + 1, y + 1);
         LineTo(hdc, x + 1, y + BLOCK_SIZE * 5 - 1);
@@ -1678,10 +1770,12 @@ void TableWindow::drawVKB50(HDC hdc, bool isWithBothSide) {
             char *s = tc->vkbFace[isWithBothSide&&isShift?TC_SHIFT(k):k];
             if (s && *s) {
                 int dx = tc->OPT_win95 ? 0 : 1;
+                RECT rctmp = { 0, 0, CHAR_SIZE, CHAR_SIZE };
+                int dy = (CHAR_SIZE-DrawText(hdc, "亜", 2, &rctmp, DT_CALCRECT))/3;
                 if (strlen(s) <= 1) {
-                    TextOut(hdc, px + 3 + dx + (CHAR_SIZE / 4), py + 3, s, 1);
+                    TextOut(hdc, px + 3 + dx + (CHAR_SIZE / 4), py + 3 + dy, s, 1);
                 } else {
-                    TextOut(hdc, px + 3 + dx, py + 3, s, 2);
+                    TextOut(hdc, px + 3 + dx, py + 3 + dy, s, 2);
                 }
             }
         }
@@ -1730,12 +1824,14 @@ void TableWindow::drawVKB10(HDC hdc) {
 
         char *s = tc->vkbFace[k];
         int dx = tc->OPT_win95 ? 0 : 1;
+        RECT rctmp = {0, 0, CHAR_SIZE, CHAR_SIZE };
+        int dy = (CHAR_SIZE-DrawText(hdc, "亜", 2, &rctmp, DT_CALCRECT))/3;
         for (int y = 0; s && *s && y < 6; y++) {
             py = MARGIN_SIZE + (CHAR_SIZE + 1) * y + 5;
             if (IS_ZENKAKU(*s)) {
-                TextOut(hdc, px + 3 + dx, py, s, 2); s += 2;
+                TextOut(hdc, px + 3 + dx, py + dy, s, 2); s += 2;
             } else {
-                TextOut(hdc, px + 3 + dx + (CHAR_SIZE / 4), py, s, 1); s += 1;
+                TextOut(hdc, px + 3 + dx + (CHAR_SIZE / 4), py + dy, s, 1); s += 1;
             }
         }
     }
@@ -1776,30 +1872,32 @@ void TableWindow::drawMiniBuffer(HDC hdc, int height, COLORREF col,
         char s[3]; s[0] = 0;
         MOJI m = mb->moji(offset);
         int dx = tc->OPT_win95 ? 0 : 1;
+        RECT rctmp = {0, 0, CHAR_SIZE, CHAR_SIZE };
+        int dy = (CHAR_SIZE-DrawText(hdc, "亜", 2, &rctmp, DT_CALCRECT))/3;
         switch (mojitype(m)) {
         case MOJI_SPECIAL:
             SetTextColor(hdc, COL_DK_CYAN);
             if (m == MOJI_BUSHU) {
-                TextOut(hdc, px + dx, py + 1, "◆", 2);
+                TextOut(hdc, px + dx, py + 1 + dy, "◆", 2);
             } else if (m == MOJI_MAZE) {
-                TextOut(hdc, px + dx, py + 1, "◇", 2);
+                TextOut(hdc, px + dx, py + 1 + dy, "◇", 2);
             }
             break;
         case MOJI_ZENKAKU:
             moji2strcat(s, m);
             SetTextColor(hdc, COL_BLACK);
-            TextOut(hdc, px + dx, py + 1, s, 2);
+            TextOut(hdc, px + dx, py + 1 + dy, s, 2);
             break;
         case MOJI_HANKANA:
         case MOJI_ASCII:
             moji2strcat(s, m);
             SetTextColor(hdc, COL_BLACK);
-            TextOut(hdc, px + dx + (LARGE_CHAR_SIZE / 4), py + 1, s, 1);
+            TextOut(hdc, px + dx + (LARGE_CHAR_SIZE / 4), py + 1 + dy, s, 1);
             break;
         default:
             // XXX VKey とか
             SetTextColor(hdc, COL_DK_CYAN);
-            TextOut(hdc, px + dx, py + 1, "・", 2);
+            TextOut(hdc, px + dx, py + 1 + dy, "・", 2);
             break;
         }
     }
