@@ -80,11 +80,13 @@ using namespace std;
  * ←────────── WIDTH  ─────────→
  */
 #define CHAR_SIZE (styleFontSize)          // 文字の大きさ
-#define LARGE_CHAR_SIZE (CHAR_SIZE+4)    // 大きい文字の大きさ
-#define BLOCK_SIZE (CHAR_SIZE+6)         // 仮想鍵盤のキーの大きさ
+#define LARGE_CHAR_SIZE (CHAR_SIZE+stylePadding*2)    // 大きい文字の大きさ
+#define BLOCK_SIZE (CHAR_SIZE+stylePadding*3)         // 仮想鍵盤のキーの大きさ
 #define MARGIN_SIZE (4)         // 仮想鍵盤の天地左右の余白
 #define WIDTH  (MARGIN_SIZE * 2 + BLOCK_SIZE * 11 + 1)  // 仮想鍵盤の横幅
 #define HEIGHT (MARGIN_SIZE * 2 + BLOCK_SIZE * 5 + 1)   // 仮想鍵盤の縦幅
+#define TRUNC_MARK_SIZE (BLOCK_SIZE/3+3)
+#define SHIFT_MARK_SIZE (BLOCK_SIZE/5+3)
 
 /* -------------------------------------------------------------------
  * 仮想鍵盤 (2) - 色
@@ -179,12 +181,15 @@ private:
     int tc_lt_key;
     int tc_gt_key;
 
+    // Shift押下検出（仮想鍵盤表示用）
     bool isShift;
+    bool isShiftPrev;
 
     // スタイル設定
     COLORREF styleCol[20];
     char styleFontName[LF_FACESIZE];
     int styleFontSize;
+    int stylePadding;
 
 public:
     // コンストラクタ

@@ -66,7 +66,7 @@ public:
     bool *isShiftKana;          // Shift状態のRegisterHotKeyが必要なキーか
                                 // どうかを示すフラグを格納する配列
     //</v127a - shiftcheck>
-    bool isAnyShiftKana;
+    bool isAnyShiftSeq;         // テーブルファイルで何らかのシフト打鍵が定義されているか
     //<multishift2>
     DIR_TABLE dirTable;
     static void readDir(DIR_TABLE *, ifstream *);
@@ -94,10 +94,13 @@ public:
     //</v127a - gg>
     int OPT_bushuAlgo;          // 部首合成変換のアルゴリズム
     int OPT_conjugationalMaze;  // 活用語の交ぜ書き変換
-    int OPT_maze2gg;            // 強制練習モード
+    int OPT_maze2gg;            // 強制練習モード初期状態
     STROKE *OPT_prefixautoassign; // 熟語ガイド中の外字にストローク割り振り
 
     int OPT_shiftKana;          // シフト打鍵でかたかな
+    int OPT_shiftFallback;      // 一部でしかシフト打鍵を使わない配列の場合、
+                                // シフト打鍵の定義がない場面でシフトなし打鍵の定義で代用
+    int OPT_shiftLockStroke;    // Shiftによるストロークロック機能
     int OPT_enableHankakuKana;  // 半角かな変換
 
     int OPT_useWMIMECHAR;       // 出力メッセージ
@@ -110,11 +113,14 @@ public:
     int OPT_yLoc;               // 〃
     int OPT_offHide;            // OFF 時にウィンドウ非表示
     int OPT_followCaret;        // カーソル追従
+    int OPT_withXKeymacs;       // XKeymacs との同時使用
 
     int OPT_hardBS;             // BS で常に文字を消去
+    int OPT_weakBS;             // BS で1ストロークだけ戻る
     int OPT_useCtrlKey;         // C-h などを BS などとして扱う
     int OPT_useTTCode;          // 三枚表 T-Code スタイルの文字ヘルプ
     int OPT_win95;              // win95 でのフォントのずれの補正
+    char *OPT_offResetModes;    // 各種モードをリセット
 
     //<record>
     // 記録用
@@ -168,16 +174,22 @@ public:
     int hirakataMode;
     int punctMode;
     //int hankanaMode;
+    int maze2ggMode;
 
     /* ストローク入力の状態
      * --------------------
      * - currentBlock   : 変換テーブルの現在位置を示すポインタ。
      * - currentStroke  : 現在までのキーストロークを保持するベクタ。
      * - currentShift   : 現在までのストローク列にシフト打鍵があったか。
+     * - lockedBlock      : ストロークロック機能で一時的にTCode::tableの代わりになるポインタ。
+     * - lockedStroke     : ストロークロック機能でロックしたストローク。
      */
     ControlBlock *currentBlock;
     std::vector<STROKE> *currentStroke;
     int currentShift;
+    int currentCtrl;
+    ControlBlock *lockedBlock;
+    std::vector<STROKE> *lockedStroke;
 
     /* 入力・変換用バッファ
      * --------------------
@@ -267,6 +279,9 @@ public:
      */
     void reset();
 
+    void lockStroke();
+    void unlockStroke();
+
     /* キー入力
      * --------
      * NORMAL, CAND, HIST の各モードに対応する、キー入力処理ルーチン
@@ -342,7 +357,7 @@ public:
     void assignStroke(char *);
     void assignStroke(MOJI);
     void clearAssignStroke();
-    void makeVKB();
+    void makeVKB(bool unlock = false);
     void makeVKBBG(vector<STROKE> *);
     void makeVKBBG(STROKE *);
 

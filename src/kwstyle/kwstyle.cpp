@@ -160,12 +160,15 @@ struct {
 
 char fontname[LF_FACESIZE] = "ÇlÇr ÉSÉVÉbÉN";
 int fontsize = 12;
+int paddingsize = 2;
 
 enum {
     IDC_MYSTART = 4000,
     IDC_FONTNAME = 5000,
     IDC_FONTSIZE = 5001,
     IDC_FONT = 5002,
+    IDC_PADDING = 5005,
+    IDC_PADDINGSIZE = 5006,
     IDC_APPLY = 5099
 };
 
@@ -216,6 +219,11 @@ void ReadSetting()
     if (fs) {
         fontsize = fs;
     }
+    int ps = GetPrivateProfileInt("kanchoku", "style_padding", 0,
+                            iniFile);
+    if (ps) {
+        paddingsize = ps;
+    }
 }
 
 void WriteSetting()
@@ -249,6 +257,9 @@ void WriteSetting()
                             iniFile);
     wsprintf(style, "%d", fontsize);
     WritePrivateProfileString("kanchoku", "style_fontsize", style,
+                            iniFile);
+    wsprintf(style, "%d", paddingsize);
+    WritePrivateProfileString("kanchoku", "style_padding", style,
                             iniFile);
 }
 
@@ -329,6 +340,18 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
             WS_CHILD | WS_VISIBLE | WS_TABSTOP,
             HU*108, VU*2, HU*16, VU*10, hWnd, (HMENU)IDC_FONT,
             hInst, NULL);
+        CreateWindow("Static", "Padding",
+            WS_CHILD | WS_VISIBLE | SS_LEFTNOWORDWRAP, 
+            HU*64, VU*14, HU*30, VU*10, hWnd, (HMENU)IDC_PADDING,
+            hInst, NULL);
+        HWND hPS = CreateWindowEx(WS_EX_CLIENTEDGE,
+            "Edit", "",
+            WS_CHILD | WS_VISIBLE,
+            HU*96, VU*14, HU*10, VU*10, hWnd, (HMENU)IDC_PADDINGSIZE,
+            hInst, NULL);
+        //char work[10];
+        wsprintf(work, "%d", paddingsize);
+        SetWindowText(hPS, work);
         CreateWindow("Button", "OK",
             WS_CHILD | WS_VISIBLE | WS_TABSTOP,
             HU*72, VU*50, HU*16, VU*10, hWnd, (HMENU)IDOK,
@@ -450,6 +473,24 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
                 SetWindowText(hFS, work);
             }
             break;}
+        case IDC_PADDINGSIZE:
+            switch (wmEvent)
+            {
+            case EN_KILLFOCUS:
+                char work[10];
+                char *p;
+                HWND hEdit = GetDlgItem(hWnd, wmId);
+                GetWindowText(hEdit, work, 9);
+                int tmp = strtoul(work, &p, 10);
+                if (p == work || *p) {
+                    wsprintf(work, "%d", fontsize);
+                    SetWindowText(hEdit, work);
+                    break;
+                }
+                paddingsize = tmp;
+                break;
+            }
+            break;
 		default:
             for (i=IDC_MYSTART; allentry[(i-IDC_MYSTART)/10].nam_func; i+=10) {
                 if (wmId < i) break;

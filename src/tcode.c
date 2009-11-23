@@ -126,7 +126,7 @@ TCode::TCode(int *v, ControlBlock *t, MgTable *m, BushuDic *b, GgDic *g) {
     isShiftKana = new bool[TC_NKEYS];
     for (int i = 0; i < TC_NKEYS; i++)
         isShiftKana[i] = false;
-	isAnyShiftKana = false;
+	isAnyShiftSeq = false;
     //</v127a - shiftcheck>
     //<v127a - gg>
     ggDic = g;
@@ -142,6 +142,8 @@ TCode::TCode(int *v, ControlBlock *t, MgTable *m, BushuDic *b, GgDic *g) {
     ggCand = 0;
     ggCInc = 0;
     ittaku = 0;
+    lockedBlock = table;
+    lockedStroke = new std::vector<STROKE>;
 
     OPT_keyboard = 0;
     OPT_tableFile = 0;
@@ -227,13 +229,23 @@ TCode::~TCode() {
  */
 
 void TCode::reset() {
-    currentBlock = table;
-    currentStroke->clear();
+    currentBlock = lockedBlock;
+    *currentStroke = *lockedStroke;
     currentShift = 0;
     helpModeSave = 0;
     clearGG(table);
     clearAssignStroke();
     if (!explicitGG) clearCandGG();  // 打ち間違い救済
+}
+
+void TCode::lockStroke() {
+    lockedBlock = currentBlock;
+    *lockedStroke = *currentStroke;
+}
+
+void TCode::unlockStroke() {
+    lockedBlock = table;
+    lockedStroke->clear();
 }
 
 /* -------------------------------------------------------------------
@@ -254,7 +266,8 @@ void TCode::reset() {
  */
 
 #define ISEMPTY (preBuffer->length() == 0)
-#define ISRESET (currentBlock == table)
+#define ISRESET (currentBlock == lockedBlock/*table*/)
+#define ISLOCKED (lockedBlock != table)
 #define MS(s) B2MOJI(*(s), *((s) + 1))
 #define MC(c) B2MOJI(0, (c))
 #define MV(v) B2MOJI(MOJI_VKEY, v)
@@ -279,6 +292,16 @@ void TCode::keyinNormal(int key) {
     // 何かキー入力があったら、まずヘルプを非表示にすること
     helpMode = 0;
 
+    currentCtrl = 0;
+    switch (key) {
+    case CM_KEY:
+    case CJ_KEY:
+    case CH_KEY:
+    case CG_KEY:
+    case CI_KEY:
+        if (ISEMPTY) currentCtrl = 1;
+    }
+
     // シフト打鍵
     if (OPT_shiftKana) currentShift |= TC_ISSHIFTED(key);
     /* currentShift &= TC_ISSHIFTED(key); 8 */
@@ -295,7 +318,7 @@ void TCode::keyinNormal(int key) {
         case RET_KEY:
         default: vk = VK_RETURN; break;
         }
-        if (ISEMPTY) { preBuffer->pushSoft(MV(vk)); }
+        if (ISEMPTY) { preBuffer->pushSoft(MV(vk)); if (ggCand) ggCInc += 1; }
         else         { nfer(); addToHistMaybe(preBuffer->string()); }
         reset();
         return;
@@ -313,7 +336,11 @@ void TCode::keyinNormal(int key) {
         }
         if (ISEMPTY) {
             if (ISRESET || OPT_hardBS) {
-                preBuffer->pushSoft(MV(vk));
+                if (OPT_withXKeymacs) {
+                    preBuffer->pushSoft(MC(VK_BACK)); // MC(VK_BACK)
+                } else {
+                    preBuffer->pushSoft(MV(vk));
+                }
                 if (ggCand) ggCInc -= 1;
             }
         } else {
@@ -322,8 +349,19 @@ void TCode::keyinNormal(int key) {
                 if (ggCand) ggCInc -= 1;
             }
         }
-        if (ggCand && !explicitGG) explicitGG = new char[1];  // 打ち間違い救済
-        reset();
+        if (OPT_weakBS && !ISRESET) {
+            currentStroke->pop_back();
+            int stlen = currentStroke->size();
+            ControlBlock *p = table;
+            for (int i = 0; i < stlen; i++) {
+                Block *np = (p->block)[(*currentStroke)[i]];
+                p = (ControlBlock *)np;
+            }
+            currentBlock = p;
+        } else {
+            if (ggCand && !explicitGG) explicitGG = new char[1];  // 打ち間違い救済
+            reset();
+        }
         return;
 
     case ESC_KEY:
@@ -334,7 +372,7 @@ void TCode::keyinNormal(int key) {
         default: vk = VK_ESCAPE; break;
         }
         if (ISEMPTY) {
-            if (ISRESET) { preBuffer->pushSoft(MV(vk)); }
+            if (ISRESET) { preBuffer->pushSoft(MV(vk)); if (ggCand) ggCInc += 1; }
         } else {
             if (ISRESET) { preBuffer->clear(); } // XXX これはキツイ?
         }
@@ -350,13 +388,23 @@ void TCode::keyinNormal(int key) {
         }
         if (ISRESET) {
             if (ISEMPTY) {
-                preBuffer->pushSoft(MV(vk));
+                if (maze2ggMode && explicitGG && ggCInc < ittaku) {
+                    currentCtrl = 0;
+                    MojiBuffer work(strlen(explicitGG));
+                    work.pushSoft(explicitGG);
+                    preBuffer->pushSoft(work.string(ggCInc, ittaku-ggCInc));
+                    ggCInc += ittaku-ggCInc;
+                } else {
+                    preBuffer->pushSoft(MV(vk));
+                    if (ggCand) ggCInc += 1;
+                }
             } else {
                 nferHirakata();
                 addToHistMaybe(preBuffer->string());
             }
         } else {
             preBuffer->pushSoft(MV(vkey[TC_UNSHIFT(currentStroke->at(0))]));
+            if (ggCand) ggCInc += 1;
         }
         reset();
         return;
@@ -374,9 +422,23 @@ void TCode::keyinNormal(int key) {
      * - 入れ子の表 : 状態遷移する
      * - 特殊定義   : 定義に従った動作
      */
+    if (OPT_shiftLockStroke == 1) {
+        if (ISLOCKED) {
+            if (!justCurShift) {
+                unlockStroke();
+                reset();
+            }
+        } else {
+            if (justCurShift) lockStroke();
+        }
+    }
     currentStroke->push_back(key);
     Block *nextBlock = (currentBlock->block)[key];
-    if (OPT_shiftKana && !nextBlock) nextBlock = (currentBlock->block)[TC_UNSHIFT(key)];
+    if (OPT_shiftFallback && !nextBlock) {
+        currentStroke->pop_back();
+        currentStroke->push_back(TC_UNSHIFT(key));
+        nextBlock = (currentBlock->block)[TC_UNSHIFT(key)];
+    }
     //<record>
     record.nstroke += 1;
     //</record>
@@ -478,7 +540,7 @@ void TCode::keyinNormal(int key) {
             reset(); return;
 
         case F_MAZE2GG:
-            OPT_maze2gg ^= 1;
+            maze2ggMode ^= 1;
             clearCandGG();
             //<record>
             record.nspecial += 1;
@@ -562,6 +624,7 @@ void TCode::keyinNormal(int key) {
 
         case F_VERB_FIRST:
             preBuffer->pushSoft(MV(vkey[TC_UNSHIFT(currentStroke->at(0))]));
+            if (ggCand) ggCInc += 1; 
             //<record>
             // XXX: ?
             //record.nspecial += 1;
@@ -739,6 +802,8 @@ void TCode::keyinCand(int key) {
     // 何かキー入力があったら、まずヘルプを非表示にすること
     helpMode = 0;
 
+    currentCtrl = 0;
+
     switch (key) {
     case RET_KEY:
     case CM_KEY:
@@ -837,6 +902,8 @@ void TCode::keyinCand1(int key) {
     // 何かキー入力があったら、まずヘルプを非表示にすること
     helpMode = 0;
 
+    currentCtrl = 0;
+
     switch (key) {
     case RET_KEY:
     case CM_KEY:
@@ -866,13 +933,13 @@ void TCode::keyinCand1(int key) {
     case LT_KEY:
         if (OPT_conjugationalMaze != 2) return;
         makeMazeYomiLonger();
-        if (OPT_maze2gg) { ggCand = currentCand; setCandGGHeader(); }
+        if (maze2ggMode) { ggCand = currentCand; setCandGGHeader(); }
         return;
 
     case GT_KEY:
         if (OPT_conjugationalMaze != 2) return;
         makeMazeYomiShorter();
-        if (OPT_maze2gg) { ggCand = currentCand; setCandGGHeader(); }
+        if (maze2ggMode) { ggCand = currentCand; setCandGGHeader(); }
         return;
 
     default:
@@ -896,6 +963,8 @@ void TCode::keyinCand1(int key) {
 void TCode::keyinHist(int key) {
     // 何かキー入力があったら、まずヘルプを非表示にすること
     helpMode = 0;
+
+    currentCtrl = 0;
 
     // シフト打鍵
     //currentShift |= TC_ISSHIFTED(key);
@@ -1069,10 +1138,17 @@ void TCode::reduceByMaze() {
     }
     currentCand = mgTable->cand; candOffset = 0;
 
-    if (OPT_maze2gg) {
-        mode = CAND1;
+    if (maze2ggMode) {
         ggCand = currentCand;
-        setCandGGHeader();
+        if (OPT_conjugationalMaze == 2) {
+            mode = CAND1;
+            setCandGGHeader();
+        } else {
+            setCandGGHeader();
+            cand = (*currentCand)[0];
+            finishCand(cand);
+            mode = NORMAL;
+        }
         return;
     }
     if (currentCand->size() == 1) {
@@ -1088,7 +1164,7 @@ void TCode::reduceByMaze() {
 }
 
 void TCode::finishCand(char *cand) {
-    if (OPT_maze2gg) {
+    if (maze2ggMode) {
         goCandGG();
         return;
     }
@@ -1098,9 +1174,10 @@ void TCode::finishCand(char *cand) {
     for (headerLen = 0; headerLen < yomiLen && headerLen < candBuffer.length(); headerLen++) {
         if (candBuffer.moji(headerLen) != preBuffer->moji(-yomiLen+headerLen)) break;
     }
-    MojiBuffer okuri(okuriLen);
+    MojiBuffer *okuri;
     if (OPT_conjugationalMaze == 2 && okuriLen > 0) {
-        okuri.pushSoft(preBuffer->string(-okuriLen));
+        okuri = new MojiBuffer(okuriLen);
+        okuri->pushSoft(preBuffer->string(-okuriLen));
     }
     preBuffer->popN(yomiLen + 1);
     //<v127c - postInPre>
@@ -1116,7 +1193,8 @@ void TCode::finishCand(char *cand) {
     //</v127c>
     preBuffer->pushSoft(cand);
     if (OPT_conjugationalMaze == 2 && okuriLen > 0) {
-        preBuffer->pushSoft(okuri.string(-okuriLen));
+        preBuffer->pushSoft(okuri->string(-okuriLen));
+        delete okuri;
     }
     //<record>
     {
@@ -1150,7 +1228,7 @@ void TCode::makeMazeYomiLonger() {
         okuriLen = oL;
     }
     currentCand = mgTable->cand; candOffset = 0;
-    if (OPT_maze2gg) { return; }
+    if (maze2ggMode) { return; }
     if (currentCand->size() == 1) mode = CAND1;
     else mode = CAND;
 }
@@ -1173,7 +1251,7 @@ void TCode::makeMazeYomiShorter() {
         okuriLen = oL;
     }
     currentCand = mgTable->cand; candOffset = 0;
-    if (OPT_maze2gg) { return; }
+    if (maze2ggMode) { return; }
     if (currentCand->size() == 1) mode = CAND1;
     else mode = CAND;
 }
@@ -1604,7 +1682,7 @@ void TCode::clearAssignStroke() {
 
 }
 
-void TCode::makeVKB() {
+void TCode::makeVKB(bool unlock) {
     // 初期化
     for (int i = 0; i < TC_NKEYS; i++) {
         vkbFace[i] = vkbFace[TC_SHIFT(i)] = NULL;
@@ -1675,7 +1753,7 @@ void TCode::makeVKB() {
         //</gg-defg>
         //<gg-defg2>
         //if (ggReady) {
-        if (currentBlock == table && ggReady) {
+        if ((currentBlock == table || currentBlock == lockedBlock) && ggReady) {
         //</gg-defg2>
             // make GGuide
             //<gg-defg>
@@ -1708,10 +1786,10 @@ void TCode::makeVKB() {
         //clearGG(table);
         //if (strGG) {
         //    makeGG(strGG);
-        if (currentBlock == table) {
+        if (currentBlock == table || currentBlock == lockedBlock) {
             if (ggCand) makeCandGG();
             if (OPT_defg && !strGG) strGG = OPT_defg;
-            if (OPT_defg || ggReady || OPT_maze2gg) {
+            if (OPT_defg || ggReady || maze2ggMode) {
                 clearGG(table);
                 if (explicitGG) makeGG(explicitGG, ggCInc, ittaku);
                 else if (strGG) makeGG(strGG);
@@ -1730,7 +1808,7 @@ void TCode::makeVKB() {
         if (check) makeVKBBG(stTable->stroke);
         else makeVKBBG(currentStroke);
         for (int i = 0; i < TC_NKEYS*2; i++) {
-            Block *block = currentBlock->block[i];
+            Block *block = (unlock?table:currentBlock)->block[i];
             if (block == 0) { continue; }
             switch (block->kind()) {
             case STRING_BLOCK:
@@ -1743,7 +1821,8 @@ void TCode::makeVKB() {
                 //</v127a - gg>
                 break;
             case CONTROL_BLOCK:
-                if (currentBlock != table) {
+                vkbFace[i] = "";
+                if (!unlock && currentBlock != table) {
                     vkbFace[i] = block->getFace();
                     vkbFG[i] = TC_FG_SPECIAL;
                 }
@@ -1924,7 +2003,10 @@ bool TCode::checkShiftKana(ControlBlock *block) {
 // isShiftKana[i]の値をtrueにする。
 void TCode::checkShiftSeq(ControlBlock *block) {
     for (int i = 0; i < TC_NKEYS; i++) {
-        if ((block->block)[TC_SHIFT(i)]) isShiftKana[i] = true;
+        if ((block->block)[TC_SHIFT(i)]) {
+            isShiftKana[i] = true;
+            isAnyShiftSeq = true;
+        }
         Block *nextBlock = (block->block)[i];
         if (nextBlock && nextBlock->kind() == CONTROL_BLOCK)
             checkShiftSeq((ControlBlock *)nextBlock);

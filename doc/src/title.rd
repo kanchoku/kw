@@ -4,7 +4,7 @@
 =end
 =begin html
 <div class="version">
-version 1.27f (2009-11-03)
+version 1.27f (2009-11-23)
 </div>
 =end
 

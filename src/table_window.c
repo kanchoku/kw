@@ -58,11 +58,12 @@ int TableWindow::wndProc(HWND w, UINT msg, WPARAM wp, LPARAM lp) {
     bool isShiftNow;
     // 各メッセージの handler を呼ぶ
     switch (msg) {
-    case WM_CREATE:
+    case WM_CREATE:{
+        int r = handleCreate();
 #define ID_MYTIMER 32767
-        SetTimer(w, ID_MYTIMER, 500, NULL);
-        isShift = !!(GetKeyState(VK_SHIFT) & 0x8000);
-        return handleCreate();
+        SetTimer(w, ID_MYTIMER, 100, NULL);
+        isShift = isShiftPrev = !!(GetKeyState(VK_SHIFT) & 0x8000);
+        return r;}
 
     case WM_SYSCOLORCHANGE:
         readStyleSetting();
@@ -77,8 +78,13 @@ int TableWindow::wndProc(HWND w, UINT msg, WPARAM wp, LPARAM lp) {
         isShiftNow = !!(GetKeyState(VK_SHIFT) & 0x8000);
         if ((tc->mode == TCode::NORMAL || tc->mode == TCode::CAND1)
             && !tc->helpMode 
-            && tc->isAnyShiftKana
-            && isShiftNow != isShift) InvalidateRect(w, NULL, FALSE);
+            && IsWindowVisible(w)
+            && (tc->isAnyShiftSeq || tc->OPT_shiftLockStroke)
+            && isShift != isShiftPrev && isShiftNow == isShift) {
+                if (tc->OPT_shiftLockStroke == 1) tc->makeVKB(tc->OPT_shiftLockStroke&&tc->lockedBlock!=tc->table&&!isShift);
+                InvalidateRect(w, NULL, FALSE);
+        }
+        isShiftPrev = isShift;
         isShift = isShiftNow;
         return 0;
 
@@ -148,7 +154,7 @@ void TableWindow::activate() {
         RegisterHotKey(hwnd, i, 0, tc->vkey[i]);
     }
     // HotKey の割付 (シフト打鍵)
-    if (tc->OPT_shiftKana != 0 || tc->isAnyShiftKana) {
+    if (tc->OPT_shiftKana != 0 || tc->isAnyShiftSeq || tc->OPT_shiftLockStroke) {
         for (int i = 0; i < TC_NKEYS; i++) {
             //<v127a - shiftcheck>
             //RegisterHotKey(hwnd, TC_SHIFT(i), MOD_SHIFT, tc->vkey[i]);
@@ -159,7 +165,14 @@ void TableWindow::activate() {
     }
 
     RegisterHotKey(hwnd, ESC_KEY, 0, VK_ESCAPE);
-    RegisterHotKey(hwnd, BS_KEY,  0, VK_BACK);
+    // XKeymacs との同時使用時には、BS_KEY をホットキーにしない
+    // かわりに交ぜ書き変換中の時のため、CH_KEY をホットキーにする
+    // tcode.c 中の keyinNormal(), keyinCand(), keyinCand1() を見よ
+    if (tc->OPT_withXKeymacs) {
+        RegisterHotKey(hwnd, CH_KEY, MOD_CONTROL, 'H');
+    } else {
+        RegisterHotKey(hwnd, BS_KEY,  0, VK_BACK);
+    }
     RegisterHotKey(hwnd, RET_KEY, 0, VK_RETURN);
     RegisterHotKey(hwnd, TAB_KEY, 0, VK_TAB);
     if (tc->OPT_useCtrlKey) {
@@ -200,7 +213,7 @@ void TableWindow::inactivate() {
         UnregisterHotKey(hwnd, i);
     }
     // HotKey の解放 (シフト打鍵)
-    if (tc->OPT_shiftKana != 0 || tc->isAnyShiftKana) {
+    if (tc->OPT_shiftKana != 0 || tc->isAnyShiftSeq || tc->OPT_shiftLockStroke) {
         for (int i = 0; i < TC_NKEYS; i++) {
             //<v127a - shiftcheck>
             //UnregisterHotKey(hwnd, TC_SHIFT(i));
@@ -210,7 +223,12 @@ void TableWindow::inactivate() {
         }
     }
     UnregisterHotKey(hwnd, ESC_KEY);
-    UnregisterHotKey(hwnd, BS_KEY);
+    // XKeymacs との同時使用時には BS_KEY をホットキーにしない
+    if (tc->OPT_withXKeymacs) {
+        UnregisterHotKey(hwnd, CH_KEY);
+    } else {
+        UnregisterHotKey(hwnd, BS_KEY);
+    }
     UnregisterHotKey(hwnd, RET_KEY);
     UnregisterHotKey(hwnd, TAB_KEY);
     if (tc->OPT_useCtrlKey) {
@@ -284,7 +302,7 @@ void TableWindow::setTitleText() {
         //strcpy(str, "漢直窓 - ON");
         strcat(str, " - ON");
         //</multishift2>
-        if (tc->hirakataMode || tc->hanzenMode || tc->punctMode || tc->OPT_maze2gg) {
+        if (tc->hirakataMode || tc->hanzenMode || tc->punctMode || tc->maze2ggMode) {
             strcat(str, " [");
             //<hankana>
             //strcat(str, (tc->hirakataMode ? "ア" : "―"));
@@ -296,7 +314,7 @@ void TableWindow::setTitleText() {
             strcat(str, "|");
             strcat(str, (tc->punctMode    ? "句読" : "――"));
             strcat(str, "|");
-            strcat(str, (tc->OPT_maze2gg  ? "習" : "―"));
+            strcat(str, (tc->maze2ggMode  ? "習" : "―"));
             //</hankana>
             strcat(str, "]");
         }
@@ -559,7 +577,7 @@ int TableWindow::handlePaint() {
         } else {
             drawMiniBuffer(hdc, 4, COL_LT_BLUE, tc->preBuffer);
         }
-        drawVKB50(hdc, tc->isAnyShiftKana);
+        drawVKB50(hdc, tc->isAnyShiftSeq || tc->OPT_shiftLockStroke);
         goto END_PAINT;
     }
 
@@ -584,8 +602,13 @@ int TableWindow::handlePaint() {
         drawFrame50(hdc);
         if (0 < tc->preBuffer->length()) {
             drawMiniBuffer(hdc, 4, COL_LT_GREEN, tc->preBuffer);
+        } else if (tc->maze2ggMode && tc->explicitGG && tc->ggCInc < tc->ittaku) {
+            MojiBuffer work(strlen(tc->explicitGG));
+            work.pushSoft(tc->explicitGG);
+            work.popN(work.length()-tc->ittaku);
+            drawMiniBuffer(hdc, 4, COL_ON_K1, &work);
         }
-        drawVKB50(hdc, tc->isAnyShiftKana);
+        drawVKB50(hdc, tc->isAnyShiftSeq || tc->OPT_shiftLockStroke);
         goto END_PAINT;
     }
 
@@ -610,6 +633,17 @@ int TableWindow::handleHotKey() {
         tc->postDelete = 0;
         //</v127c>
         tc->clearCandGG();
+        int i = 0;
+        if (tc->OPT_offResetModes[i] != '0') tc->hirakataMode = 0;
+        if (tc->OPT_offResetModes[i+1]) i++;
+        if (tc->OPT_offResetModes[i] != '0') tc->hanzenMode = 0;
+        if (tc->OPT_offResetModes[i+1]) i++;
+        if (tc->OPT_offResetModes[i] != '0') tc->punctMode = 0;
+        if (tc->OPT_offResetModes[i+1]) i++;
+        if (tc->OPT_offResetModes[i] != '0') tc->maze2ggMode = tc->OPT_maze2gg;
+        if (tc->OPT_offResetModes[i+1]) i++;
+        if (tc->OPT_offResetModes[i] != '0') tc->unlockStroke();
+
         if (tc->mode == TCode::OFF) {
             tc->mode = TCode::NORMAL;
             activate();
@@ -740,9 +774,10 @@ int TableWindow::handleHotKey() {
  *                                      =2 指定は通常入力時も非表示
  *                                      //</v127c>
  * - followCaret=[01]       0           ウィンドウがカーソルに追従
+ * - withXKeymacs=[01]      0           XKeymacs との同時使用
  *
  * - hardBS=[01]            0           BS は常に (第二打鍵でも) 文字を消去
- * - useCtrlKey=[01]        0           例えば C-h を BS として扱うなど
+ * - useCtrlKey=[012]       0           例えば C-h を BS として扱うなど
  * - useTTCode=[01]         0           三枚表 T-Code スタイルの文字ヘルプ
  * - win95=[01]             0           Windows95 でのフォントのずれを補正
  */
@@ -870,6 +905,12 @@ void TableWindow::initTC() {
     int OPT_shiftKana =
         GetPrivateProfileInt("kanchoku", "shiftkana", 0, iniFile);
         
+    int OPT_shiftFallback =
+        GetPrivateProfileInt("kanchoku", "fallbackonunshift", OPT_shiftKana, iniFile);
+        
+    int OPT_shiftLockStroke =
+        GetPrivateProfileInt("kanchoku", "lockstrokebyshift", 0, iniFile);
+        
     /* ---------------------------------------------------------------
      * 半角かな変換
      */
@@ -936,6 +977,9 @@ void TableWindow::initTC() {
     // hardBS
     int OPT_hardBS = GetPrivateProfileInt("kanchoku", "hardbs", 0, iniFile);
 
+    // weakBS
+    int OPT_weakBS = GetPrivateProfileInt("kanchoku", "weakbs", 0, iniFile);
+
     // useCtrlKkey
     int OPT_useCtrlKey = GetPrivateProfileInt("kanchoku", "usectrlkey", 0,
                                               iniFile);
@@ -955,6 +999,14 @@ void TableWindow::initTC() {
     int OPT_followCaret =
         GetPrivateProfileInt("kanchoku", "followcaret", 0, iniFile);
 
+    // withXKeymacs
+    int OPT_withXKeymacs =
+        GetPrivateProfileInt("kanchoku", "withxkeymacs", 0, iniFile);
+
+    char OPT_offResetModes[255];
+    GetPrivateProfileString("kanchoku", "offresetmodes", "0",
+                            OPT_offResetModes, sizeof(OPT_offResetModes),
+                            iniFile);
     /* ---------------------------------------------------------------
      */
     // キーボードファイルの読み込み
@@ -1113,11 +1165,13 @@ void TableWindow::initTC() {
     if (OPT_shiftKana)
         tc->checkShiftKana(tc->table);
     //</v127a - shiftcheck>
+    tc->OPT_shiftFallback = OPT_shiftFallback;
     tc->checkShiftSeq(tc->table);
-    for (int i = 0; i < TC_NKEYS; i++) {
-        if (tc->isShiftKana[i]) tc->isAnyShiftKana = true;
+    tc->OPT_shiftLockStroke = OPT_shiftLockStroke;
+    if (OPT_shiftLockStroke) {
+        for (int i = 0; i < TC_NKEYS; i++) tc->isShiftKana[i] = true;
     }
-    tc->OPT_maze2gg = OPT_maze2gg;
+    tc->OPT_maze2gg = tc->maze2ggMode = OPT_maze2gg;
     tc->OPT_enableHankakuKana = OPT_enableHankakuKana;
     tc->OPT_useWMIMECHAR = OPT_useWMIMECHAR;
     //<v127a - outputsleep>
@@ -1127,6 +1181,7 @@ void TableWindow::initTC() {
     tc->OPT_xLoc = OPT_xLoc;
     tc->OPT_yLoc = OPT_yLoc;
     tc->OPT_hardBS = OPT_hardBS;
+    tc->OPT_weakBS = OPT_weakBS;
     tc->OPT_useCtrlKey = OPT_useCtrlKey;
     //<multishift>
     //tc->OPT_useTTCode = OPT_useTTCode;
@@ -1136,6 +1191,8 @@ void TableWindow::initTC() {
     //</multishift>
     tc->OPT_win95 = OPT_win95;
     tc->OPT_followCaret = OPT_followCaret;
+    tc->OPT_withXKeymacs = OPT_withXKeymacs;
+    STRDUP(tc->OPT_offResetModes, OPT_offResetModes);
 
     WM_KANCHOKU_CHAR = 0;
     lpfnMySetHook = NULL;
@@ -1268,6 +1325,11 @@ void TableWindow::readStyleSetting() {
                             iniFile);
     if (!fs) fs = 12;
     styleFontSize = fs;
+
+    int ps = GetPrivateProfileInt("kanchoku", "style_padding", 0,
+                            iniFile);
+    if (!ps) ps = 2;
+    stylePadding = ps;
 }
 
 // -------------------------------------------------------------------
@@ -1291,6 +1353,11 @@ void TableWindow::output() {
         int l = MOJI2L(m);
         switch (mojitype(m)) {
         case MOJI_VKEY:
+            if (tc->OPT_useCtrlKey == 2 && tc->currentCtrl && l == 'H') {
+                l = VK_BACK;
+                keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, NULL);
+                Sleep(tc->OPT_outputSleep);
+            }
             //<v127c>
             // IEの1行フォームの中で-とか\とかの直接入力 [練習スレ2:616]
             //PostMessage(activeWin, WM_KEYDOWN, l, 0);
@@ -1302,8 +1369,12 @@ void TableWindow::output() {
             //Sleep(0);               // 先にVK_BACKを処理してほしい
             Sleep(tc->OPT_outputSleep); // 先にVK_BACKを処理してほしい
             //</v127a - outputSleep>
+            if (tc->OPT_useCtrlKey == 2 && tc->currentCtrl && l == VK_BACK) {
+                keybd_event(VK_CONTROL, 0, 0, NULL);
+                l = 'H';
+            }
             // XXX
-            if (l == VK_BACK || l == 'H') { tc->postBuffer->pop(); }
+            if (l == VK_BACK || tc->currentCtrl && l == 'H') { tc->postBuffer->pop(); }
             else                          { tc->postBuffer->pushHard(m); }
             break;
 
@@ -1342,7 +1413,8 @@ void TableWindow::output() {
 
         case MOJI_ASCII:
             PostMessage(activeWin, WM_CHAR, (unsigned char)l, 1);
-            tc->postBuffer->pushHard(m);
+            if (l == VK_BACK) tc->postBuffer->pop();
+            else tc->postBuffer->pushHard(m);
             break;
 
         default: // ここには来ないはず
@@ -1652,8 +1724,10 @@ void TableWindow::drawFrame10(HDC hdc) {
     DeleteObject(brM1);
     DeleteObject(pnLN);
     DeleteObject(pnK2);
+    DeleteObject(pnK3);
     DeleteObject(pnM1);
     DeleteObject(pnM2);
+    DeleteObject(pnM3);
 }
 
 // -------------------------------------------------------------------
@@ -1709,11 +1783,11 @@ void TableWindow::drawVKB50(HDC hdc, bool isWithBothSide) {
                 POINT tri[3];
                 tri[0].x = tri[1].x = px + 2;
                 tri[1].y = tri[2].y = py + BLOCK_SIZE-1;
-                tri[2].x = px + 2 + 8;
-                tri[0].y = py + BLOCK_SIZE-1 - 8;
+                tri[2].x = px + 2 + TRUNC_MARK_SIZE;
+                tri[0].y = py + BLOCK_SIZE-1 - TRUNC_MARK_SIZE;
                 Polygon(hdc, tri, 3);
             }
-            if (isWithBothSide && isShift && tc->vkbFace[k]) {
+            if (isWithBothSide && isShift && tc->vkbFace[k] && *tc->vkbFace[k] && !(tc->OPT_shiftFallback && tc->isShiftKana[k] && !tc->vkbFace[TC_SHIFT(k)])) {
                 switch (tc->vkbFG[k]) {
                 case TC_FG_SPECIAL: SelectObject(hdc, brSP); break;
                 case TC_FG_GG: SelectObject(hdc, brGG); break;
@@ -1722,8 +1796,8 @@ void TableWindow::drawVKB50(HDC hdc, bool isWithBothSide) {
                 POINT tri[3];
                 tri[0].x = tri[1].x = px + 2;
                 tri[1].y = tri[2].y = py + BLOCK_SIZE-1;
-                tri[2].x = px + 2 + 6;
-                tri[0].y = py + BLOCK_SIZE-1 - 6;
+                tri[2].x = px + 2 + SHIFT_MARK_SIZE;
+                tri[0].y = py + BLOCK_SIZE-1 - SHIFT_MARK_SIZE;
                 Polygon(hdc, tri, 3);
             }
             if (tc->vkbCorner[k] & TC_MK_SH2) {
@@ -1731,8 +1805,8 @@ void TableWindow::drawVKB50(HDC hdc, bool isWithBothSide) {
                 POINT tri[3];
                 tri[2].x = tri[1].x = px + BLOCK_SIZE-1;
                 tri[1].y = tri[0].y = py + BLOCK_SIZE-1;
-                tri[0].x = px + BLOCK_SIZE-1 - 8;
-                tri[2].y = py + BLOCK_SIZE-1 - 8;
+                tri[0].x = px + BLOCK_SIZE-1 - TRUNC_MARK_SIZE;
+                tri[2].y = py + BLOCK_SIZE-1 - TRUNC_MARK_SIZE;
                 Polygon(hdc, tri, 3);
             }
             if (tc->vkbCorner[k] & TC_MK_SH3) {
@@ -1740,11 +1814,11 @@ void TableWindow::drawVKB50(HDC hdc, bool isWithBothSide) {
                 POINT tri[3];
                 tri[0].x = tri[1].x = px + BLOCK_SIZE-1;
                 tri[1].y = tri[2].y = py + 2;
-                tri[2].x = px + BLOCK_SIZE-1 - 8;
-                tri[0].y = py + 2 + 8;
+                tri[2].x = px + BLOCK_SIZE-1 - TRUNC_MARK_SIZE;
+                tri[0].y = py + 2 + TRUNC_MARK_SIZE;
                 Polygon(hdc, tri, 3);
             }
-            if (isWithBothSide && !isShift && tc->vkbFace[TC_SHIFT(k)]) {
+            if (isWithBothSide && !isShift && tc->vkbFace[TC_SHIFT(k)] && *tc->vkbFace[TC_SHIFT(k)]) {
                 switch (tc->vkbFG[TC_SHIFT(k)]) {
                 case TC_FG_SPECIAL: SelectObject(hdc, brSP); break;
                 case TC_FG_GG: SelectObject(hdc, brGG); break;
@@ -1753,12 +1827,12 @@ void TableWindow::drawVKB50(HDC hdc, bool isWithBothSide) {
                 POINT tri[3];
                 tri[0].x = tri[1].x = px + BLOCK_SIZE-1;
                 tri[1].y = tri[2].y = py + 2;
-                tri[2].x = px + BLOCK_SIZE-1 - 6;
-                tri[0].y = py + 2 + 6;
+                tri[2].x = px + BLOCK_SIZE-1 - SHIFT_MARK_SIZE;
+                tri[0].y = py + 2 + SHIFT_MARK_SIZE;
                 Polygon(hdc, tri, 3);
             }
 
-            switch (tc->vkbFG[isWithBothSide&&isShift?TC_SHIFT(k):k]) {
+            switch (tc->vkbFG[isWithBothSide&&isShift&&!(tc->OPT_shiftFallback&&tc->isShiftKana[k]&&!tc->vkbFace[TC_SHIFT(k)])?TC_SHIFT(k):k]) {
             case TC_FG_SPECIAL: SetTextColor(hdc, COL_DK_CYAN); break;
             case TC_FG_STROKE:  SetTextColor(hdc, COL_DK_CYAN); break;
             //<v127a - gg>
@@ -1767,15 +1841,15 @@ void TableWindow::drawVKB50(HDC hdc, bool isWithBothSide) {
             case TC_FG_NORMAL:
             default:            SetTextColor(hdc, COL_BLACK); break;
             }
-            char *s = tc->vkbFace[isWithBothSide&&isShift?TC_SHIFT(k):k];
+            char *s = tc->vkbFace[isWithBothSide&&isShift&&!(tc->OPT_shiftFallback&&tc->isShiftKana[k]&&!tc->vkbFace[TC_SHIFT(k)])?TC_SHIFT(k):k];
             if (s && *s) {
                 int dx = tc->OPT_win95 ? 0 : 1;
                 RECT rctmp = { 0, 0, CHAR_SIZE, CHAR_SIZE };
                 int dy = (CHAR_SIZE-DrawText(hdc, "亜", 2, &rctmp, DT_CALCRECT))/3;
                 if (strlen(s) <= 1) {
-                    TextOut(hdc, px + 3 + dx + (CHAR_SIZE / 4), py + 3 + dy, s, 1);
+                    TextOut(hdc, px + stylePadding*3/2 + dx + (CHAR_SIZE / 4), py + stylePadding*3/2 + dy, s, 1);
                 } else {
-                    TextOut(hdc, px + 3 + dx, py + 3 + dy, s, 2);
+                    TextOut(hdc, px + stylePadding*3/2 + dx, py + stylePadding*3/2 + dy, s, 2);
                 }
             }
         }
@@ -1829,9 +1903,9 @@ void TableWindow::drawVKB10(HDC hdc) {
         for (int y = 0; s && *s && y < 6; y++) {
             py = MARGIN_SIZE + (CHAR_SIZE + 1) * y + 5;
             if (IS_ZENKAKU(*s)) {
-                TextOut(hdc, px + 3 + dx, py + dy, s, 2); s += 2;
+                TextOut(hdc, px + stylePadding*3/2 + dx, py + dy, s, 2); s += 2;
             } else {
-                TextOut(hdc, px + 3 + dx + (CHAR_SIZE / 4), py + dy, s, 1); s += 1;
+                TextOut(hdc, px + stylePadding*3/2 + dx + (CHAR_SIZE / 4), py + dy, s, 1); s += 1;
             }
         }
     }
@@ -1860,8 +1934,8 @@ void TableWindow::drawMiniBuffer(HDC hdc, int height, COLORREF col,
     Rectangle(hdc, px + 2, py + 2, px + BLOCK_SIZE, py + BLOCK_SIZE * height);
 
     // text
-    px = MARGIN_SIZE + BLOCK_SIZE * 5 + 1;
-    py = MARGIN_SIZE + BLOCK_SIZE * 0 + 1;
+    px = MARGIN_SIZE + BLOCK_SIZE * 5 + stylePadding/2;
+    py = MARGIN_SIZE + BLOCK_SIZE * 0 + stylePadding/2;
     SetTextColor(hdc, COL_BLACK);
     SetBkMode(hdc, TRANSPARENT);
 
@@ -1873,7 +1947,7 @@ void TableWindow::drawMiniBuffer(HDC hdc, int height, COLORREF col,
         MOJI m = mb->moji(offset);
         int dx = tc->OPT_win95 ? 0 : 1;
         RECT rctmp = {0, 0, CHAR_SIZE, CHAR_SIZE };
-        int dy = (CHAR_SIZE-DrawText(hdc, "亜", 2, &rctmp, DT_CALCRECT))/3;
+        int dy = (LARGE_CHAR_SIZE-DrawText(hdc, "亜", 2, &rctmp, DT_CALCRECT))/3;
         switch (mojitype(m)) {
         case MOJI_SPECIAL:
             SetTextColor(hdc, COL_DK_CYAN);
