@@ -56,14 +56,11 @@ int TableWindow::wndProc(HWND w, UINT msg, WPARAM wp, LPARAM lp) {
     lParam = lp;
 
     bool isShiftNow;
+#define ID_MYTIMER 32767
     // 各メッセージの handler を呼ぶ
     switch (msg) {
-    case WM_CREATE:{
-        int r = handleCreate();
-#define ID_MYTIMER 32767
-        SetTimer(w, ID_MYTIMER, 100, NULL);
-        isShift = isShiftPrev = !!(GetKeyState(VK_SHIFT) & 0x8000);
-        return r;}
+    case WM_CREATE:
+        return handleCreate();
 
     case WM_SYSCOLORCHANGE:
         readStyleSetting();
@@ -74,14 +71,14 @@ int TableWindow::wndProc(HWND w, UINT msg, WPARAM wp, LPARAM lp) {
         InvalidateRect(w, NULL, FALSE);
         return 0;
 
-    case WM_TIMER:
+    case WM_TIMER:  // SetTimer() は handleHotKey() 内で行っている
         isShiftNow = !!(GetKeyState(VK_SHIFT) & 0x8000);
         if ((tc->mode == TCode::NORMAL || tc->mode == TCode::CAND1)
             && !tc->helpMode 
             && IsWindowVisible(w)
             && (tc->isAnyShiftSeq || tc->OPT_shiftLockStroke)
             && isShift != isShiftPrev && isShiftNow == isShift) {
-                if (tc->OPT_shiftLockStroke == 1) tc->makeVKB(tc->OPT_shiftLockStroke&&tc->lockedBlock!=tc->table&&!isShift);
+                if (tc->OPT_shiftLockStroke == 1) tc->makeVKB(tc->lockedBlock!=tc->table&&!isShift);
                 InvalidateRect(w, NULL, FALSE);
         }
         isShiftPrev = isShift;
@@ -165,14 +162,7 @@ void TableWindow::activate() {
     }
 
     RegisterHotKey(hwnd, ESC_KEY, 0, VK_ESCAPE);
-    // XKeymacs との同時使用時には、BS_KEY をホットキーにしない
-    // かわりに交ぜ書き変換中の時のため、CH_KEY をホットキーにする
-    // tcode.c 中の keyinNormal(), keyinCand(), keyinCand1() を見よ
-    if (tc->OPT_withXKeymacs) {
-        RegisterHotKey(hwnd, CH_KEY, MOD_CONTROL, 'H');
-    } else {
-        RegisterHotKey(hwnd, BS_KEY,  0, VK_BACK);
-    }
+    RegisterHotKey(hwnd, BS_KEY,  0, VK_BACK);
     RegisterHotKey(hwnd, RET_KEY, 0, VK_RETURN);
     RegisterHotKey(hwnd, TAB_KEY, 0, VK_TAB);
     if (tc->OPT_useCtrlKey) {
@@ -223,12 +213,7 @@ void TableWindow::inactivate() {
         }
     }
     UnregisterHotKey(hwnd, ESC_KEY);
-    // XKeymacs との同時使用時には BS_KEY をホットキーにしない
-    if (tc->OPT_withXKeymacs) {
-        UnregisterHotKey(hwnd, CH_KEY);
-    } else {
-        UnregisterHotKey(hwnd, BS_KEY);
-    }
+    UnregisterHotKey(hwnd, BS_KEY);
     UnregisterHotKey(hwnd, RET_KEY);
     UnregisterHotKey(hwnd, TAB_KEY);
     if (tc->OPT_useCtrlKey) {
@@ -243,23 +228,6 @@ void TableWindow::inactivate() {
     tc->mode = TCode::NORMAL;
     tc->mode = TCode::OFF;
 }
-
-// -------------------------------------------------------------------
-// EscやBs、Ctrl-Hなど
-//void TableWindow::setSpecialHotKey() {
-//    if((tc->table == tc->currentBlock) &&
-//       (tc->mode == TCode::NORMAL)) {
-//        UnregisterHotKey(hwnd, ESC_KEY);
-//        UnregisterHotKey(hwnd, BS_KEY);
-//        UnregisterHotKey(hwnd, RET_KEY);
-//        UnregisterHotKey(hwnd, TAB_KEY);
-//    } else {
-//        RegisterHotKey(hwnd, ESC_KEY, 0, VK_ESCAPE);
-//        RegisterHotKey(hwnd, BS_KEY, 0, VK_BACK);
-//        RegisterHotKey(hwnd, RET_KEY, 0, VK_RETURN);
-//        RegisterHotKey(hwnd, TAB_KEY, 0, VK_TAB);
-//    }
-//}
 
 void TableWindow::setMazeHotKey(int onoff) {
     if (!onoff) {
@@ -277,6 +245,73 @@ void TableWindow::setMazeHotKey(int onoff) {
         if (tc_gt_key == -1 || !tc->isShiftKana[tc_gt_key])
             RegisterHotKey(hwnd, GT_KEY, MOD_SHIFT, 0xbe);  //VK_OEM_PERIOD
     }
+}
+
+void TableWindow::disableHotKey() {
+    if (hotKeyMode == EDITCLAUSE) { setMazeHotKey(0); hotKeyMode = EDITCLAUSE; }
+    // HotKey の解放
+    for (int i = 0; i < TC_NKEYS; i++) {
+        UnregisterHotKey(hwnd, i);
+    }
+    // HotKey の解放 (シフト打鍵)
+    if (tc->OPT_shiftKana != 0 || tc->isAnyShiftSeq || tc->OPT_shiftLockStroke) {
+        for (int i = 0; i < TC_NKEYS; i++) {
+            //<v127a - shiftcheck>
+            //UnregisterHotKey(hwnd, TC_SHIFT(i));
+            if (tc->isShiftKana[i])
+                UnregisterHotKey(hwnd, TC_SHIFT(i));
+            //</v127a - shiftcheck>
+        }
+    }
+    UnregisterHotKey(hwnd, ESC_KEY);
+    UnregisterHotKey(hwnd, BS_KEY);
+    UnregisterHotKey(hwnd, RET_KEY);
+    UnregisterHotKey(hwnd, TAB_KEY);
+    if (tc->OPT_useCtrlKey) {
+        UnregisterHotKey(hwnd, CG_KEY);
+        UnregisterHotKey(hwnd, CH_KEY);
+        UnregisterHotKey(hwnd, CM_KEY);
+        UnregisterHotKey(hwnd, CJ_KEY);
+        UnregisterHotKey(hwnd, CI_KEY);
+    }
+    if (tc->OPT_hotKey)
+        UnregisterHotKey(hwnd, ACTIVE_KEY); // HotKey を削除
+    if (tc->OPT_unmodifiedHotKey)
+        UnregisterHotKey(hwnd, ACTIVE2_KEY); // HotKey を削除
+}
+
+void TableWindow::resumeHotKey() {
+    if (hotKeyMode == EDITCLAUSE) { hotKeyMode = NORMAL; setMazeHotKey(1); }
+    // HotKey の割付
+    for (int i = 0; i < TC_NKEYS; i++) {
+        RegisterHotKey(hwnd, i, 0, tc->vkey[i]);
+    }
+    // HotKey の割付 (シフト打鍵)
+    if (tc->OPT_shiftKana != 0 || tc->isAnyShiftSeq || tc->OPT_shiftLockStroke) {
+        for (int i = 0; i < TC_NKEYS; i++) {
+            //<v127a - shiftcheck>
+            //RegisterHotKey(hwnd, TC_SHIFT(i), MOD_SHIFT, tc->vkey[i]);
+            if (tc->isShiftKana[i])
+                RegisterHotKey(hwnd, TC_SHIFT(i), MOD_SHIFT, tc->vkey[i]);
+            //</v127a - shiftcheck>
+        }
+    }
+
+    RegisterHotKey(hwnd, ESC_KEY, 0, VK_ESCAPE);
+    RegisterHotKey(hwnd, BS_KEY,  0, VK_BACK);
+    RegisterHotKey(hwnd, RET_KEY, 0, VK_RETURN);
+    RegisterHotKey(hwnd, TAB_KEY, 0, VK_TAB);
+    if (tc->OPT_useCtrlKey) {
+        RegisterHotKey(hwnd, CG_KEY, MOD_CONTROL, 'G');
+        RegisterHotKey(hwnd, CH_KEY, MOD_CONTROL, 'H');
+        RegisterHotKey(hwnd, CM_KEY, MOD_CONTROL, 'M');
+        RegisterHotKey(hwnd, CJ_KEY, MOD_CONTROL, 'J');
+        RegisterHotKey(hwnd, CI_KEY, MOD_CONTROL, 'I');
+    }
+    if (tc->OPT_hotKey)
+        RegisterHotKey(hwnd, ACTIVE_KEY, MOD_CONTROL, tc->OPT_hotKey);
+    if (tc->OPT_unmodifiedHotKey)
+        RegisterHotKey(hwnd, ACTIVE2_KEY, 0, tc->OPT_unmodifiedHotKey);
 }
 
 // -------------------------------------------------------------------
@@ -302,20 +337,18 @@ void TableWindow::setTitleText() {
         //strcpy(str, "漢直窓 - ON");
         strcat(str, " - ON");
         //</multishift2>
-        if (tc->hirakataMode || tc->hanzenMode || tc->punctMode || tc->maze2ggMode) {
+        if (tc->hirakataMode || tc->hanzenMode || tc->punctMode) {
             strcat(str, " [");
-            //<hankana>
-            //strcat(str, (tc->hirakataMode ? "ア" : "―"));
-            //strcat(str, (tc->hanzenMode   ? "全" : "―"));
-            //strcat(str, (tc->punctMode    ? "句" : "―"));
-            strcat(str, (tc->hirakataMode ? "カ" : "―"));
+            strcat(str, (tc->punctMode    ? "句読" : "――"));
             strcat(str, "|");
             strcat(str, (tc->hanzenMode   ? "全半" : "――"));
             strcat(str, "|");
-            strcat(str, (tc->punctMode    ? "句読" : "――"));
-            strcat(str, "|");
+            strcat(str, (tc->hirakataMode ? "カ" : "―"));
+            strcat(str, "]");
+        }
+        if (tc->maze2ggMode) {
+            strcat(str, " [");
             strcat(str, (tc->maze2ggMode  ? "習" : "―"));
-            //</hankana>
             strcat(str, "]");
         }
         SetWindowText(hwnd, str);
@@ -602,7 +635,7 @@ int TableWindow::handlePaint() {
         drawFrame50(hdc);
         if (0 < tc->preBuffer->length()) {
             drawMiniBuffer(hdc, 4, COL_LT_GREEN, tc->preBuffer);
-        } else if (tc->maze2ggMode && tc->explicitGG && tc->ggCInc < tc->ittaku) {
+        } else if (tc->maze2ggMode && tc->explicitGG && tc->ggCInputted() < tc->ittaku) {
             MojiBuffer work(strlen(tc->explicitGG));
             work.pushSoft(tc->explicitGG);
             work.popN(work.length()-tc->ittaku);
@@ -622,6 +655,11 @@ int TableWindow::handlePaint() {
 // WM_HOTKEY
 int TableWindow::handleHotKey() {
     int key = wParam;
+
+    // 少なくとも文字送出完了まではタイマー不要
+    if (tc->mode != TCode::OFF) {
+        KillTimer(hwnd, ID_MYTIMER);
+    }
 
     // ON/OFF
     if (key == ACTIVE_KEY || key == ACTIVE2_KEY) { //<OKA> support unmodified hot key
@@ -706,6 +744,10 @@ int TableWindow::handleHotKey() {
         } else {
             ShowWindow(hwnd, SW_SHOWNA);
         }
+    } else if (tc->OPT_offHide == 1) {
+        if (tc->mode != TCode::OFF && !IsWindowVisible(hwnd)) {
+            ShowWindow(hwnd, SW_SHOWNA);
+        }
     }
     //</v127c>
 
@@ -721,6 +763,11 @@ int TableWindow::handleHotKey() {
     //RedrawWindow(hwnd, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ERASE);
     InvalidateRect(hwnd, NULL, TRUE);
     //</v127c>
+
+    if (tc->mode != TCode::OFF) {
+        SetTimer(hwnd, ID_MYTIMER, 100, NULL);
+        isShift = isShiftPrev = !!(GetKeyState(VK_SHIFT) & 0x8000);
+    }
 
     return 0;
 }
@@ -774,7 +821,6 @@ int TableWindow::handleHotKey() {
  *                                      =2 指定は通常入力時も非表示
  *                                      //</v127c>
  * - followCaret=[01]       0           ウィンドウがカーソルに追従
- * - withXKeymacs=[01]      0           XKeymacs との同時使用
  *
  * - hardBS=[01]            0           BS は常に (第二打鍵でも) 文字を消去
  * - useCtrlKey=[012]       0           例えば C-h を BS として扱うなど
@@ -943,6 +989,10 @@ void TableWindow::initTC() {
                    stricmp(OPT_outputMethod, "WM_KANCHOKU_CHAR") == 0 ||
                    stricmp(OPT_outputMethod, "2")                == 0) {
             OPT_useWMIMECHAR = OUT_WMKANCHOKUCHAR;
+        } else if (stricmp(OPT_outputMethod, "WMUNICHAR")  == 0 ||
+                   stricmp(OPT_outputMethod, "WM_UNICHAR") == 0 ||
+                   stricmp(OPT_outputMethod, "3")          == 0) {
+            OPT_useWMIMECHAR = OUT_WMUNICHAR;
         } else {
             warn("outputMethodに指定されている値が正しくありません。");
             OPT_useWMIMECHAR = OUT_WMCHAR; // とりあえず WM_CHAR に
@@ -957,6 +1007,12 @@ void TableWindow::initTC() {
     long OPT_outputSleep =
         GetPrivateProfileInt("kanchoku", "outputSleep", 0, iniFile);
     //</v127a - outputsleep>
+
+    long OPT_outputVKeyMethod =
+        GetPrivateProfileInt("kanchoku", "outputVKeyMethod", 0, iniFile);
+
+    long OPT_outputUnicode =
+        GetPrivateProfileInt("kanchoku", "outputUnicode", 0, iniFile);
 
     /* ---------------------------------------------------------------
      * 表示関連
@@ -998,10 +1054,6 @@ void TableWindow::initTC() {
     // followCaret
     int OPT_followCaret =
         GetPrivateProfileInt("kanchoku", "followcaret", 0, iniFile);
-
-    // withXKeymacs
-    int OPT_withXKeymacs =
-        GetPrivateProfileInt("kanchoku", "withxkeymacs", 0, iniFile);
 
     char OPT_offResetModes[255];
     GetPrivateProfileString("kanchoku", "offresetmodes", "0",
@@ -1177,6 +1229,8 @@ void TableWindow::initTC() {
     //<v127a - outputsleep>
     tc->OPT_outputSleep = OPT_outputSleep;
     //</v127a - outputsleep>
+    tc->OPT_outputVKeyMethod = OPT_outputVKeyMethod;
+    tc->OPT_outputUnicode = OPT_outputUnicode;
     tc->OPT_offHide = OPT_offHide;
     tc->OPT_xLoc = OPT_xLoc;
     tc->OPT_yLoc = OPT_yLoc;
@@ -1191,14 +1245,15 @@ void TableWindow::initTC() {
     //</multishift>
     tc->OPT_win95 = OPT_win95;
     tc->OPT_followCaret = OPT_followCaret;
-    tc->OPT_withXKeymacs = OPT_withXKeymacs;
     STRDUP(tc->OPT_offResetModes, OPT_offResetModes);
 
     WM_KANCHOKU_CHAR = 0;
+    WM_KANCHOKU_UNICHAR = 0;
     lpfnMySetHook = NULL;
     lpfnMyEndHook = NULL;
     if (OPT_enableWMKANCHOKUCHAR) {
         WM_KANCHOKU_CHAR = RegisterWindowMessage("WM_KANCHOKU_CHAR");
+        WM_KANCHOKU_UNICHAR = RegisterWindowMessage("WM_KANCHOKU_UNICHAR");
         hKanCharDLL = LoadLibrary("kanchar.dll");
         if (hKanCharDLL) {
             lpfnMySetHook = (HHOOK (*)(void))GetProcAddress(hKanCharDLL,
@@ -1270,6 +1325,10 @@ void TableWindow::readTargetWindowSetting(char *iniFile) {
                    stricmp(outputMethod, "WM_KANCHOKU_CHAR") == 0 ||
                    stricmp(outputMethod, "2")                == 0) {
             m = OUT_WMKANCHOKUCHAR;
+        } else if (stricmp(outputMethod, "WMUNICHAR")  == 0 ||
+                   stricmp(outputMethod, "WM_UNICHAR") == 0 ||
+                   stricmp(outputMethod, "3")          == 0) {
+            m = OUT_WMUNICHAR;
         } else {
             warn("outputMethodに指定されている値が正しくありません。");
             continue;
@@ -1338,7 +1397,12 @@ void TableWindow::output() {
     if (tc->isComplete() == 0) { return; }
 
     int len = tc->preBuffer->length();
-    if(len == 0) { return; }
+    if(len == 0 && tc->postDelete == 0) { return; }
+
+    int headerLen;
+    for (headerLen = 0; headerLen < len && headerLen < tc->postDelete; headerLen++) {
+        if (tc->postBuffer->moji(-tc->postDelete+headerLen) != tc->preBuffer->moji(headerLen)) break;
+    }
 
     // 入力フォーカスを持つウィンドウを取得
     HWND targetWin = GetForegroundWindow();
@@ -1346,18 +1410,96 @@ void TableWindow::output() {
     DWORD selfThread = GetCurrentThreadId();
     AttachThreadInput(selfThread, targetThread, TRUE);
     HWND activeWin = GetFocus();
+    // スレッドを切り離す
+    AttachThreadInput(selfThread, targetThread, FALSE);
+    DWORD targetProcess;
+    GetWindowThreadProcessId(targetWin, &targetProcess);
+    HANDLE hTargetProcess = OpenProcess(SYNCHRONIZE, 0, targetProcess);
+    int i;
+    int lctrl, rctrl, nowctrl;
+    int sc;
+    lctrl = !!(GetAsyncKeyState(VK_LCONTROL)&0x8000);  // Win9xではVK_LCONTROL等使えないそうで
+    rctrl = !!(GetAsyncKeyState(VK_RCONTROL)&0x8000);
+    if (!rctrl) lctrl |= !!(GetAsyncKeyState(VK_CONTROL)&0x8000);  // 対策してみたが多分不十分
+    nowctrl = lctrl || rctrl;
 
-    for (int i = 0; i < len; i++) {
+    if (tc->postDelete > 0) {  // 後置型変換の完了
+        if (nowctrl) {  // C-mで確定したときにCtrl+BSが入ってしまう等を回避
+            sc = MapVirtualKey(VK_CONTROL, MAPVK_VK_TO_VSC);
+            if (lctrl) keybd_event(VK_CONTROL, sc, KEYEVENTF_KEYUP, NULL);
+            if (rctrl) keybd_event(VK_CONTROL, sc, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, NULL);
+            Sleep(tc->OPT_outputSleep+5);
+            nowctrl = 0;
+        }
+        if (tc->OPT_outputVKeyMethod) disableHotKey();
+        for (i = 0; i < tc->postDelete - headerLen; i++) {
+            sc = MapVirtualKey(VK_BACK, MAPVK_VK_TO_VSC);
+            if (tc->OPT_outputVKeyMethod) {
+                keybd_event(VK_BACK, sc, 0, NULL);
+                Sleep(tc->OPT_outputSleep*3);
+            } else {
+                PostMessage(activeWin, WM_KEYDOWN, VK_BACK, (i==0?1:0x40000001));
+                Sleep(tc->OPT_outputSleep*2);
+            }
+            if (i == tc->postDelete - headerLen - 1) {
+                if (tc->OPT_outputVKeyMethod) {
+                    keybd_event(VK_BACK, sc, KEYEVENTF_KEYUP, NULL);
+                    Sleep(tc->OPT_outputSleep+5);
+                } else PostMessage(activeWin, WM_KEYUP, VK_BACK, 0xc0000001);
+            }
+        }
+        if (tc->OPT_outputVKeyMethod) resumeHotKey();
+        WaitForInputIdle(hTargetProcess, 1000);
+        tc->postBuffer->popN(tc->postDelete - headerLen);
+        tc->postBufferDeleted(tc->postDelete);
+        tc->postBufferCount(headerLen);
+        tc->postDelete = 0;
+    }
+
+    for (i = headerLen; i < len; i++) {
         MOJI m = tc->preBuffer->moji(i);
         int h = MOJI2H(m);
         int l = MOJI2L(m);
+        if (mojitype(m) == MOJI_VKEY && (tc->OPT_useCtrlKey == 1 && l >= 'A' && l <= 'Z')) {  // F_VERB_FIRST とか未考慮
+            if (!nowctrl) {
+                sc = MapVirtualKey(VK_CONTROL, MAPVK_VK_TO_VSC);
+                if (lctrl) keybd_event(VK_CONTROL, sc, 0, NULL);
+                if (rctrl) keybd_event(VK_CONTROL, sc, KEYEVENTF_EXTENDEDKEY, NULL);
+                if (!(mojitype(m) == MOJI_VKEY && tc->OPT_outputVKeyMethod)) Sleep(tc->OPT_outputSleep+5);
+                nowctrl = 1;
+            }
+        } else {
+            if (nowctrl) {
+                sc = MapVirtualKey(VK_CONTROL, MAPVK_VK_TO_VSC);
+                if (lctrl) keybd_event(VK_CONTROL, sc, KEYEVENTF_KEYUP, NULL);
+                if (rctrl) keybd_event(VK_CONTROL, sc, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, NULL);
+                if (!(mojitype(m) == MOJI_VKEY && tc->OPT_outputVKeyMethod)) Sleep(tc->OPT_outputSleep+5);
+                nowctrl = 0;
+            }
+        }
+        char mbc[3];
+        WCHAR wc[3];
+        int mlen, wlen;
         switch (mojitype(m)) {
         case MOJI_VKEY:
-            if (tc->OPT_useCtrlKey == 2 && tc->currentCtrl && l == 'H') {
-                l = VK_BACK;
-                keybd_event(VK_CONTROL, 0, KEYEVENTF_KEYUP, NULL);
-                Sleep(tc->OPT_outputSleep);
+            if (tc->OPT_useCtrlKey == 2 && tc->currentCtrl && l >= 'A' && l <= 'Z') {
+                switch (l)
+                {
+                case 'H': l = VK_BACK; break;
+                case 'J': l = VK_RETURN; break;
+                case 'M': l = VK_RETURN; break;
+                case 'G': l = VK_ESCAPE; break;
+                case 'I': l = VK_TAB; break;
+                }
             }
+            sc = MapVirtualKey(l, MAPVK_VK_TO_VSC);
+           if (tc->OPT_outputVKeyMethod) {
+                disableHotKey();
+                keybd_event(l, sc, 0, NULL);
+                keybd_event(l, sc, KEYEVENTF_KEYUP, NULL);
+                resumeHotKey();
+                Sleep(tc->OPT_outputSleep+5);
+           } else {
             //<v127c>
             // IEの1行フォームの中で-とか\とかの直接入力 [練習スレ2:616]
             //PostMessage(activeWin, WM_KEYDOWN, l, 0);
@@ -1369,58 +1511,146 @@ void TableWindow::output() {
             //Sleep(0);               // 先にVK_BACKを処理してほしい
             Sleep(tc->OPT_outputSleep); // 先にVK_BACKを処理してほしい
             //</v127a - outputSleep>
-            if (tc->OPT_useCtrlKey == 2 && tc->currentCtrl && l == VK_BACK) {
-                keybd_event(VK_CONTROL, 0, 0, NULL);
-                l = 'H';
+           }
+            if (tc->OPT_useCtrlKey == 2 && tc->currentCtrl) {
+                l = MOJI2L(m);
             }
             // XXX
-            if (l == VK_BACK || tc->currentCtrl && l == 'H') { tc->postBuffer->pop(); }
-            else                          { tc->postBuffer->pushHard(m); }
+            if (l == VK_BACK || tc->currentCtrl && l == 'H') {
+                tc->postBuffer->pop();
+                tc->postBufferCount(1);
+                tc->postBufferDeleted(2);
+            }
+            else { tc->postBuffer->pushHard(m); tc->postBufferCount(1); }
             break;
 
-        case MOJI_ZENKAKU:
+        case MOJI_UNICODE:
+            wc[0] = (h-'@') << 8 | l;
             switch (getOutputMethod(activeWin)) {
+            case OUT_WMUNICHAR:
+                PostMessageW(activeWin, WM_UNICHAR, (LPARAM)wc[0], 1);
+                break;
             case OUT_WMKANCHOKUCHAR:
-                PostMessage(activeWin, WM_KANCHOKU_CHAR,
-                            (((unsigned char)h << 8 ) | (unsigned char)l), 1);
+                PostMessageW(activeWin, WM_KANCHOKU_UNICHAR, (LPARAM)wc[0], 1);
                 break;
             case OUT_WMIMECHAR:
-                PostMessage(activeWin, WM_IME_CHAR,
-                            (((unsigned char)h << 8 ) | (unsigned char)l), 1);
+                PostMessageW(activeWin, WM_IME_CHAR, (LPARAM)wc[0], 1);
                 break;
             case OUT_WMCHAR:
-                PostMessage(activeWin, WM_CHAR, (unsigned char)h, 1);
-                PostMessage(activeWin, WM_CHAR, (unsigned char)l, 1);
+                PostMessageW(activeWin, WM_CHAR, (LPARAM)wc[0], 1);
                 break;
             }
-            tc->postBuffer->pushHard(m);
+            tc->postBuffer->pushHard(m); tc->postBufferCount(1);
             break;
+
+        case MOJI_ZENKAKU:{
+            mbc[0] = h; mbc[1] = l; mbc[2] = 0;
+            wlen = ::MultiByteToWideChar(CP_THREAD_ACP, 0, mbc, 3, wc, 3);
+            // サロゲートペア (SJIS2004化でもしてない限り不要のはず)
+            WORD hi = wc[0], lo = wc[1];
+            ULONG X = (hi & ((1 << 6) -1)) << 10 | lo & ((1 << 10) -1);
+            ULONG W = (hi >> 6) & ((1 << 5) - 1);
+            ULONG U = W + 1;
+            ULONG C = U << 16 | X;
+            switch (getOutputMethod(activeWin)) {
+            case OUT_WMUNICHAR:{
+                if (wlen == 2) PostMessageW(activeWin, WM_UNICHAR, (LPARAM)wc[0], 1);
+                else {  // サロゲートペア
+                    PostMessageW(activeWin, WM_UNICHAR, (LPARAM)C, 1);
+                }
+                break;}
+            case OUT_WMKANCHOKUCHAR:
+                if (tc->OPT_outputUnicode) {
+                    PostMessageW(activeWin, WM_KANCHOKU_UNICHAR, (LPARAM)wc[0], 1);
+                } else {
+                    PostMessageW(activeWin, WM_KANCHOKU_CHAR,
+                            (((unsigned char)h << 8 ) | (unsigned char)l), 1);
+                }
+                break;
+            case OUT_WMIMECHAR:
+                if (tc->OPT_outputUnicode) {
+                    PostMessageW(activeWin, WM_IME_CHAR, (LPARAM)wc[0], 1);
+                    if (wlen > 2) {  // サロゲートペア
+                        PostMessageW(activeWin, WM_IME_CHAR, (LPARAM)wc[1], 1);
+                    }
+                } else {
+                    PostMessageW(activeWin, WM_IME_CHAR,
+                            (((unsigned char)h << 8 ) | (unsigned char)l), 1);
+                }
+                break;
+            case OUT_WMCHAR:
+                if (tc->OPT_outputUnicode) {
+                    PostMessageW(activeWin, WM_CHAR, (LPARAM)wc[0], 1);
+                    if (wlen > 2) {  // サロゲートペア
+                        PostMessageW(activeWin, WM_IME_CHAR, (LPARAM)wc[1], 1);
+                    }
+                } else {
+                    PostMessage(activeWin, WM_CHAR, (unsigned char)h, 1);
+                    PostMessage(activeWin, WM_CHAR, (unsigned char)l, 1);
+                }
+                break;
+            }
+            tc->postBuffer->pushHard(m); tc->postBufferCount(1);
+            break;}
 
         case MOJI_HANKANA:      // XXX
+            wc[0] = 0xFF60 - 0xA0 + (unsigned char)l;
             switch (getOutputMethod(activeWin)) {
+            case OUT_WMUNICHAR:
+                PostMessageW(activeWin, WM_UNICHAR, (LPARAM)wc[0], 1);
+                break;
             case OUT_WMKANCHOKUCHAR:
-                PostMessage(activeWin, WM_KANCHOKU_CHAR, (unsigned char)l, 1);
+                if (tc->OPT_outputUnicode) {
+                    PostMessageW(activeWin, WM_KANCHOKU_UNICHAR, (LPARAM)wc[0], 1);
+                } else {
+                    PostMessageW(activeWin, WM_KANCHOKU_CHAR, (unsigned char)l, 1);
+                }
                 break;
             case OUT_WMIMECHAR:
-                PostMessage(activeWin, WM_IME_CHAR, (unsigned char)l, 1);
+                if (tc->OPT_outputUnicode) {
+                    PostMessageW(activeWin, WM_IME_CHAR, (LPARAM)wc[0], 1);
+                } else {
+                    PostMessage(activeWin, WM_IME_CHAR, (unsigned char)l, 1);
+                }
                 break;
             case OUT_WMCHAR:
-                PostMessage(activeWin, WM_CHAR, (unsigned char)l, 1);
+                if (tc->OPT_outputUnicode) {
+                    PostMessageW(activeWin, WM_CHAR, (LPARAM)wc[0], 1);
+                } else {
+                    PostMessage(activeWin, WM_CHAR, (unsigned char)l, 1);
+                }
                 break;
             }
-            tc->postBuffer->pushHard(m);
+            tc->postBuffer->pushHard(m); tc->postBufferCount(1);
             break;
 
         case MOJI_ASCII:
             PostMessage(activeWin, WM_CHAR, (unsigned char)l, 1);
-            if (l == VK_BACK) tc->postBuffer->pop();
-            else tc->postBuffer->pushHard(m);
+            if (l == VK_BACK) {
+                tc->postBuffer->pop();
+                tc->postBufferCount(1);
+                tc->postBufferDeleted(2);
+            }
+            else { tc->postBuffer->pushHard(m);  tc->postBufferCount(1); }
             break;
 
         default: // ここには来ないはず
             break;
         } // switch mojitype(m)
     } // for i
+    if (lctrl || rctrl) {
+        if (!nowctrl) {
+            sc = MapVirtualKey(VK_CONTROL, MAPVK_VK_TO_VSC);
+            if (lctrl) keybd_event(VK_CONTROL, sc, 0, NULL);
+            if (rctrl) keybd_event(VK_CONTROL, sc, KEYEVENTF_EXTENDEDKEY, NULL);
+        }
+    } else {
+        if (nowctrl) {
+            sc = MapVirtualKey(VK_CONTROL, MAPVK_VK_TO_VSC);
+            if (lctrl) keybd_event(VK_CONTROL, sc, KEYEVENTF_KEYUP, NULL);
+            if (rctrl) keybd_event(VK_CONTROL, sc, KEYEVENTF_EXTENDEDKEY | KEYEVENTF_KEYUP, NULL);
+        }
+    }
     tc->preBuffer->clear();
 
     // カーソルに追従
@@ -1447,8 +1677,7 @@ void TableWindow::output() {
         MoveWindow(hwnd, sX, sY, WIDTH + dX, HEIGHT + dY, TRUE);
     }
 
-    // スレッドを切り離す
-    AttachThreadInput(selfThread, targetThread, FALSE);
+    CloseHandle(hTargetProcess);
 }
 
 // -------------------------------------------------------------------
@@ -1846,7 +2075,13 @@ void TableWindow::drawVKB50(HDC hdc, bool isWithBothSide) {
                 int dx = tc->OPT_win95 ? 0 : 1;
                 RECT rctmp = { 0, 0, CHAR_SIZE, CHAR_SIZE };
                 int dy = (CHAR_SIZE-DrawText(hdc, "亜", 2, &rctmp, DT_CALCRECT))/3;
-                if (strlen(s) <= 1) {
+                WCHAR wc[2];
+                wc[1] = 0;
+                char *tr=s;
+                if (tc->OPT_outputUnicode && strlen(s) >= 6 && s[0] == 'U' && s[1] == '+') wc[0] = (WCHAR)strtoul(s+2, &tr, 16);
+                if (tc->OPT_outputUnicode && strlen(s) >= 6 && s[0] == 'U' && s[1] == '+' && wc[0] < 0x3FFFU && tr == s+6) {
+                    TextOutW(hdc, px + stylePadding*3/2 + dx, py + stylePadding*3/2 + dy, wc, 1);
+                } else if (strlen(s) <= 1) {
                     TextOut(hdc, px + stylePadding*3/2 + dx + (CHAR_SIZE / 4), py + stylePadding*3/2 + dy, s, 1);
                 } else {
                     TextOut(hdc, px + stylePadding*3/2 + dx, py + stylePadding*3/2 + dy, s, 2);

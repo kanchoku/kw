@@ -140,7 +140,7 @@ TCode::TCode(int *v, ControlBlock *t, MgTable *m, BushuDic *b, GgDic *g) {
     assignedsBuffer = new MojiBuffer(TC_BUFFER_SIZE);
     explicitGG = 0;
     ggCand = 0;
-    ggCInc = 0;
+    ggCStart = 0;
     ittaku = 0;
     lockedBlock = table;
     lockedStroke = new std::vector<STROKE>;
@@ -235,7 +235,9 @@ void TCode::reset() {
     helpModeSave = 0;
     clearGG(table);
     clearAssignStroke();
-    if (!explicitGG) clearCandGG();  // 打ち間違い救済
+    // maze2gg 打ち間違い救済
+    // 入力ミスを出力後makeVKBでexplicitGGが落ちて、以降の入力でresetが呼び出されたら完全終了
+    if (!explicitGG) clearCandGG();
 }
 
 void TCode::lockStroke() {
@@ -318,7 +320,7 @@ void TCode::keyinNormal(int key) {
         case RET_KEY:
         default: vk = VK_RETURN; break;
         }
-        if (ISEMPTY) { preBuffer->pushSoft(MV(vk)); if (ggCand) ggCInc += 1; }
+        if (ISEMPTY) { preBuffer->pushSoft(MV(vk)); }
         else         { nfer(); addToHistMaybe(preBuffer->string()); }
         reset();
         return;
@@ -330,23 +332,18 @@ void TCode::keyinNormal(int key) {
         case BS_KEY:
         default: vk = VK_BACK; break;
         }
-        if (ggCand && ggCInc == 0 && ISRESET) {
+        if (ggCand && !ggCInputted() && ISRESET) {
             clearCandGG();
             return;
         }
         if (ISEMPTY) {
             if (ISRESET || OPT_hardBS) {
-                if (OPT_withXKeymacs) {
-                    preBuffer->pushSoft(MC(VK_BACK)); // MC(VK_BACK)
-                } else {
-                    preBuffer->pushSoft(MV(vk));
-                }
-                if (ggCand) ggCInc -= 1;
+                preBuffer->pushSoft(MV(vk));
             }
         } else {
             if (ISRESET || OPT_hardBS) {
                 preBuffer->pop();
-                if (ggCand) ggCInc -= 1;
+                if (ISEMPTY) postDelete = 0;
             }
         }
         if (OPT_weakBS && !ISRESET) {
@@ -372,9 +369,9 @@ void TCode::keyinNormal(int key) {
         default: vk = VK_ESCAPE; break;
         }
         if (ISEMPTY) {
-            if (ISRESET) { preBuffer->pushSoft(MV(vk)); if (ggCand) ggCInc += 1; }
+            if (ISRESET) { preBuffer->pushSoft(MV(vk)); }
         } else {
-            if (ISRESET) { preBuffer->clear(); } // XXX これはキツイ?
+            if (ISRESET) { preBuffer->clear(); postDelete = 0; } // XXX これはキツイ?
         }
         reset();
         return;
@@ -388,15 +385,13 @@ void TCode::keyinNormal(int key) {
         }
         if (ISRESET) {
             if (ISEMPTY) {
-                if (maze2ggMode && explicitGG && ggCInc < ittaku) {
+                if (maze2ggMode && explicitGG && ggCInputted() < ittaku) {
                     currentCtrl = 0;
                     MojiBuffer work(strlen(explicitGG));
                     work.pushSoft(explicitGG);
-                    preBuffer->pushSoft(work.string(ggCInc, ittaku-ggCInc));
-                    ggCInc += ittaku-ggCInc;
+                    preBuffer->pushSoft(work.string(ggCInputted(), ittaku-ggCInputted()));
                 } else {
                     preBuffer->pushSoft(MV(vk));
-                    if (ggCand) ggCInc += 1;
                 }
             } else {
                 nferHirakata();
@@ -404,7 +399,6 @@ void TCode::keyinNormal(int key) {
             }
         } else {
             preBuffer->pushSoft(MV(vkey[TC_UNSHIFT(currentStroke->at(0))]));
-            if (ggCand) ggCInc += 1;
         }
         reset();
         return;
@@ -453,7 +447,12 @@ void TCode::keyinNormal(int key) {
             MojiBuffer mb(TC_BUFFER_SIZE);
             mb.clear();
             for (char *s = str; *s; ) {
-                MOJI m = str2moji(s, &s);
+                MOJI m;
+                char *tr=s;
+                if (OPT_outputUnicode && strlen(s) >= 6 && s[0] == 'U' && s[1] == '+') m = (MOJI)strtoul(s+2, &tr, 16);
+                if (OPT_outputUnicode && strlen(s) >= 6 && s[0] == 'U' && s[1] == '+'
+                    && m < 0x3FFFU && tr == s+6) { s = tr; if (m >= 0x0080U) m += 0x4000; }
+                else m = str2moji(s, &s);
                 if (currentShift) { m = mojiHirakata(m); }
                 if (punctMode)    { m = mojiPunct(m); }
                 //<hankana>
@@ -489,8 +488,7 @@ void TCode::keyinNormal(int key) {
                 }
             }
             //</record>
-            preBuffer->pushSoft(str);
-            if (ggCand) { ggCInc += mb.length(); }
+            for (int i=0; i < mb.length(); i++) preBuffer->pushSoft(mb.moji(i));
         }
         reset(); return;
 
@@ -545,6 +543,15 @@ void TCode::keyinNormal(int key) {
             //<record>
             record.nspecial += 1;
             //</record>
+            reset(); return;
+
+        case F_SHOWWIN:
+            if (OPT_offHide != 0) {
+            OPT_offHide = 3 - OPT_offHide;  // 元のパッチより簡略化させていただきました
+            //<record>
+            record.nspecial += 1;
+            //</record>
+            }
             reset(); return;
 
         case F_BUSHU_PRE:
@@ -624,7 +631,14 @@ void TCode::keyinNormal(int key) {
 
         case F_VERB_FIRST:
             preBuffer->pushSoft(MV(vkey[TC_UNSHIFT(currentStroke->at(0))]));
-            if (ggCand) ggCInc += 1; 
+            //<record>
+            // XXX: ?
+            //record.nspecial += 1;
+            //</record>
+            reset(); return;
+
+        case F_VERB_THIS:
+            preBuffer->pushSoft(MV(vkey[TC_UNSHIFT(currentStroke->back())]));
             //<record>
             // XXX: ?
             //record.nspecial += 1;
@@ -803,6 +817,14 @@ void TCode::keyinCand(int key) {
     helpMode = 0;
 
     currentCtrl = 0;
+    switch (key) {
+    case CM_KEY:
+    case CJ_KEY:
+    case CH_KEY:
+    case CG_KEY:
+    case CI_KEY:
+        if (ISEMPTY) currentCtrl = 1;
+    }
 
     switch (key) {
     case RET_KEY:
@@ -903,6 +925,14 @@ void TCode::keyinCand1(int key) {
     helpMode = 0;
 
     currentCtrl = 0;
+    switch (key) {
+    case CM_KEY:
+    case CJ_KEY:
+    case CH_KEY:
+    case CG_KEY:
+    case CI_KEY:
+        if (ISEMPTY) currentCtrl = 1;
+    }
 
     switch (key) {
     case RET_KEY:
@@ -965,6 +995,14 @@ void TCode::keyinHist(int key) {
     helpMode = 0;
 
     currentCtrl = 0;
+    switch (key) {
+    case CM_KEY:
+    case CJ_KEY:
+    case CH_KEY:
+    case CG_KEY:
+    case CI_KEY:
+        if (ISEMPTY) currentCtrl = 1;
+    }
 
     // シフト打鍵
     //currentShift |= TC_ISSHIFTED(key);
@@ -991,6 +1029,14 @@ void TCode::keyinHist(int key) {
         //</record>
     }
     mode = NORMAL; return;
+}
+
+void TCode::postBufferDeleted(int del) {
+    if (ggCand && ggCStart < 0) ggCStart += del;
+}
+
+void TCode::postBufferCount(int inc) {
+    if (ggCand) ggCStart -= inc;
 }
 
 /* -------------------------------------------------------------------
@@ -1046,27 +1092,9 @@ void TCode::reduceByBushu() {
     }
     // 変換成功
     //<v127c - postInPre>
-    //if (postDelete != 0) {      // 後置
-    //    preBuffer->popN(3);
-    //    preBuffer->pushSoftN(MV(VK_BACK), postDelete); postDelete = 0;
-    //    preBuffer->pushSoft(m);
-    //    if (isComplete()) { addToHelpBufferMaybe(m); }
-    //    if (isComplete()) { addToHistMaybe(m); }
-    //    return;
-    //} else {
-    //    preBuffer->popN(3);
-    //    preBuffer->pushSoft(m);
-    //    if (isComplete()) { addToHelpBufferMaybe(m); }
-    //    if (isComplete()) { addToHistMaybe(m); }
-    //    return;
-    //}
-    //// ここには来ないはず
     preBuffer->popN(3);
     if (postInPre) {            // 前置中の後置
         postInPre = 0;
-    } else if (postDelete > 0 && preBuffer->length() == 0) {
-                                // 後置
-        preBuffer->pushSoftN(MV(VK_BACK), postDelete); postDelete = 0;
     }
     preBuffer->pushSoft(m);
     //<record>
@@ -1168,12 +1196,6 @@ void TCode::finishCand(char *cand) {
         goCandGG();
         return;
     }
-    MojiBuffer candBuffer(strlen(cand));
-    int headerLen;
-    candBuffer.pushSoft(cand);
-    for (headerLen = 0; headerLen < yomiLen && headerLen < candBuffer.length(); headerLen++) {
-        if (candBuffer.moji(headerLen) != preBuffer->moji(-yomiLen+headerLen)) break;
-    }
     MojiBuffer *okuri;
     if (OPT_conjugationalMaze == 2 && okuriLen > 0) {
         okuri = new MojiBuffer(okuriLen);
@@ -1181,14 +1203,8 @@ void TCode::finishCand(char *cand) {
     }
     preBuffer->popN(yomiLen + 1);
     //<v127c - postInPre>
-    //preBuffer->pushSoftN(MV(VK_BACK), postDelete); postDelete = 0;
     if (postInPre) {
         postInPre = 0;
-    } else if (postDelete > 0 && preBuffer->length() == 0) {
-        //preBuffer->pushSoftN(MV(VK_BACK), postDelete);
-        preBuffer->pushSoftN(MV(VK_BACK), postDelete-headerLen);
-        cand = candBuffer.string(headerLen);
-        postDelete = 0;
     }
     //</v127c>
     preBuffer->pushSoft(cand);
@@ -1265,6 +1281,7 @@ void TCode::makeMazeYomiShorter() {
 void TCode::nfer() {
     MojiBuffer tmpMB(TC_BUFFER_SIZE);
     tmpMB.clear();
+    int n = preBuffer->length();
     for (int i = 0; i < preBuffer->length(); i++) {
         MOJI m = preBuffer->moji(i);
         if (mojitype(m) != MOJI_SPECIAL) {
@@ -1272,10 +1289,10 @@ void TCode::nfer() {
         }
     }
     preBuffer->clear();
-    preBuffer->pushSoftN(MV(VK_BACK), postDelete); postDelete = 0;
     for (int i = 0; i < tmpMB.length(); i++) {
         preBuffer->pushSoft(tmpMB.moji(i));
     }
+    if (ggCand) ggCStart = preBuffer->length() - (n - ggCStart);
     //<record>
     // NOP
     //</record>
@@ -1288,6 +1305,7 @@ void TCode::nfer() {
 void TCode::nferHirakata() {
     MojiBuffer tmpMB(TC_BUFFER_SIZE);
     tmpMB.clear();
+    int n = preBuffer->length();
     for (int i = 0; i < preBuffer->length(); i++) {
         MOJI m = preBuffer->moji(i);
         if (mojitype(m) != MOJI_SPECIAL) {
@@ -1295,10 +1313,10 @@ void TCode::nferHirakata() {
         }
     }
     preBuffer->clear();
-    preBuffer->pushSoftN(MV(VK_BACK), postDelete); postDelete = 0;
     for (int i = 0; i < tmpMB.length(); i++) {
         preBuffer->pushSoft(tmpMB.moji(i));
     }
+    if (ggCand) ggCStart = preBuffer->length() - (n - ggCStart);
     //<record>
     // NOP
     //</record>
@@ -1341,35 +1359,25 @@ void TCode::setCandGGHeader()
         }
     }
     for (i = 0; i < ggBuffer.length(); i++) {
-        if (!stTable->look(ggBuffer.moji(i))) continue;
+        if (!stTable->look(ggBuffer.moji(i))) continue;  // 外字も入力済みとする
         for (j = 0; j < yomiLen; j++) {
             if (ggBuffer.moji(i) == preBuffer->moji(-yomiLen+j)) break;
         }
         if (j < yomiLen) continue;
         break;
     }
-    ggCInc = i;
+    ggCHeaderLen = i;
 }
 
 void TCode::goCandGG() {
-    MojiBuffer candBuffer(strlen((*currentCand)[0])); // 頭からggCIncまでは全候補同じ
-    int headerLen;
+    MojiBuffer candBuffer(strlen((*currentCand)[0])); // 頭からggCHeaderLenまでは全候補同じ
     candBuffer.pushSoft((*currentCand)[0]);
-    for (headerLen = 0; headerLen < ggCInc; headerLen++) {
-        if (candBuffer.moji(headerLen) != preBuffer->moji(-yomiLen+headerLen)) break;
-    }
     preBuffer->popN(yomiLen + 1);
     if (postInPre) {        // 前置中の後置
         postInPre = 0;
-        preBuffer->pushSoft(candBuffer.string(0, ggCInc));
-    } else if (postDelete > 0 && preBuffer->length() == 0) {
-                            // 後置
-        preBuffer->pushSoftN(MV(VK_BACK), postDelete-headerLen);
-        preBuffer->pushSoft(candBuffer.string(headerLen, ggCInc-headerLen));
-        postDelete = 0;
-    } else {                // 前置
-        preBuffer->pushSoft(candBuffer.string(0, ggCInc));
     }
+    ggCStart = preBuffer->length();
+    preBuffer->pushSoft(candBuffer.string(0, ggCHeaderLen));
 }
 
 void TCode::makeCandGG() {
@@ -1382,17 +1390,18 @@ void TCode::makeCandGG() {
         ccand.pushSoft((*ggCand)[i]);
         for (j = 0; j < ccand.length(); j++) {
             if (ggBuffer.isEmpty()) {
-                if (j < ggCInc) {
-                    if (preBuffer->length() > 0) {
-                        if (preBuffer->moji(-(mode==CAND1?yomiLen:ggCInc)+j) != ccand.moji(j)) break;
+                if (j < ggCInputted()) {
+                    if (mode==CAND1) {  // goCandGG以前
+                    } else if (ggCStart + j >= 0) {
+                        if (preBuffer->moji(ggCStart + j) != ccand.moji(j)) break;
                     } else {
-                        if (postBuffer->moji(-(mode==CAND1?yomiLen:ggCInc)+j) != ccand.moji(j)) break;
+                        if (postBuffer->moji(ggCStart + j) != ccand.moji(j)) break;
                     }
-                } else if (j == ggCInc) {
+                } else if (j == ggCInputted()) {
                     if (ggBuffer2.isEmpty()) ggBuffer.pushSoft(ccand.string());
                     else ggBuffer2.pushSoft(ccand.moji(j));
                 }
-            } else if (j < ggCInc) {
+            } else if (j < ggCInputted()) {
                 if (ccand.moji(j) != ggBuffer.moji(j)) break;
             } else {
                 if (j == ggBuffer.length()) {
@@ -1418,10 +1427,18 @@ void TCode::makeCandGG() {
 
 void TCode::clearCandGG() {
     ggCand = 0;
-    ggCInc = 0;
+    ggCStart = 0;
     ittaku = 0;
     if (explicitGG) delete [] explicitGG;
     explicitGG = 0;
+}
+
+int TCode::ggCInputted() {
+    if (mode==CAND1) {  // goCandGG以前
+        return ggCHeaderLen;
+    } else {
+        return preBuffer->length() - ggCStart;
+    }
 }
 
 #undef MS
@@ -1791,7 +1808,7 @@ void TCode::makeVKB(bool unlock) {
             if (OPT_defg && !strGG) strGG = OPT_defg;
             if (OPT_defg || ggReady || maze2ggMode) {
                 clearGG(table);
-                if (explicitGG) makeGG(explicitGG, ggCInc, ittaku);
+                if (explicitGG) makeGG(explicitGG, ggCInputted(), ittaku);
                 else if (strGG) makeGG(strGG);
             }
         //</gg-defg2>
@@ -1799,10 +1816,10 @@ void TCode::makeVKB(bool unlock) {
         }
         //</v127a - gg>
         int check = 0;
-        if (explicitGG && ggCInc < ittaku) {
+        if (explicitGG && ggCInputted() < ittaku) {
             MojiBuffer hoge(strlen(explicitGG));
             hoge.pushSoft(explicitGG);
-            MOJI moji = hoge.moji(ggCInc);
+            MOJI moji = hoge.moji(ggCInputted());
             check = stTable->look(moji);
         }
         if (check) makeVKBBG(stTable->stroke);

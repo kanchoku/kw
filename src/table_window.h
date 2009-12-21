@@ -26,6 +26,13 @@
 
 using namespace std;
 
+#ifndef MAPVK_VK_TO_VSC
+#define MAPVK_VK_TO_VSC (0)
+#endif
+#ifndef WM_UNICHAR
+#define WM_UNICHAR 0x0109
+#endif
+
 /* -------------------------------------------------------------------
  * メッセージ
  */
@@ -173,11 +180,12 @@ private:
     int (*lpfnMyEndHook)(void);
     HHOOK hNextHook;
     UINT WM_KANCHOKU_CHAR;
+    UINT WM_KANCHOKU_UNICHAR;
 
     enum HOTKEYMODE { OFF, NORMAL, EDITCLAUSE };
     HOTKEYMODE hotKeyMode;
     // 語幹伸ばし縮め用キー
-    // T-Codeキーとかぶっている場合のみ使用
+    // T-Codeキーとかぶっている場合のみLT_KEY、GT_KEYの代わりに使用
     int tc_lt_key;
     int tc_gt_key;
 
@@ -205,6 +213,8 @@ private:
     void inactivate();          // 待機 (HotKey の解放)
     //void setSpecialHotKey();    // 特殊 HotKey の確保と解放
     void setMazeHotKey(int);
+    void disableHotKey();
+    void resumeHotKey();
     void setTitleText();        // タイトルバーの文字列設定
 
     // メッセージハンドラ

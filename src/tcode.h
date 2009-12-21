@@ -37,6 +37,7 @@ typedef std::map<MOJI, struct STATENT> StatMap;
 #define OUT_WMCHAR 0
 #define OUT_WMIMECHAR 1
 #define OUT_WMKANCHOKUCHAR 2
+#define OUT_WMUNICHAR 3
 
 /* TCode クラス
  *
@@ -108,12 +109,13 @@ public:
     //<v127a - outputsleep>
     long OPT_outputSleep;       // 仮想キーの output 時の Sleep 量 (ms)
     //</v127a - outputsleep>
+    int OPT_outputVKeyMethod;
+    int OPT_outputUnicode;
 
     int OPT_xLoc;               // ウィンドウ初期位置
     int OPT_yLoc;               // 〃
     int OPT_offHide;            // OFF 時にウィンドウ非表示
     int OPT_followCaret;        // カーソル追従
-    int OPT_withXKeymacs;       // XKeymacs との同時使用
 
     int OPT_hardBS;             // BS で常に文字を消去
     int OPT_weakBS;             // BS で1ストロークだけ戻る
@@ -197,7 +199,7 @@ public:
      *                必要に応じて、部首合成・交ぜ書き変換が行われた後、
      *                アプリケーションに出力される。
      * - postBuffer : アプリケーションに出力された (最近の) 文字を保持。
-     *                後置型の変換で使用する。
+     *                後置型の変換で使用する。TableWindow::output() だけで更新。
      * - postDelete : 後置型の変換で、遅延デリートする文字数。
      * - helpBuffer : 文字ヘルプの対象となる文字 (補助変換で入力したもの) を
      *                保持するバッファ。
@@ -251,7 +253,10 @@ public:
     /* 熟語ガイド、強制練習モード、外字自動割り振り
 	 */
     std::vector<char *> *ggCand;
-    int ggCInc;
+    int ggCHeaderLen;  // 入力済みとする文字数
+    int ggCStart;  // preBuffer or postBufferでの変換結果開始位置
+                   // ex. preBuffer == "◇一", [報方] → ggCStart == 1
+                   //     preBuffer == "", postBuffer == "...一", [報方] → ggCStart == -1
     int ittaku;  // 一択
     char *explicitGG;
     MojiBuffer *assignedsBuffer;
@@ -291,6 +296,14 @@ public:
     void keyinCand1(int);
     void keyinHist(int);
 
+    /* バッファ管理
+     * ------------
+     * - postBufferDeleted()    : postBufferの末尾からpop()した（アプリにBackspaceを送った）とき。
+     * - postBufferCount()      : preBufferの内容をpostBufferへ転送した（アプリに文字列を送った）とき。
+     */
+    void postBufferDeleted(int);
+    void postBufferCount(int);
+
     /* 補助変換
      * --------
      * いずれも、preBuffer の内容に関するもの。
@@ -320,6 +333,7 @@ public:
     void goCandGG();  // finishCand()相当
     void makeCandGG();  // output()後に呼ぶ
     void clearCandGG();
+    int ggCInputted();
 
     /* 文字ヘルプ
      * ----------

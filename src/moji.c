@@ -11,6 +11,7 @@ int mojitype(MOJI m) {
     int l = MOJI2L(m);
 
     if (IS_ZENKAKU(h)) { return MOJI_ZENKAKU; }
+    if (h == '@' && l >= 0x80 || h > '@' && h <= 0x7F) { return MOJI_UNICODE; }  // test
 
     switch (h) {
     case 0:

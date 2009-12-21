@@ -24,7 +24,8 @@
 //#define VERSION "1.27f (2006-03-25)"
 //#define VERSION "1.27f-fullshift-20091018"
 //#define VERSION "1.27f-maze2gg-20091103"
-#define VERSION "1.27f-strokelock-20091123"
+//#define VERSION "1.27f-strokelock-20091123"
+#define VERSION "1.27f-okxkeymacs-20091221"
 
 // -------------------------------------------------------------------
 // オリジナル版の value.c のコメント

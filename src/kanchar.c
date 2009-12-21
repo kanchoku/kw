@@ -5,6 +5,7 @@
 #include "kanchar.h"
 
 UINT WM_KANCHOKU_CHAR=0;
+UINT WM_KANCHOKU_UNICHAR=0;
 
 HINSTANCE hInst;
 HHOOK hMsgHook=0;
@@ -19,6 +20,7 @@ int WINAPI DllMain(HINSTANCE hInstance, DWORD fdReason, PVOID pvReserved)
     case DLL_PROCESS_ATTACH:
         hInst = hInstance;
         WM_KANCHOKU_CHAR = RegisterWindowMessage("WM_KANCHOKU_CHAR");
+        WM_KANCHOKU_UNICHAR = RegisterWindowMessage("WM_KANCHOKU_UNICHAR");
         break;
     case DLL_THREAD_ATTACH:
         break;
@@ -72,7 +74,7 @@ EXPORT LRESULT CALLBACK msgHookProc(int nCode, WPARAM wp, LPARAM lp)
     }
     if (nCode == HC_ACTION && wp == PM_REMOVE) {
         pcwp = (MSG *)lp;
-        if (pcwp->message == WM_KANCHOKU_CHAR) {
+        if (pcwp->message == WM_KANCHOKU_CHAR || pcwp->message == WM_KANCHOKU_UNICHAR) {
             if (pcwp->lParam & 0xFF > 0) {
                 //メッセージキューに並びなおす（WordでのBS暴走対策）
                 //VK_BACKの時にWM_KEYDOWN/KEYUPをPostMessageするなら
@@ -116,6 +118,35 @@ EXPORT LRESULT CALLBACK msgHookProc(int nCode, WPARAM wp, LPARAM lp)
                 ImmSetConversionStatus(hImc, (((pcwp->wParam >> 8) & 0xff) ? IME_CMODE_FULLSHAPE : 0), IME_SMODE_NONE);
             }
             ImmSetCompositionString(hImc, SCS_SETSTR, (LPVOID)mbc, strlen(mbc), (LPVOID)mbc, strlen(mbc));
+            ImmNotifyIME(hImc, NI_COMPOSITIONSTR, CPS_COMPLETE, 0);
+            ImmSetConversionStatus(hImc, dwConv, dwSent);
+            if (!bIME) {
+                ImmSetOpenStatus(hImc, FALSE);
+            }
+            ImmReleaseContext(activeWin, hImc);
+            pcwp->message = WM_NULL;
+        }
+        if (pcwp->message == WM_KANCHOKU_UNICHAR) {
+            HWND activeWin = pcwp->hwnd;
+            WCHAR wc[4];
+            HIMC hImc;
+            int bIME;
+            DWORD dwConv, dwSent;
+            wc[0] = pcwp->wParam;
+            wc[1] = 0;
+            hImc = ImmGetContext(activeWin);
+            if(hImc == NULL) {
+              return(0);
+            }
+            bIME = ImmGetOpenStatus(hImc);
+            if (!bIME) {
+                ImmSetOpenStatus(hImc, TRUE);
+            }
+            ImmGetConversionStatus(hImc, &dwConv, &dwSent);
+            {
+                ImmSetConversionStatus(hImc, IME_CMODE_FULLSHAPE, IME_SMODE_NONE);
+            }
+            ImmSetCompositionStringW(hImc, SCS_SETSTR, (LPVOID)wc, wcslen(wc)*sizeof(WCHAR), (LPVOID)wc, wcslen(wc)*sizeof(WCHAR));
             ImmNotifyIME(hImc, NI_COMPOSITIONSTR, CPS_COMPLETE, 0);
             ImmSetConversionStatus(hImc, dwConv, dwSent);
             if (!bIME) {

@@ -34,6 +34,11 @@ StringBlock::StringBlock(char *s) {
         case 0: face = NULL; break;
         case 1: face = new char[2]; strcpy(face, str); break;
         default:
+            if (strlen(str) >= 6 && str[0] == 'U' && str[1] == '+') {
+                face = new char[strlen(str)+1];
+                strcpy(face, str);
+                break;
+            }
             face = new char[3];
             strncpy(face, str, 2); face[2] = 0;
             break;
@@ -78,6 +83,8 @@ SpecialBlock::SpecialBlock(char c) {
         function = F_PUNCT; break;
     case 'g':                   // 強制練習モード切り替え
         function = F_MAZE2GG; break;
+    case 'w':                   // ウィンドウ表示非表示切り替え
+        function = F_SHOWWIN; break;
 
     case 'b':                   // 前置型の部首合成変換
         function = F_BUSHU_PRE; break;
@@ -112,6 +119,8 @@ SpecialBlock::SpecialBlock(char c) {
 
     case 'v':                   // 第一打鍵のキー
         function = F_VERB_FIRST; break;
+    case '^':                   // 今回打ったこのキー
+        function = F_VERB_THIS; break;
 
     default:                    // その他 (未実装のもの)
         function = 0; break;
@@ -125,6 +134,7 @@ char *SpecialBlock::getFace() {
     case F_HANZEN:      return "全";
     case F_PUNCT:       return "句";
     case F_MAZE2GG:     return "習";
+    case F_SHOWWIN:     return "窓";
 
     case F_BUSHU_PRE:   return "◆";
     case F_MAZE_PRE:    return "◇";
@@ -149,6 +159,7 @@ char *SpecialBlock::getFace() {
     case F_HELP_FORW:   return "≫";
 
     case F_VERB_FIRST:  return "・";
+    case F_VERB_THIS:   return "・";
 
     default:            return "○";
     }

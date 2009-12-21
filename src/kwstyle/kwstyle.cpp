@@ -294,8 +294,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         /*HFONT hFont = CreateFont(9, 0, 0, 0, FW_REGULAR, 0, 0, 0,
             DEFAULT_CHARSET, OUT_DEFAULT_PRECIS, CLIP_DEFAULT_PRECIS, PROOF_QUALITY,
             FIXED_PITCH | FF_DONTCARE, "Courier New");*/
-        int HU = LOWORD(GetDialogBaseUnits())/2;  // templateunitX‚Ì2”{‚Á‚Û‚¢‚à‚Ì
-        int VU = LOWORD(GetDialogBaseUnits())/4;  // templateunitY‚Ì2”{‚Á‚Û‚¢‚à‚Ì
+        int HU = LOWORD(GetDialogBaseUnits()+1)/2;  // templateunitX‚Ì2”{‚Á‚Û‚¢‚à‚Ì
+        int VU = LOWORD(GetDialogBaseUnits()+3)/4;  // templateunitY‚Ì2”{‚Á‚Û‚¢‚à‚Ì
         rcC.left = rcC.top = 0;
         rcC.right = HU * clientsizeX;
         rcC.bottom = VU * clientsizeY;
@@ -376,8 +376,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         SetScrollInfo(hWnd, SB_VERT, &si, TRUE);
         break;}
     case WM_VSCROLL:{
-        int HU = LOWORD(GetDialogBaseUnits())/2;  // templateunitX‚Ì2”{‚Á‚Û‚¢‚à‚Ì
-        int VU = LOWORD(GetDialogBaseUnits())/4;  // templateunitY‚Ì2”{‚Á‚Û‚¢‚à‚Ì
+        int HU = LOWORD(GetDialogBaseUnits()+1)/2;  // templateunitX‚Ì2”{‚Á‚Û‚¢‚à‚Ì
+        int VU = LOWORD(GetDialogBaseUnits()+3)/4;  // templateunitY‚Ì2”{‚Á‚Û‚¢‚à‚Ì
         int dy;
         switch (LOWORD(wParam))
         {
@@ -550,8 +550,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
         hdc = ((LPDRAWITEMSTRUCT)lParam)->hDC;
         {HBRUSH br = CreateSolidBrush(allentry[(wmId-IDC_MYSTART)/10].col);
         HGDIOBJ brSave = SelectObject(hdc, br);
-        int HU = LOWORD(GetDialogBaseUnits())/2;  // templateunitX‚Ì2”{‚Á‚Û‚¢‚à‚Ì
-        int VU = LOWORD(GetDialogBaseUnits())/4;  // templateunitY‚Ì2”{‚Á‚Û‚¢‚à‚Ì
+        int HU = LOWORD(GetDialogBaseUnits()+1)/2;  // templateunitX‚Ì2”{‚Á‚Û‚¢‚à‚Ì
+        int VU = LOWORD(GetDialogBaseUnits()+3)/4;  // templateunitY‚Ì2”{‚Á‚Û‚¢‚à‚Ì
         Rectangle(hdc, -1, -1, HU*10+1, VU*10+1);
         SelectObject(hdc, brSave);
         DeleteObject(br);}

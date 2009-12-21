@@ -94,6 +94,7 @@ int mojiHankana(MOJI, MOJI *, MOJI *);
 #define MOJI_ASCII    0         // ASCII 文字
 #define MOJI_HANKANA 'K'        // 半角かな
 #define MOJI_ZENKAKU 'Z'        // 全角
+#define MOJI_UNICODE 'U'        // ユニコード
 
 #define MOJI_SPECIAL '@'        // 特殊
 #define MOJI_VKEY    '!'        // 仮想キー

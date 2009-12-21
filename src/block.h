@@ -26,6 +26,7 @@
 #define F_HANZEN        12      // @Z 全 半角/全角
 #define F_PUNCT         13      // @p 句 句読点切り替え
 //#define F_HANKANA     14      // @k 半 半角かたかな
+#define F_SHOWWIN       15      // @w 窓 ウィンドウ表示非表示の切り替え
 #define F_MAZE2GG       16      // @g 習 強制練習モード
 /* 前置型 */
 #define F_BUSHU_PRE     21      // @b ◆ 前置型の部首合成
@@ -51,6 +52,7 @@
 #define F_HELP_FORW     72      // @H ≫ 文字ヘルプ (次の文字)
 /* キー */
 #define F_VERB_FIRST    82      // @v ・ 第一打鍵のキー
+#define F_VERB_THIS     83      // @^ ・ 今回打ったこのキー
 
 // -------------------------------------------------------------------
 // Block
