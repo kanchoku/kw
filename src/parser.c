@@ -43,10 +43,12 @@ void Parser::parseControl(ControlBlock *node) {
         case LBRACE:            // '{' : ネストした control block
             parseControl((ControlBlock *)node->block[k]);
             setNextToken();
-            break;
+            if (currentToken != ARROW) break;
         case ARROW:             // '-n>' : control block の指定位置に移動
-            parseRoute((ControlBlock *)node->block[k]);
-            setNextToken();
+            while (currentToken == ARROW) {
+                parseRoute((ControlBlock *)node->block[k]);
+                setNextToken();
+            }
             break;
         case RBRACE:            // '}' が来たらブランク
         case COMMA:             // ',' が来てもブランク

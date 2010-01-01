@@ -1,10 +1,10 @@
 =begin
 
-= Š¿’¼Win 1.27
+= Š¿’¼Win 1.28
 =end
 =begin html
 <div class="version">
-version 1.27f (2009-12-21)
+version 1.28 (2010-01-01)
 </div>
 =end
 

@@ -136,6 +136,7 @@ TCode::TCode(int *v, ControlBlock *t, MgTable *m, BushuDic *b, GgDic *g) {
     postBuffer = new MojiBuffer(TC_BUFFER_SIZE);
     helpBuffer = new MojiBuffer(TC_BUFFER_SIZE);
     currentStroke = new std::vector<STROKE>;
+    inputtedStroke = new std::vector<STROKE>;
     stTable = new StTable(table);
     assignedsBuffer = new MojiBuffer(TC_BUFFER_SIZE);
     explicitGG = 0;
@@ -231,10 +232,12 @@ TCode::~TCode() {
 void TCode::reset() {
     currentBlock = lockedBlock;
     *currentStroke = *lockedStroke;
+    *inputtedStroke = *lockedStroke;
     currentShift = 0;
     helpModeSave = 0;
     clearGG(table);
     clearAssignStroke();
+    displayOK = 0;
     // maze2gg 打ち間違い救済
     // 入力ミスを出力後makeVKBでexplicitGGが落ちて、以降の入力でresetが呼び出されたら完全終了
     if (!explicitGG) clearCandGG();
@@ -355,9 +358,12 @@ void TCode::keyinNormal(int key) {
                 p = (ControlBlock *)np;
             }
             currentBlock = p;
+            *inputtedStroke = *currentStroke;
         } else {
             if (ggCand && !explicitGG) explicitGG = new char[1];  // 打ち間違い救済
+            int d = !ISRESET && displayOK;
             reset();
+            displayOK = d;
         }
         return;
 
@@ -433,6 +439,8 @@ void TCode::keyinNormal(int key) {
         currentStroke->push_back(TC_UNSHIFT(key));
         nextBlock = (currentBlock->block)[TC_UNSHIFT(key)];
     }
+    std::vector<STROKE> bkupStroke = *currentStroke;
+    *inputtedStroke = bkupStroke;
     //<record>
     record.nstroke += 1;
     //</record>
@@ -490,7 +498,7 @@ void TCode::keyinNormal(int key) {
             //</record>
             for (int i=0; i < mb.length(); i++) preBuffer->pushSoft(mb.moji(i));
         }
-        reset(); return;
+        reset(); *inputtedStroke = bkupStroke; return;
 
     case CONTROL_BLOCK:
         // ここは reset() しないこと
@@ -1540,32 +1548,73 @@ void TCode::addToHistMaybe(MOJI m) {
 }
 
 /* -------------------------------------------------------------------
- * 仮想鍵盤
+ * 文脈依存準備処理 (熟語ガイド等)
  * --------
- * 仮想鍵盤を作る。
- * キー番号 i のキーに対して、
- * - vkbFace[i] : キーのフェイス (キートップに表示する文字)
- * - vkbFG[i]   : 前景色 (文字の色)
- * - vkbBG[i]   : 背景色 (キーの色)
- * を設定する。
- *
- * 5 通りの場合分け:
- * - OFF モード             : 何も表示しない
- * - 文字ヘルプモード       : 文字のストロークで背景色とフェイスを設定
- * - 通常入力モード         : 現在のストロークで背景色を、
- *                            現在の遷移状態でフェイスを設定
- * - 交ぜ書き候補選択モード : 現在の候補群の内容でフェイスを設定
- * - ヒストリ候補選択モード : 現在のヒストリ内容でフェイスを設定、さらに、
- *                            ヒストリポインタの位置を背景色で、
- *                            参照ビットが立っている候補を前景色で明示しておく
- *
- * なお、ヒストリ候補は、交ぜ書き変換の候補選択モードの候補が 10 個以下の場合
- * と同じ扱いにするため、ホーム段の 10 キー、すなわちキー番号 20 ～ 29 のキー
- * に設定している。
  */
 
+void TCode::updateContext() {
+    if (helpMode) {
+        return;
+    }
+    if (mode == NORMAL || mode == CAND1) {
+        //<v127a - gg>
+        //<gg-defg>
+        char *strGG = NULL;
+        //</gg-defg>
+        //<gg-defg2>
+        //if (ggReady) {
+        if ((currentBlock == table || currentBlock == lockedBlock) && ggReady) {
+        //</gg-defg2>
+            // make GGuide
+            //<gg-defg>
+            //MOJI *strGG = NULL;
+            //</gg-defg>
+            if (preBuffer->length() > 0) {
+                ////strGG = ggDic->look(preBuffer);
+                int i, n = preBuffer->length();
+                for (i = 0; i < n; i++) {
+                    if (preBuffer->moji(i) == MOJI_BUSHU) break;
+                }
+                if (i < n)  // 部首合成変換には不要
+                    ;
+                else if (preBuffer->length() == 1)  // 交ぜ書き開始直後なら
+                    strGG = ggDic->look(postBuffer);
+                else 
+                    strGG = ggDic->look(preBuffer);
+            } else if (postBuffer->length() > 0) {
+                strGG = ggDic->look(postBuffer);
+            }
+            if (strGG) assignStroke(strGG);
+        //<gg-defg>
+            //clearGG(table);
+            //if (strGG) {
+            //    makeGG(strGG);
+            //}
+        }
+        //<gg-defg2>
+        //if (OPT_defg && !strGG) strGG = OPT_defg;
+        //clearGG(table);
+        //if (strGG) {
+        //    makeGG(strGG);
+        if (currentBlock == table || currentBlock == lockedBlock) {
+            if (ggCand) makeCandGG();
+            if (OPT_defg && !strGG) strGG = OPT_defg;
+            if (OPT_defg || ggReady || maze2ggMode) {
+                clearGG(table);
+                if (explicitGG) makeGG(explicitGG, ggCInputted(), ittaku);
+                else if (strGG) makeGG(strGG);
+            }
+        //</gg-defg2>
+        //</gg-defg>
+        }
+        //</v127a - gg>
+        if (mode == CAND1 || explicitGG) displayOK = 1;
+        else if (!(OPT_offHide == 2 && !OPT_displayHelpDelay)
+            && !OPT_displayHelpDelay) displayOK = 1;
+    }
+}
+
 //<v127a - gg>
-// この2関数はblock.cで実装するのが正しい?
 //<gg-defg>
 //void TCode::makeGG(MOJI *strGG) {
 void TCode::makeGG(char *strGG, int start, int protectOnConflict) {
@@ -1699,6 +1748,31 @@ void TCode::clearAssignStroke() {
 
 }
 
+/* -------------------------------------------------------------------
+ * 仮想鍵盤
+ * --------
+ * 仮想鍵盤を作る。
+ * キー番号 i のキーに対して、
+ * - vkbFace[i] : キーのフェイス (キートップに表示する文字)
+ * - vkbFG[i]   : 前景色 (文字の色)
+ * - vkbBG[i]   : 背景色 (キーの色)
+ * を設定する。
+ *
+ * 5 通りの場合分け:
+ * - OFF モード             : 何も表示しない
+ * - 文字ヘルプモード       : 文字のストロークで背景色とフェイスを設定
+ * - 通常入力モード         : 現在のストロークで背景色を、
+ *                            現在の遷移状態でフェイスを設定
+ * - 交ぜ書き候補選択モード : 現在の候補群の内容でフェイスを設定
+ * - ヒストリ候補選択モード : 現在のヒストリ内容でフェイスを設定、さらに、
+ *                            ヒストリポインタの位置を背景色で、
+ *                            参照ビットが立っている候補を前景色で明示しておく
+ *
+ * なお、ヒストリ候補は、交ぜ書き変換の候補選択モードの候補が 10 個以下の場合
+ * と同じ扱いにするため、ホーム段の 10 キー、すなわちキー番号 20 ～ 29 のキー
+ * に設定している。
+ */
+
 void TCode::makeVKB(bool unlock) {
     // 初期化
     for (int i = 0; i < TC_NKEYS; i++) {
@@ -1764,57 +1838,10 @@ void TCode::makeVKB(bool unlock) {
 
     // NORMAL mode
     if (mode == NORMAL || mode == CAND1) {
-        //<v127a - gg>
-        //<gg-defg>
-        char *strGG = NULL;
-        //</gg-defg>
-        //<gg-defg2>
-        //if (ggReady) {
-        if ((currentBlock == table || currentBlock == lockedBlock) && ggReady) {
-        //</gg-defg2>
-            // make GGuide
-            //<gg-defg>
-            //MOJI *strGG = NULL;
-            //</gg-defg>
-            if (preBuffer->length() > 0) {
-                ////strGG = ggDic->look(preBuffer);
-                int i, n = preBuffer->length();
-                for (i = 0; i < n; i++) {
-                    if (preBuffer->moji(i) == MOJI_BUSHU) break;
-                }
-                if (i < n)  // 部首合成変換には不要
-                    ;
-                else if (preBuffer->length() == 1)  // 交ぜ書き開始直後なら
-                    strGG = ggDic->look(postBuffer);
-                else 
-                    strGG = ggDic->look(preBuffer);
-            } else if (postBuffer->length() > 0) {
-                strGG = ggDic->look(postBuffer);
-            }
-            if (strGG) assignStroke(strGG);
-        //<gg-defg>
-            //clearGG(table);
-            //if (strGG) {
-            //    makeGG(strGG);
-            //}
+        if (!displayOK) {
+            makeVKBBG(inputtedStroke);
+            return;
         }
-        //<gg-defg2>
-        //if (OPT_defg && !strGG) strGG = OPT_defg;
-        //clearGG(table);
-        //if (strGG) {
-        //    makeGG(strGG);
-        if (currentBlock == table || currentBlock == lockedBlock) {
-            if (ggCand) makeCandGG();
-            if (OPT_defg && !strGG) strGG = OPT_defg;
-            if (OPT_defg || ggReady || maze2ggMode) {
-                clearGG(table);
-                if (explicitGG) makeGG(explicitGG, ggCInputted(), ittaku);
-                else if (strGG) makeGG(strGG);
-            }
-        //</gg-defg2>
-        //</gg-defg>
-        }
-        //</v127a - gg>
         int check = 0;
         if (explicitGG && ggCInputted() < ittaku) {
             MojiBuffer hoge(strlen(explicitGG));

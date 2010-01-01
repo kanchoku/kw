@@ -116,6 +116,7 @@ public:
     int OPT_yLoc;               // 〃
     int OPT_offHide;            // OFF 時にウィンドウ非表示
     int OPT_followCaret;        // カーソル追従
+    int OPT_displayHelpDelay;   // 仮想鍵盤表示待ち時間(ms)
 
     int OPT_hardBS;             // BS で常に文字を消去
     int OPT_weakBS;             // BS で1ストロークだけ戻る
@@ -185,6 +186,7 @@ public:
      * - currentShift   : 現在までのストローク列にシフト打鍵があったか。
      * - lockedBlock      : ストロークロック機能で一時的にTCode::tableの代わりになるポインタ。
      * - lockedStroke     : ストロークロック機能でロックしたストローク。
+     * - inputtedStroke   : displayHelpDelay でディレイ中の表示に使うストローク。
      */
     ControlBlock *currentBlock;
     std::vector<STROKE> *currentStroke;
@@ -192,6 +194,7 @@ public:
     int currentCtrl;
     ControlBlock *lockedBlock;
     std::vector<STROKE> *lockedStroke;
+    std::vector<STROKE> *inputtedStroke;
 
     /* 入力・変換用バッファ
      * --------------------
@@ -266,11 +269,13 @@ public:
      * - vkbFace[]  : 仮想鍵盤の各キーのフェイス
      * - vkbFG[]    : 仮想鍵盤の各キーの前景色。上記 TC_FG_* を参照。
      * - vkbBG[]    : 仮想鍵盤の各キーの背景色。上記 TC_BG_* を参照。
+     * - displayOK  : displayHelpDelay 経過後かどうか
      */
     char *vkbFace[TC_NKEYS*2];
     int vkbFG[TC_NKEYS*2];
     int vkbBG[TC_NKEYS];
     int vkbCorner[TC_NKEYS];
+    int displayOK;
 
     /* コンストラクタとデストラクタ
      */
@@ -354,13 +359,9 @@ public:
     void addToHistMaybe(char *);
     void addToHistMaybe(MOJI);
 
-    /* 仮想鍵盤
-     * --------
-     * - makeVKB()      : 仮想鍵盤を作成。
-     *                    各キーのフェイス・前景色・背景色を設定。
-     * - makeVKBBG()    : makeVKB の下請け。
-     *                    ストロークに従って各キーの背景色を設定。
+    /* 文脈依存準備処理 (熟語ガイド等)
      */
+    void updateContext();
     //<v127a - gg>
     //<gg-defg>
     //void makeGG(MOJI *);
@@ -371,6 +372,14 @@ public:
     void assignStroke(char *);
     void assignStroke(MOJI);
     void clearAssignStroke();
+
+    /* 仮想鍵盤
+     * --------
+     * - makeVKB()      : 仮想鍵盤を作成。
+     *                    各キーのフェイス・前景色・背景色を設定。
+     * - makeVKBBG()    : makeVKB の下請け。
+     *                    ストロークに従って各キーの背景色を設定。
+     */
     void makeVKB(bool unlock = false);
     void makeVKBBG(vector<STROKE> *);
     void makeVKBBG(STROKE *);

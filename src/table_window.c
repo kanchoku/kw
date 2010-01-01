@@ -55,7 +55,7 @@ int TableWindow::wndProc(HWND w, UINT msg, WPARAM wp, LPARAM lp) {
     wParam = wp;
     lParam = lp;
 
-    bool isShiftNow;
+    bool isShiftNow, trigDisp;
 #define ID_MYTIMER 32767
     // 各メッセージの handler を呼ぶ
     switch (msg) {
@@ -72,12 +72,25 @@ int TableWindow::wndProc(HWND w, UINT msg, WPARAM wp, LPARAM lp) {
         return 0;
 
     case WM_TIMER:  // SetTimer() は handleHotKey() 内で行っている
-        isShiftNow = !!(GetKeyState(VK_SHIFT) & 0x8000);
+        if (deciSecAfterStroke < 65536) deciSecAfterStroke++;
+        trigDisp = false;
+        if (tc->currentBlock != tc->lockedBlock) {
+            if (tc->mode == TCode::NORMAL && !tc->helpMode && !tc->displayOK
+                && !(tc->OPT_offHide == 2 && !tc->OPT_displayHelpDelay)
+                && deciSecAfterStroke*100 >= tc->OPT_displayHelpDelay) {
+                trigDisp = true;
+                tc->displayOK = 1;
+                tc->makeVKB();
+                ShowWindow(w, SW_SHOWNA);
+                InvalidateRect(w, NULL, FALSE);
+            }
+        }
+        isShiftNow = !!(GetKeyState(VK_SHIFT) & 0x8000);  // GetAsyncKeyState じゃなくて大丈夫なのだろうか
         if ((tc->mode == TCode::NORMAL || tc->mode == TCode::CAND1)
             && !tc->helpMode 
             && IsWindowVisible(w)
             && (tc->isAnyShiftSeq || tc->OPT_shiftLockStroke)
-            && isShift != isShiftPrev && isShiftNow == isShift) {
+            && (trigDisp || isShift != isShiftPrev && isShiftNow == isShift)) {
                 if (tc->OPT_shiftLockStroke == 1) tc->makeVKB(tc->lockedBlock!=tc->table&&!isShift);
                 InvalidateRect(w, NULL, FALSE);
         }
@@ -726,6 +739,8 @@ int TableWindow::handleHotKey() {
      */
     output();
 
+    tc->updateContext();
+
     /* ---------------------------------------------------------------
      * 描画
      */
@@ -739,7 +754,8 @@ int TableWindow::handleHotKey() {
             || tc->mode == TCode::NORMAL
             && tc->helpMode == 0    // helpMode と mode は独立
             && tc->preBuffer->length() == 0 // 補助変換中でない
-            && tc->explicitGG == 0) { // 強制練習中でない
+            && tc->explicitGG == 0 // 強制練習中でない
+            && !tc->displayOK) {
             ShowWindow(hwnd, SW_HIDE);
         } else {
             ShowWindow(hwnd, SW_SHOWNA);
@@ -767,6 +783,7 @@ int TableWindow::handleHotKey() {
     if (tc->mode != TCode::OFF) {
         SetTimer(hwnd, ID_MYTIMER, 100, NULL);
         isShift = isShiftPrev = !!(GetKeyState(VK_SHIFT) & 0x8000);
+        deciSecAfterStroke = 0;
     }
 
     return 0;
@@ -1024,6 +1041,9 @@ void TableWindow::initTC() {
     int OPT_xLoc = GetPrivateProfileInt("kanchoku", "xloc", -1, iniFile);
     int OPT_yLoc = GetPrivateProfileInt("kanchoku", "yloc", -1, iniFile);
 
+    // displayHelpDelay
+    int OPT_displayHelpDelay = GetPrivateProfileInt("kanchoku", "displayHelpDelay", 0, iniFile);
+
     // style
     readStyleSetting();
 
@@ -1234,6 +1254,7 @@ void TableWindow::initTC() {
     tc->OPT_offHide = OPT_offHide;
     tc->OPT_xLoc = OPT_xLoc;
     tc->OPT_yLoc = OPT_yLoc;
+    tc->OPT_displayHelpDelay = OPT_displayHelpDelay;
     tc->OPT_hardBS = OPT_hardBS;
     tc->OPT_weakBS = OPT_weakBS;
     tc->OPT_useCtrlKey = OPT_useCtrlKey;

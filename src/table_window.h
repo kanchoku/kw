@@ -192,6 +192,8 @@ private:
     // Shift押下検出（仮想鍵盤表示用）
     bool isShift;
     bool isShiftPrev;
+    // Timeout判定用
+    int deciSecAfterStroke;
 
     // スタイル設定
     COLORREF styleCol[20];
