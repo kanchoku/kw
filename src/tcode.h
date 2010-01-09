@@ -110,6 +110,7 @@ public:
     long OPT_outputSleep;       // 仮想キーの output 時の Sleep 量 (ms)
     //</v127a - outputsleep>
     int OPT_outputVKeyMethod;
+    int OPT_outputAlphabetAsVKey;
     int OPT_outputUnicode;
 
     int OPT_xLoc;               // ウィンドウ初期位置
@@ -191,7 +192,6 @@ public:
     ControlBlock *currentBlock;
     std::vector<STROKE> *currentStroke;
     int currentShift;
-    int currentCtrl;
     ControlBlock *lockedBlock;
     std::vector<STROKE> *lockedStroke;
     std::vector<STROKE> *inputtedStroke;

@@ -1,3 +1,54 @@
+2010-01-09
+
+	* displayHelpDelay 中の表示を修正
+	* 起動時の条件により文字が入力できなくなる、という症状について
+	対策を行った [Issue:7]
+	* maze2gg で変換直後に Tab でカタカナ変換したときの不正な表示を修正
+	* Ctrl+英字の扱い方について整理
+	* outputAlphabetAsVKey 設定を追加
+
+2010-01-01
+
+	* version 1.28:
+	* 第一打鍵を入力してから仮想鍵盤が表示されるまでの待ち時間
+	displayHelpDelay 設定を追加 [Issue:2]
+
+2009-12-21
+
+	* 文字送出関数 output() を大幅見直し
+	- withxkeymacs 設定を削除
+	- outputVKeyMethod 設定を追加
+	- outputMethod=WM_UNICHAR 設定を追加
+	- outputUnicode 設定を追加
+	- kanchar.dll に WM_KANCHOKU_UNICHAR を追加
+        * tmpshowwin (木原さん [漢直スレ3:906]) をマージ、簡略化
+	* タイトルバーのカタカナモード・全角モード・句読点モードの
+	表示順を t.tbl での配置に合わせて修正 [issue:1]
+	* preBuffer/postBuffer の扱いを整理
+	* kanchoku.ini の [TortoiseSVN] の項を修正
+
+2009-11-23
+
+	* シフト打鍵によるストロークロック機能追加
+        * offResetModes (木原さん [漢直スレ3:914]) をマージ、拡張
+	* withxkeymacs (馬場さん [tcode-ml:2667]) をマージ
+	* useCtrlKey=2 設定を追加
+	* weakBS 設定を追加
+	* kwstyle.exe に style_padding 設定を追加
+
+2009-11-15
+
+	* 配色・フォント設定実装、カスタマイズツール kwstyle.exe を追加
+
+2009-11-03
+
+	* maze2gg 本格版を実装
+	* 表示周りの修正
+
+2009-10-18
+
+	* [漢直スレ4:264] から maze2gg 以外の分をマージ
+
 2006-03-25
 
 	* bug fix: 木原さん [tcode-ml:2665]

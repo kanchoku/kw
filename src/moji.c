@@ -21,6 +21,9 @@ int mojitype(MOJI m) {
     case MOJI_VKEY:
     return MOJI_VKEY;
 
+    case MOJI_CTRLVKY:
+    return MOJI_CTRLVKY;
+
     case MOJI_SPECIAL:
     return MOJI_SPECIAL;
 

@@ -8,6 +8,8 @@
     新しい機能に対応したマニュアルを追加して、バージョン 1.27 として
     再パッケージ化を行いました。
 
+    現在は Google Code 上でメンテナンスされています。
+
 
 
 ■ 使用法
@@ -21,11 +23,11 @@
     ドキュメント類
 
       readme.txt        このファイル
-      news.txt          1.27* 版の変更点
+      news.txt          1.27～ 版の変更点
       news127.txt       1.27 版での主な変更点
       history.txt       履歴
 
-      doc/kanchoku.html 「漢直Win 1.27」のマニュアル
+      doc/kanchoku.html 「漢直Win 1.28」のマニュアル
 
       old/kanchoku.txt  1.26 版 (オリジナル版) のドキュメント
       old/readme.txt    1.26eb 版のドキュメント
@@ -68,9 +70,5 @@
 ■  問い合わせ先
 
     バグレポートや要望は、
-    T-Code メーリングリスト <tcode-ml@is.s.u-tokyo.ac.jp>
+    T-Code 開発ページ <http://code.google.com/p/tcode/>
     までお願いします。
-
-    メーリングリストの参加方法は、
-    T-Code Laboratory <http://openlab.jp/tcode/>
-    をご覧ください。

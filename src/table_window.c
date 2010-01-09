@@ -1028,6 +1028,9 @@ void TableWindow::initTC() {
     long OPT_outputVKeyMethod =
         GetPrivateProfileInt("kanchoku", "outputVKeyMethod", 0, iniFile);
 
+    long OPT_outputAlphabetAsVKey =
+        GetPrivateProfileInt("kanchoku", "outputAlphabetAsVKey", 0, iniFile);
+
     long OPT_outputUnicode =
         GetPrivateProfileInt("kanchoku", "outputUnicode", 0, iniFile);
 
@@ -1250,6 +1253,7 @@ void TableWindow::initTC() {
     tc->OPT_outputSleep = OPT_outputSleep;
     //</v127a - outputsleep>
     tc->OPT_outputVKeyMethod = OPT_outputVKeyMethod;
+    tc->OPT_outputAlphabetAsVKey = OPT_outputAlphabetAsVKey;
     tc->OPT_outputUnicode = OPT_outputUnicode;
     tc->OPT_offHide = OPT_offHide;
     tc->OPT_xLoc = OPT_xLoc;
@@ -1481,12 +1485,12 @@ void TableWindow::output() {
         MOJI m = tc->preBuffer->moji(i);
         int h = MOJI2H(m);
         int l = MOJI2L(m);
-        if (mojitype(m) == MOJI_VKEY && (tc->OPT_useCtrlKey == 1 && l >= 'A' && l <= 'Z')) {  // F_VERB_FIRST ‚Æ‚©–¢l—¶
+        if (mojitype(m) == MOJI_CTRLVKY) {
             if (!nowctrl) {
                 sc = MapVirtualKey(VK_CONTROL, MAPVK_VK_TO_VSC);
                 if (lctrl) keybd_event(VK_CONTROL, sc, 0, NULL);
                 if (rctrl) keybd_event(VK_CONTROL, sc, KEYEVENTF_EXTENDEDKEY, NULL);
-                if (!(mojitype(m) == MOJI_VKEY && tc->OPT_outputVKeyMethod)) Sleep(tc->OPT_outputSleep+5);
+                if (!(tc->OPT_outputVKeyMethod)) Sleep(tc->OPT_outputSleep+5);
                 nowctrl = 1;
             }
         } else {
@@ -1502,17 +1506,8 @@ void TableWindow::output() {
         WCHAR wc[3];
         int mlen, wlen;
         switch (mojitype(m)) {
+        case MOJI_CTRLVKY:
         case MOJI_VKEY:
-            if (tc->OPT_useCtrlKey == 2 && tc->currentCtrl && l >= 'A' && l <= 'Z') {
-                switch (l)
-                {
-                case 'H': l = VK_BACK; break;
-                case 'J': l = VK_RETURN; break;
-                case 'M': l = VK_RETURN; break;
-                case 'G': l = VK_ESCAPE; break;
-                case 'I': l = VK_TAB; break;
-                }
-            }
             sc = MapVirtualKey(l, MAPVK_VK_TO_VSC);
            if (tc->OPT_outputVKeyMethod) {
                 disableHotKey();
@@ -1533,11 +1528,8 @@ void TableWindow::output() {
             Sleep(tc->OPT_outputSleep); // æ‚ÉVK_BACK‚ğˆ—‚µ‚Ä‚Ù‚µ‚¢
             //</v127a - outputSleep>
            }
-            if (tc->OPT_useCtrlKey == 2 && tc->currentCtrl) {
-                l = MOJI2L(m);
-            }
             // XXX
-            if (l == VK_BACK || tc->currentCtrl && l == 'H') {
+            if (l == VK_BACK || mojitype(m) == MOJI_CTRLVKY && l == 'H') {
                 tc->postBuffer->pop();
                 tc->postBufferCount(1);
                 tc->postBufferDeleted(2);

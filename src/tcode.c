@@ -276,6 +276,7 @@ void TCode::unlockStroke() {
 #define MS(s) B2MOJI(*(s), *((s) + 1))
 #define MC(c) B2MOJI(0, (c))
 #define MV(v) B2MOJI(MOJI_VKEY, v)
+#define M_V(v) B2MOJI(currentCtrl?MOJI_CTRLVKY:MOJI_VKEY, v)
 
 /* NORMAL モードでのキー入力
  * -------------------------
@@ -297,14 +298,28 @@ void TCode::keyinNormal(int key) {
     // 何かキー入力があったら、まずヘルプを非表示にすること
     helpMode = 0;
 
-    currentCtrl = 0;
+    int currentCtrl = 0;
     switch (key) {
     case CM_KEY:
     case CJ_KEY:
     case CH_KEY:
     case CG_KEY:
     case CI_KEY:
-        if (ISEMPTY) currentCtrl = 1;
+        currentCtrl = 1;
+    }
+    if (OPT_useCtrlKey == 2 && currentCtrl) {
+        currentCtrl = 0;
+        switch (key) {
+        case CM_KEY:
+        case CJ_KEY:
+            key = RET_KEY; break;
+        case CH_KEY:
+            key = BS_KEY; break;
+        case CG_KEY:
+            key = ESC_KEY; break;
+        case CI_KEY:
+            key = TAB_KEY; break;
+        }
     }
 
     // シフト打鍵
@@ -323,7 +338,7 @@ void TCode::keyinNormal(int key) {
         case RET_KEY:
         default: vk = VK_RETURN; break;
         }
-        if (ISEMPTY) { preBuffer->pushSoft(MV(vk)); }
+        if (ISEMPTY) { preBuffer->pushSoft(M_V(vk)); }
         else         { nfer(); addToHistMaybe(preBuffer->string()); }
         reset();
         return;
@@ -341,7 +356,7 @@ void TCode::keyinNormal(int key) {
         }
         if (ISEMPTY) {
             if (ISRESET || OPT_hardBS) {
-                preBuffer->pushSoft(MV(vk));
+                preBuffer->pushSoft(M_V(vk));
             }
         } else {
             if (ISRESET || OPT_hardBS) {
@@ -375,7 +390,7 @@ void TCode::keyinNormal(int key) {
         default: vk = VK_ESCAPE; break;
         }
         if (ISEMPTY) {
-            if (ISRESET) { preBuffer->pushSoft(MV(vk)); }
+            if (ISRESET) { preBuffer->pushSoft(M_V(vk)); }
         } else {
             if (ISRESET) { preBuffer->clear(); postDelete = 0; } // XXX これはキツイ?
         }
@@ -392,12 +407,11 @@ void TCode::keyinNormal(int key) {
         if (ISRESET) {
             if (ISEMPTY) {
                 if (maze2ggMode && explicitGG && ggCInputted() < ittaku) {
-                    currentCtrl = 0;
                     MojiBuffer work(strlen(explicitGG));
                     work.pushSoft(explicitGG);
                     preBuffer->pushSoft(work.string(ggCInputted(), ittaku-ggCInputted()));
                 } else {
-                    preBuffer->pushSoft(MV(vk));
+                    preBuffer->pushSoft(M_V(vk));
                 }
             } else {
                 nferHirakata();
@@ -482,6 +496,9 @@ void TCode::keyinNormal(int key) {
                     } else {
                         m = mojiHanzen(m);
                     }
+                }
+                if (OPT_outputAlphabetAsVKey && m >= 'a' && m <= 'z' ) {
+                    m = MV(m-'a'+'A');
                 }
                 //</hankana>
                 mb.pushSoft(m);
@@ -824,16 +841,6 @@ void TCode::keyinCand(int key) {
     // 何かキー入力があったら、まずヘルプを非表示にすること
     helpMode = 0;
 
-    currentCtrl = 0;
-    switch (key) {
-    case CM_KEY:
-    case CJ_KEY:
-    case CH_KEY:
-    case CG_KEY:
-    case CI_KEY:
-        if (ISEMPTY) currentCtrl = 1;
-    }
-
     switch (key) {
     case RET_KEY:
     case CM_KEY:
@@ -932,16 +939,6 @@ void TCode::keyinCand1(int key) {
     // 何かキー入力があったら、まずヘルプを非表示にすること
     helpMode = 0;
 
-    currentCtrl = 0;
-    switch (key) {
-    case CM_KEY:
-    case CJ_KEY:
-    case CH_KEY:
-    case CG_KEY:
-    case CI_KEY:
-        if (ISEMPTY) currentCtrl = 1;
-    }
-
     switch (key) {
     case RET_KEY:
     case CM_KEY:
@@ -965,6 +962,7 @@ void TCode::keyinCand1(int key) {
     case TAB_KEY:
     case CI_KEY:
         mode = NORMAL;
+        clearCandGG();
         nferHirakata();
         return;
 
@@ -1001,16 +999,6 @@ void TCode::keyinCand1(int key) {
 void TCode::keyinHist(int key) {
     // 何かキー入力があったら、まずヘルプを非表示にすること
     helpMode = 0;
-
-    currentCtrl = 0;
-    switch (key) {
-    case CM_KEY:
-    case CJ_KEY:
-    case CH_KEY:
-    case CG_KEY:
-    case CI_KEY:
-        if (ISEMPTY) currentCtrl = 1;
-    }
 
     // シフト打鍵
     //currentShift |= TC_ISSHIFTED(key);
@@ -1838,10 +1826,6 @@ void TCode::makeVKB(bool unlock) {
 
     // NORMAL mode
     if (mode == NORMAL || mode == CAND1) {
-        if (!displayOK) {
-            makeVKBBG(inputtedStroke);
-            return;
-        }
         int check = 0;
         if (explicitGG && ggCInputted() < ittaku) {
             MojiBuffer hoge(strlen(explicitGG));
@@ -1849,10 +1833,11 @@ void TCode::makeVKB(bool unlock) {
             MOJI moji = hoge.moji(ggCInputted());
             check = stTable->look(moji);
         }
-        if (check) makeVKBBG(stTable->stroke);
+        if (!displayOK) makeVKBBG(inputtedStroke);
+        else if (check) makeVKBBG(stTable->stroke);
         else makeVKBBG(currentStroke);
         for (int i = 0; i < TC_NKEYS*2; i++) {
-            Block *block = (unlock?table:currentBlock)->block[i];
+            Block *block = (unlock?table:(displayOK?currentBlock:lockedBlock))->block[i];
             if (block == 0) { continue; }
             switch (block->kind()) {
             case STRING_BLOCK:
@@ -1866,7 +1851,7 @@ void TCode::makeVKB(bool unlock) {
                 break;
             case CONTROL_BLOCK:
                 vkbFace[i] = "";
-                if (!unlock && currentBlock != table) {
+                if (!unlock && (displayOK?currentBlock:lockedBlock) != table) {
                     vkbFace[i] = block->getFace();
                     vkbFG[i] = TC_FG_SPECIAL;
                 }

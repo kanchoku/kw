@@ -57,7 +57,7 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prevInstance,
     // ウィンドウを表示
     //<hideOnStartup>
     //ShowWindow(hwnd, cmdShow);
-    ShowWindow(hwnd, SW_RESTORE);
+    ShowWindow(hwnd, SW_SHOWNOACTIVATE);
     //</hideOnStartup>
     UpdateWindow(hwnd);
     //<hideOnStartup>

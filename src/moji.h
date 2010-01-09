@@ -98,6 +98,7 @@ int mojiHankana(MOJI, MOJI *, MOJI *);
 
 #define MOJI_SPECIAL '@'        // 特殊
 #define MOJI_VKEY    '!'        // 仮想キー
+#define MOJI_CTRLVKY '"'        // Ctrl+仮想キー
 
 /* -------------------------------------------------------------------
  * 特殊文字
