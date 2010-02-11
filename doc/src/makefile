@@ -3,7 +3,7 @@ RUBYROOT	= c:\programs\ruby-1.8.4-i386-mingw32\usr\local
 RUBY	= $(RUBYROOT)\bin\ruby -Ks
 RD2	= $(RUBYROOT)\bin\rd2 -r rd/rd2html-lib.rb 
 RD2OPTS	= --with-css=style/kanchoku.css --with-part=html:include \
-	  --html-title=kw127 --html-lang=ja --html-charset=Shift_JIS
+	  --html-title=kw128 --html-lang=ja --html-charset=Shift_JIS
 
 RD_SRC	= intro.rd install.rd usage.rd auxil.rd customize.rd \
 	  history.rd changes.rd \

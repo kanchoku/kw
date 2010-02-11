@@ -38,6 +38,7 @@ typedef std::map<MOJI, struct STATENT> StatMap;
 #define OUT_WMIMECHAR 1
 #define OUT_WMKANCHOKUCHAR 2
 #define OUT_WMUNICHAR 3
+#define OUT_KEYEVENTFUNICODE 4
 
 /* TCode クラス
  *
@@ -112,6 +113,13 @@ public:
     int OPT_outputVKeyMethod;
     int OPT_outputAlphabetAsVKey;
     int OPT_outputUnicode;
+
+    int OPT_syncWithIME;        // IMEのON/OFFと漢直WinのON/OFFを連動させる
+    int OPT_onoffLocal;         // ウィンドウを切り替えるときに各アプリのIME状態を優先
+    int OPT_whatisimeon;        // 連動するIMEのON/OFFとはON/OFFである、NATIVE/ALNUMである
+    int OPT_syncmaster;         // 漢直WinのhotkeyでIMEをどうする
+    int OPT_syncslave;          // IMEの状態変化で漢直Winをどうする
+    int OPT_considerIMEAction;  // WM_KANCHOKU_NOTIFYVKPROCESSKEY用
 
     int OPT_xLoc;               // ウィンドウ初期位置
     int OPT_yLoc;               // 〃

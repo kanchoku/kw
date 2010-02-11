@@ -58,6 +58,8 @@ int TableWindow::wndProc(HWND w, UINT msg, WPARAM wp, LPARAM lp) {
     bool isShiftNow, trigDisp;
 #define ID_MYTIMER 32767
     // 各メッセージの handler を呼ぶ
+    if (msg == WM_KANCHOKU_NOTIFYIMESTATUS) return handleNotifyIMEStatus();
+    if (msg == WM_KANCHOKU_NOTIFYVKPROCESSKEY) return handleNotifyVKPROCESSKEY();
     switch (msg) {
     case WM_CREATE:
         return handleCreate();
@@ -665,6 +667,90 @@ int TableWindow::handlePaint() {
 }
 
 // -------------------------------------------------------------------
+// WM_KANCHOKU_NOTIFYIMESTATUS
+int TableWindow::handleNotifyIMEStatus() {
+    if (!tc->OPT_syncWithIME) return 0;
+            // 入力フォーカスを持つウィンドウを取得
+            HWND targetWin = GetForegroundWindow();
+            DWORD targetThread = GetWindowThreadProcessId(targetWin, NULL);
+            DWORD selfThread = GetCurrentThreadId();
+            AttachThreadInput(selfThread, targetThread, TRUE);
+            HWND activeWin = GetFocus();
+            AttachThreadInput(selfThread, targetThread, FALSE);
+    int caus = (wParam >> 27) & 7;
+    if (caus == 0) {
+        hwNewTarget = (HWND)lParam;
+        if (!tc->OPT_onoffLocal) {  // as syncmaster
+            if (((wParam >> 25) & 3) == 3 && hwNewTarget == activeWin
+                && (tc->mode != TCode::OFF) != ((wParam >> 24) & 1)
+                && ((tc->mode != TCode::OFF)?1:2) & tc->OPT_syncmaster) {
+                PostMessage(activeWin, WM_KANCHOKU_SETIMESTATUS, IMN_SETOPENSTATUS, tc->mode != TCode::OFF);
+            }
+            return 0;
+        }
+    }
+    if (((wParam >> 25) & 3) == 3 && hwNewTarget == activeWin) {  // syncslave
+        if ((tc->mode != TCode::OFF) != ((wParam >> 24) & 1)
+            && (((wParam >> 24) & 1)?1:2) & tc->OPT_syncslave) {
+            wParam = ACTIVEIME_KEY;
+            return handleHotKey();
+        }
+    }
+    return 0;
+}
+
+// -------------------------------------------------------------------
+// WM_KANCHOKU_NOTIFYVKPROCESSKEY
+int TableWindow::handleNotifyVKPROCESSKEY() {
+    if (!tc->OPT_considerIMEAction) return 0;
+    if (wParam == VK_RETURN && tc->postBuffer->moji(-1) == B2MOJI(MOJI_VKEY, VK_RETURN)) {
+                tc->postBuffer->pop();
+                tc->postBufferDeleted(1);
+    tc->updateContext();
+
+    /* ---------------------------------------------------------------
+     * 描画
+     */
+ DRAW:
+    //<v127c - offHide2>
+    // offHide=2 - 補助機能利用時以外は仮想鍵盤を非表示
+    // * 表示   - 補助変換・候補選択・文字ヘルプ・ヒストリ入力
+    // * 非表示 - 通常のストローク入力
+    if (tc->OPT_offHide == 2) {
+        if (tc->mode == TCode::OFF
+            || tc->mode == TCode::NORMAL
+            && tc->helpMode == 0    // helpMode と mode は独立
+            && tc->preBuffer->length() == 0 // 補助変換中でない
+            && tc->explicitGG == 0 // 強制練習中でない
+            && !tc->displayOK) {
+            ShowWindow(hwnd, SW_HIDE);
+        } else {
+            ShowWindow(hwnd, SW_SHOWNA);
+        }
+    } else if (tc->OPT_offHide == 1) {
+        if (tc->mode != TCode::OFF && !IsWindowVisible(hwnd)) {
+            ShowWindow(hwnd, SW_SHOWNA);
+        }
+    }
+    //</v127c>
+
+    // 仮想鍵盤を作成
+    tc->makeVKB();
+
+    // タイトル文字列を更新
+    //setTitleText();
+
+    // windowを書き直す (ここで仮想鍵盤を表示)
+    //<v127c>
+    // [連習スレ2:517] キーリピート時の問題
+    //RedrawWindow(hwnd, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ERASE);
+    InvalidateRect(hwnd, NULL, TRUE);
+    //</v127c>
+    }
+    return 0;
+}
+
+// -------------------------------------------------------------------
 // WM_HOTKEY
 int TableWindow::handleHotKey() {
     int key = wParam;
@@ -675,7 +761,7 @@ int TableWindow::handleHotKey() {
     }
 
     // ON/OFF
-    if (key == ACTIVE_KEY || key == ACTIVE2_KEY) { //<OKA> support unmodified hot key
+    if (key == ACTIVE_KEY || key == ACTIVE2_KEY || key == ACTIVEIME_KEY) {
         tc->reset();
         tc->preBuffer->clear();
         tc->postBuffer->clear();
@@ -698,9 +784,22 @@ int TableWindow::handleHotKey() {
         if (tc->mode == TCode::OFF) {
             tc->mode = TCode::NORMAL;
             activate();
+            tc->updateContext();
         } else {
             tc->mode = TCode::OFF;
             inactivate();
+        }
+        if (key != ACTIVEIME_KEY
+            && ((tc->mode != TCode::OFF)?1:2) & tc->OPT_syncmaster) {  // syncmaster
+            // 入力フォーカスを持つウィンドウを取得
+            HWND targetWin = GetForegroundWindow();
+            DWORD targetThread = GetWindowThreadProcessId(targetWin, NULL);
+            DWORD selfThread = GetCurrentThreadId();
+            AttachThreadInput(selfThread, targetThread, TRUE);
+            HWND activeWin = GetFocus();
+            AttachThreadInput(selfThread, targetThread, FALSE);
+            hwNewTarget = activeWin;
+            PostMessage(activeWin, WM_KANCHOKU_SETIMESTATUS, IMN_SETOPENSTATUS, tc->mode != TCode::OFF);
         }
         goto DRAW;
     }
@@ -1010,6 +1109,10 @@ void TableWindow::initTC() {
                    stricmp(OPT_outputMethod, "WM_UNICHAR") == 0 ||
                    stricmp(OPT_outputMethod, "3")          == 0) {
             OPT_useWMIMECHAR = OUT_WMUNICHAR;
+        } else if (stricmp(OPT_outputMethod, "KEYEVENTFUNICODE")  == 0 ||
+                   stricmp(OPT_outputMethod, "KEYEVENTF_UNICODE") == 0 ||
+                   stricmp(OPT_outputMethod, "4")                 == 0) {
+            OPT_useWMIMECHAR = OUT_KEYEVENTFUNICODE;
         } else {
             warn("outputMethodに指定されている値が正しくありません。");
             OPT_useWMIMECHAR = OUT_WMCHAR; // とりあえず WM_CHAR に
@@ -1017,7 +1120,7 @@ void TableWindow::initTC() {
     }
 
     int OPT_enableWMKANCHOKUCHAR =
-        GetPrivateProfileInt("kanchoku", "enablewmkanchokuchar", 0, iniFile);
+        GetPrivateProfileInt("kanchoku", "enablewmkanchokuchar", 1, iniFile);
 
     //<v127a - outputsleep>
     // outputSleep
@@ -1033,6 +1136,27 @@ void TableWindow::initTC() {
 
     long OPT_outputUnicode =
         GetPrivateProfileInt("kanchoku", "outputUnicode", 0, iniFile);
+
+    /* ---------------------------------------------------------------
+     * IME との連携、その他ウィンドウ制御
+     */
+    int OPT_syncWithIME =
+        GetPrivateProfileInt("kanchoku", "syncwithime", 0, iniFile);
+
+    int OPT_onoffLocal =
+        GetPrivateProfileInt("kanchoku", "onofflocal", 0, iniFile);
+
+    int OPT_whatisimeon =
+        GetPrivateProfileInt("kanchoku", "whatisimeon", 0, iniFile);
+
+    int OPT_syncmaster =
+        GetPrivateProfileInt("kanchoku", "syncmaster", 3, iniFile);
+
+    int OPT_syncslave =
+        GetPrivateProfileInt("kanchoku", "syncslave", 3, iniFile);
+
+    int OPT_considerIMEAction =
+        GetPrivateProfileInt("kanchoku", "considerimeaction", 0, iniFile);
 
     /* ---------------------------------------------------------------
      * 表示関連
@@ -1255,6 +1379,12 @@ void TableWindow::initTC() {
     tc->OPT_outputVKeyMethod = OPT_outputVKeyMethod;
     tc->OPT_outputAlphabetAsVKey = OPT_outputAlphabetAsVKey;
     tc->OPT_outputUnicode = OPT_outputUnicode;
+    tc->OPT_syncWithIME = OPT_syncWithIME;
+    tc->OPT_onoffLocal = OPT_onoffLocal;
+    tc->OPT_whatisimeon = OPT_whatisimeon;
+    tc->OPT_syncmaster = OPT_syncmaster;
+    tc->OPT_syncslave = OPT_syncslave;
+    tc->OPT_considerIMEAction = OPT_considerIMEAction;
     tc->OPT_offHide = OPT_offHide;
     tc->OPT_xLoc = OPT_xLoc;
     tc->OPT_yLoc = OPT_yLoc;
@@ -1274,22 +1404,30 @@ void TableWindow::initTC() {
 
     WM_KANCHOKU_CHAR = 0;
     WM_KANCHOKU_UNICHAR = 0;
+    WM_KANCHOKU_NOTIFYVKPROCESSKEY = 0;
+    WM_KANCHOKU_NOTIFYIMESTATUS = 0;
+    WM_KANCHOKU_SETIMESTATUS = 0;
     lpfnMySetHook = NULL;
     lpfnMyEndHook = NULL;
     if (OPT_enableWMKANCHOKUCHAR) {
         WM_KANCHOKU_CHAR = RegisterWindowMessage("WM_KANCHOKU_CHAR");
         WM_KANCHOKU_UNICHAR = RegisterWindowMessage("WM_KANCHOKU_UNICHAR");
+        WM_KANCHOKU_NOTIFYVKPROCESSKEY = RegisterWindowMessage("WM_KANCHOKU_NOTIFYVKPROCESSKEY");
+        WM_KANCHOKU_NOTIFYIMESTATUS = RegisterWindowMessage("WM_KANCHOKU_NOTIFYIMESTATUS");
+        WM_KANCHOKU_SETIMESTATUS = RegisterWindowMessage("WM_KANCHOKU_SETIMESTATUS");
         hKanCharDLL = LoadLibrary("kanchar.dll");
         if (hKanCharDLL) {
-            lpfnMySetHook = (HHOOK (*)(void))GetProcAddress(hKanCharDLL,
+            lpfnMySetHook = (void (*)(HHOOK *, HHOOK *))GetProcAddress(hKanCharDLL,
                 "_MySetHook");
             lpfnMyEndHook = (int (*)(void))GetProcAddress(hKanCharDLL,
                 "_MyEndHook");
         }
         if (lpfnMySetHook) {
-            hNextHook = lpfnMySetHook();
-            SetProp(hwnd, "KanchokuWin_KanCharDLL_NextHook",
-                (HANDLE)hNextHook);
+            lpfnMySetHook(&hNextMsgHook, &hNextCWPHook);
+            SetProp(hwnd, "KanchokuWin_KanCharDLL_NextMsgHook",
+                (HANDLE)hNextMsgHook);
+            SetProp(hwnd, "KanchokuWin_KanCharDLL_NextCWPHook",
+                (HANDLE)hNextCWPHook);
         }
         if (!hKanCharDLL) {
             warn("kanchar.dllが読み込めません。");
@@ -1354,6 +1492,10 @@ void TableWindow::readTargetWindowSetting(char *iniFile) {
                    stricmp(outputMethod, "WM_UNICHAR") == 0 ||
                    stricmp(outputMethod, "3")          == 0) {
             m = OUT_WMUNICHAR;
+        } else if (stricmp(outputMethod, "KEYEVENTFUNICODE")  == 0 ||
+                   stricmp(outputMethod, "KEYEVENTF_UNICODE") == 0 ||
+                   stricmp(outputMethod, "4")                 == 0) {
+            m = OUT_KEYEVENTFUNICODE;
         } else {
             warn("outputMethodに指定されている値が正しくありません。");
             continue;
@@ -1540,6 +1682,12 @@ void TableWindow::output() {
         case MOJI_UNICODE:
             wc[0] = (h-'@') << 8 | l;
             switch (getOutputMethod(activeWin)) {
+            case OUT_KEYEVENTFUNICODE:{
+                INPUT hoge = { INPUT_KEYBOARD };
+                hoge.ki.dwFlags = KEYEVENTF_UNICODE;
+                hoge.ki.wScan = wc[0];
+                SendInput(1, &hoge, sizeof(INPUT));
+                break;}
             case OUT_WMUNICHAR:
                 PostMessageW(activeWin, WM_UNICHAR, (LPARAM)wc[0], 1);
                 break;
@@ -1566,6 +1714,12 @@ void TableWindow::output() {
             ULONG U = W + 1;
             ULONG C = U << 16 | X;
             switch (getOutputMethod(activeWin)) {
+            case OUT_KEYEVENTFUNICODE:{
+                INPUT hoge = { INPUT_KEYBOARD };
+                hoge.ki.dwFlags = KEYEVENTF_UNICODE;
+                hoge.ki.wScan = wc[0];
+                SendInput(1, &hoge, sizeof(INPUT));
+                break;}
             case OUT_WMUNICHAR:{
                 if (wlen == 2) PostMessageW(activeWin, WM_UNICHAR, (LPARAM)wc[0], 1);
                 else {  // サロゲートペア
@@ -1609,6 +1763,12 @@ void TableWindow::output() {
         case MOJI_HANKANA:      // XXX
             wc[0] = 0xFF60 - 0xA0 + (unsigned char)l;
             switch (getOutputMethod(activeWin)) {
+            case OUT_KEYEVENTFUNICODE:{
+                INPUT hoge = { INPUT_KEYBOARD };
+                hoge.ki.dwFlags = KEYEVENTF_UNICODE;
+                hoge.ki.wScan = wc[0];
+                SendInput(1, &hoge, sizeof(INPUT));
+                break;}
             case OUT_WMUNICHAR:
                 PostMessageW(activeWin, WM_UNICHAR, (LPARAM)wc[0], 1);
                 break;
@@ -1638,7 +1798,14 @@ void TableWindow::output() {
             break;
 
         case MOJI_ASCII:
-            PostMessage(activeWin, WM_CHAR, (unsigned char)l, 1);
+            if (getOutputMethod(activeWin) == OUT_KEYEVENTFUNICODE) {
+                INPUT hoge = { INPUT_KEYBOARD };
+                hoge.ki.dwFlags = KEYEVENTF_UNICODE;
+                hoge.ki.wScan = l;
+                SendInput(1, &hoge, sizeof(INPUT));
+            } else {
+                PostMessage(activeWin, WM_CHAR, (unsigned char)l, 1);
+            }
             if (l == VK_BACK) {
                 tc->postBuffer->pop();
                 tc->postBufferCount(1);

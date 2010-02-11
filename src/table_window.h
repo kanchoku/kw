@@ -46,9 +46,8 @@ using namespace std;
  * 衝突しないように気をつけること。
  */
 #define ACTIVE_KEY (0x100 + 1) // ON/OFF の切り替えキー
-//<OKA> support unmodified hot key
 #define ACTIVE2_KEY (0x100 + 2) // ON/OFF の切り替えキー、その2
-//</OKA>
+#define ACTIVEIME_KEY (0x100 + 6) // IME連動による ON/OFF の切り替え (漢直Winが従)
 
 #define ESC_KEY    (0x100 + 11) // ESC
 #define CG_KEY     (0x100 + 12) // C-g
@@ -176,11 +175,17 @@ private:
 
     // WM_KANCHOKU_CHAR関連
     HINSTANCE hKanCharDLL;
-    HHOOK (*lpfnMySetHook)(void);
+    void (*lpfnMySetHook)(HHOOK *, HHOOK *);
     int (*lpfnMyEndHook)(void);
-    HHOOK hNextHook;
+    HHOOK hNextMsgHook, hNextCWPHook;
     UINT WM_KANCHOKU_CHAR;
     UINT WM_KANCHOKU_UNICHAR;
+    UINT WM_KANCHOKU_NOTIFYVKPROCESSKEY;
+    UINT WM_KANCHOKU_NOTIFYIMESTATUS;
+    UINT WM_KANCHOKU_SETIMESTATUS;
+
+    HWND hwNewTarget;
+    HWND hwSnapTarget;
 
     enum HOTKEYMODE { OFF, NORMAL, EDITCLAUSE };
     HOTKEYMODE hotKeyMode;
@@ -224,6 +229,8 @@ private:
     int handleDestroy();        // WM_DESTROY
     int handleLButtonDown();    // WM_LBUTTONDOWN
     int handlePaint();          // WM_PAINT
+    int handleNotifyVKPROCESSKEY(); // WM_KANCHOKU_NOTIFYVKPROCESSKEY
+    int handleNotifyIMEStatus();    // WM_KANCHOKU_NOTIFYIMESTATUS
     int handleHotKey();         // WM_HOTKEY
 
     // T-Code 関連

@@ -27,7 +27,7 @@ DLLLINKER	= ilink32 -v- -x -Gn -c -Tpd
 GUIFLAGS= -aa
 RCFLAGS	= -r -dWIN32
 LIBS	= import32.lib cw32.lib
-CFLAGS	= -c -DSTRICT -O2 -P
+CFLAGS	= -c -DSTRICT -O2 -P -U_WIN32_WINNT -D_WIN32_WINNT=0x0500
 
 # --------------------------------------------------------------------
 

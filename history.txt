@@ -1,3 +1,13 @@
+2010-02-11
+
+	* IMEのON/OFFと漢直WinのON/OFFを連動させる syncWithIME 設定その他を追加 [Issue:3 ?]
+	- kanchar.dll を大幅拡張
+	* enableWMKANCHOKUCHAR 設定のデフォルトを1に変更
+	* outputMethod=KEYEVENTF_UNICODE 設定を追加
+	- makefile にて CFLAGS に -D_WIN32_WINNT=0x0500 を追加(なお bcc32.cfg にて -DWINVER=0x0400)
+	Windows 9x/ME で実行可能か未確認
+	* considerIMEAction 設定を追加
+
 2010-01-09
 
 	* displayHelpDelay 中の表示を修正
