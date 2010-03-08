@@ -4,7 +4,7 @@
 
 #include "kanchar.h"
 
-static const char VERSION[] = "kanchar.dll 2010/02/11";
+static const char VERSION[] = "kanchar.dll 2010/03/07";
 
 UINT WM_KANCHOKU_CHAR=0;
 UINT WM_KANCHOKU_UNICHAR=0;
@@ -98,6 +98,8 @@ BOOL CALLBACK FindWindowProc(HWND hw, LPARAM lp)
     wParam: ImmGetVirtualKeyで取得した仮想キーコード
     lParam: 未定義(とりあえずWM_KEYDOWNのlParam)
   WM_KANCHOKU_NOTIFYIMESTATUS: フォーカスのあるウィンドウ→漢直Win
+                               フォーカスのないウィンドウからは発生しない
+                               WM_KANCHOKU_SETIMESTATUSによる状態変化からは発生しない
     wParam: 0-7 GCS_COMPREADSTRの長さ
             8-15 GCS_COMPSTRの長さ
             16-19 ImmGetConversionStatusの第2引数の戻り値(下位4ビット)
@@ -119,7 +121,7 @@ EXPORT LRESULT CALLBACK cwpHookProc(int nCode, WPARAM wp, LPARAM lp)
     if (!hMsgHook) {
         EnumWindows(&FindWindowProc, NULL);
     }
-    if (!hCWPHook) return 0;
+    if (!hwKanchoku || !hCWPHook) return 0;
     if (nCode == HC_ACTION) {
         pcwp = (CWPSTRUCT *)lp;
         if (pcwp->hwnd == hwKanchoku) return CallNextHookEx(hCWPHook, nCode, wp, lp);
@@ -128,7 +130,7 @@ EXPORT LRESULT CALLBACK cwpHookProc(int nCode, WPARAM wp, LPARAM lp)
             || pcwp->message == WM_IME_NOTIFY && !inKanChar
                && (pcwp->wParam == IMN_SETOPENSTATUS
                    || pcwp->wParam == IMN_SETCONVERSIONMODE)) {
-            if (!hwKanchoku) return CallNextHookEx(hCWPHook, nCode, wp, lp);
+            if (GetFocus() != pcwp->hwnd) return CallNextHookEx(hCWPHook, nCode, wp, lp);
             HWND activeWin = pcwp->hwnd;
             WPARAM wpRet = 0;
             HKL hKL;
@@ -149,12 +151,12 @@ EXPORT LRESULT CALLBACK cwpHookProc(int nCode, WPARAM wp, LPARAM lp)
                 bIME = ImmGetOpenStatus(hImc);
                 wpRet |= !!bIME << 24;
                 if (ImmGetConversionStatus(hImc, &dwConv, &dwSent)) {
-                    wpRet |= (dwConv && 0x000f) << 16;
+                    wpRet |= (dwConv & 0x000f) << 16;
                 }
                 lReadLen = ImmGetCompositionString(hImc, GCS_COMPREADSTR, NULL, 0);
-                if (lReadLen >= 0) wpRet |= (lReadLen && 0xff) << 8;
+                if (lReadLen >= 0) wpRet |= (lReadLen & 0xff) << 8;
                 lCompLen = ImmGetCompositionString(hImc, GCS_COMPSTR, NULL, 0);
-                if (lCompLen >= 0) wpRet |= (lCompLen && 0xff);
+                if (lCompLen >= 0) wpRet |= (lCompLen & 0xff);
                 ImmReleaseContext(activeWin, hImc);
             }
             PostMessage(hwKanchoku, WM_KANCHOKU_NOTIFYIMESTATUS, wpRet, (LPARAM)pcwp->hwnd);
@@ -170,6 +172,7 @@ EXPORT LRESULT CALLBACK msgHookProc(int nCode, WPARAM wp, LPARAM lp)
     if (!hMsgHook) {
         EnumWindows(&FindWindowProc, NULL);
     }
+    if (!hwKanchoku) return 0;
     if (nCode == HC_ACTION && wp == PM_REMOVE) {
         pcwp = (MSG *)lp;
         if (pcwp->hwnd == hwKanchoku) return CallNextHookEx(hMsgHook, nCode, wp, lp);

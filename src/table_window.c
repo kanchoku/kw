@@ -678,20 +678,45 @@ int TableWindow::handleNotifyIMEStatus() {
             HWND activeWin = GetFocus();
             AttachThreadInput(selfThread, targetThread, FALSE);
     int caus = (wParam >> 27) & 7;
+    hwNewTarget = (HWND)lParam;
+    if (hwNewTarget != activeWin) return 0;
     if (caus == 0) {
-        hwNewTarget = (HWND)lParam;
         if (!tc->OPT_onoffLocal) {  // as syncmaster
-            if (((wParam >> 25) & 3) == 3 && hwNewTarget == activeWin
+            if (((wParam >> 25) & 3) == 3 && !tc->OPT_whatisimeon
                 && (tc->mode != TCode::OFF) != ((wParam >> 24) & 1)
                 && ((tc->mode != TCode::OFF)?1:2) & tc->OPT_syncmaster) {
                 PostMessage(activeWin, WM_KANCHOKU_SETIMESTATUS, IMN_SETOPENSTATUS, tc->mode != TCode::OFF);
             }
+            if (((wParam >> 25) & 3) == 3 && tc->OPT_whatisimeon
+                && (tc->mode != TCode::OFF) && !((wParam >> 24) & 1)
+                && 1 & tc->OPT_syncmaster) {
+                PostMessage(activeWin, WM_KANCHOKU_SETIMESTATUS, IMN_SETOPENSTATUS, TRUE);
+            } 
+            if (((wParam >> 25) & 3) == 3 && tc->OPT_whatisimeon
+                && (tc->mode != TCode::OFF) && !((wParam >> 16) & 1)
+                && 1 & tc->OPT_syncmaster) {
+                PostMessage(activeWin, WM_KANCHOKU_SETIMESTATUS, IMN_SETCONVERSIONMODE, IME_CMODE_NATIVE|IME_CMODE_FULLSHAPE);
+            }
+            if (((wParam >> 25) & 3) == 3 && tc->OPT_whatisimeon
+                && !(tc->mode != TCode::OFF) && ((wParam >> 24) & 1) && ((wParam >> 16) & 1)
+                && 2 & tc->OPT_syncmaster) {
+#if 1  // OFF時IMEはOFFに
+                PostMessage(activeWin, WM_KANCHOKU_SETIMESTATUS, IMN_SETOPENSTATUS, FALSE);
+#else   // OFF時IMEは全角英数に
+                PostMessage(activeWin, WM_KANCHOKU_SETIMESTATUS, IMN_SETCONVERSIONMODE, IME_CMODE_FULLSHAPE);
+#endif
+            } 
             return 0;
         }
     }
-    if (((wParam >> 25) & 3) == 3 && hwNewTarget == activeWin) {  // syncslave
-        if ((tc->mode != TCode::OFF) != ((wParam >> 24) & 1)
-            && (((wParam >> 24) & 1)?1:2) & tc->OPT_syncslave) {
+    if (((wParam >> 25) & 3) == 3) {  // syncslave
+        if (!((wParam >> 24) & 1) && (tc->mode != TCode::OFF)
+            && 2 & tc->OPT_syncslave) {
+            wParam = ACTIVEIME_KEY;
+            return handleHotKey();
+        }
+        if (((wParam >> (tc->OPT_whatisimeon?16:24)) & 1) != (tc->mode != TCode::OFF)
+            && (((wParam >> (tc->OPT_whatisimeon?16:24)) & 1)?1:2) & tc->OPT_syncslave) {
             wParam = ACTIVEIME_KEY;
             return handleHotKey();
         }
@@ -706,6 +731,10 @@ int TableWindow::handleNotifyVKPROCESSKEY() {
     if (wParam == VK_RETURN && tc->postBuffer->moji(-1) == B2MOJI(MOJI_VKEY, VK_RETURN)) {
                 tc->postBuffer->pop();
                 tc->postBufferDeleted(1);
+    } else if (wParam == VK_SPACE && tc->postBuffer->moji(-1) == B2MOJI(MOJI_VKEY, VK_SPACE)) {
+                tc->postBuffer->pop();
+                tc->postBufferDeleted(1);
+    } else return 0;
     tc->updateContext();
 
     /* ---------------------------------------------------------------
@@ -746,7 +775,6 @@ int TableWindow::handleNotifyVKPROCESSKEY() {
     //RedrawWindow(hwnd, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ERASE);
     InvalidateRect(hwnd, NULL, TRUE);
     //</v127c>
-    }
     return 0;
 }
 
@@ -799,7 +827,22 @@ int TableWindow::handleHotKey() {
             HWND activeWin = GetFocus();
             AttachThreadInput(selfThread, targetThread, FALSE);
             hwNewTarget = activeWin;
-            PostMessage(activeWin, WM_KANCHOKU_SETIMESTATUS, IMN_SETOPENSTATUS, tc->mode != TCode::OFF);
+            if (tc->OPT_whatisimeon == 0) {
+                if (((tc->mode != TCode::OFF)?1:2) & tc->OPT_syncmaster)
+                    PostMessage(activeWin, WM_KANCHOKU_SETIMESTATUS, IMN_SETOPENSTATUS, tc->mode != TCode::OFF);
+            } else {
+#if 1  // OFF時IMEはOFFに
+                if (((tc->mode != TCode::OFF)?1:2) & tc->OPT_syncmaster)
+                    PostMessage(activeWin, WM_KANCHOKU_SETIMESTATUS, IMN_SETOPENSTATUS, tc->mode != TCode::OFF);
+                if (tc->mode != TCode::OFF && 1 & tc->OPT_syncmaster)
+                    PostMessage(activeWin, WM_KANCHOKU_SETIMESTATUS, IMN_SETCONVERSIONMODE, IME_CMODE_NATIVE|IME_CMODE_FULLSHAPE);
+#else  // OFF時IMEは全角英数に
+                if (tc->mode != TCode::OFF && 1 & tc->OPT_syncmaster)
+                    PostMessage(activeWin, WM_KANCHOKU_SETIMESTATUS, IMN_SETOPENSTATUS, TRUE);
+                if (((tc->mode != TCode::OFF)?1:2) & tc->OPT_syncmaster)
+                    PostMessage(activeWin, WM_KANCHOKU_SETIMESTATUS, IMN_SETCONVERSIONMODE, (tc->mode != TCode::OFF?IME_CMODE_NATIVE|IME_CMODE_FULLSHAPE:IME_CMODE_FULLSHAPE));
+#endif
+            }
         }
         goto DRAW;
     }
@@ -865,6 +908,9 @@ int TableWindow::handleHotKey() {
         }
     }
     //</v127c>
+    LONG exs = GetWindowLong(hwnd, GWL_EXSTYLE);
+    if (IsWindowVisible(hwnd) && !(exs & WS_EX_TOPMOST))
+        SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
 
     // 仮想鍵盤を作成
     tc->makeVKB();
@@ -1653,6 +1699,8 @@ void TableWindow::output() {
             sc = MapVirtualKey(l, MAPVK_VK_TO_VSC);
            if (tc->OPT_outputVKeyMethod) {
                 disableHotKey();
+                // ChromeでEnterが入力できなくなることへの対策（Chromeは自前でキーリピート判定を行っているものと思われる）
+                if(l == VK_RETURN) keybd_event(l, sc, KEYEVENTF_KEYUP, NULL);
                 keybd_event(l, sc, 0, NULL);
                 keybd_event(l, sc, KEYEVENTF_KEYUP, NULL);
                 resumeHotKey();

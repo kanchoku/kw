@@ -1,3 +1,9 @@
+2030-03-08
+
+	* whatIsIMEON 設定の実装、他 syncWithIME 周りの改善
+	* WS_EX_TOPMOST が解除されてしまうことに対して暫定対策
+	* outputVKeyMethod=1 で Chrome 上のページ内で Enter が入力できない症状について対策
+
 2010-02-11
 
 	* IMEのON/OFFと漢直WinのON/OFFを連動させる syncWithIME 設定その他を追加 [Issue:3 ?]
