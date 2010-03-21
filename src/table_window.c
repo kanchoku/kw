@@ -190,8 +190,6 @@ void TableWindow::activate() {
 
     // 通常モードにする
     tc->mode = TCode::NORMAL;
-    tc->preBuffer->clear();
-    tc->postBuffer->clear();   //  後置型交ぜ書き変換用のバッファをクリア
     tc->helpMode = 0;          // ヘルプ非表示
 }
 
@@ -239,8 +237,6 @@ void TableWindow::inactivate() {
         UnregisterHotKey(hwnd, CI_KEY);
     }
 
-    // 通常モードにする
-    tc->mode = TCode::NORMAL;
     tc->mode = TCode::OFF;
 }
 
@@ -669,7 +665,6 @@ int TableWindow::handlePaint() {
 // -------------------------------------------------------------------
 // WM_KANCHOKU_NOTIFYIMESTATUS
 int TableWindow::handleNotifyIMEStatus() {
-    if (!tc->OPT_syncWithIME) return 0;
             // 入力フォーカスを持つウィンドウを取得
             HWND targetWin = GetForegroundWindow();
             DWORD targetThread = GetWindowThreadProcessId(targetWin, NULL);
@@ -679,7 +674,28 @@ int TableWindow::handleNotifyIMEStatus() {
             AttachThreadInput(selfThread, targetThread, FALSE);
     int caus = (wParam >> 27) & 7;
     hwNewTarget = (HWND)lParam;
-    if (hwNewTarget != activeWin) return 0;
+    // WM_SETFOCUS直後に発生するNotifyをひとまとめに（kanchar.dllでやるべきか）
+    if (inSetFocus) {
+        caus = 0;
+    }
+    if (caus == 0) {
+        Sleep(tc->OPT_outputSleep+5);
+        if (!inSetFocus) {
+            inSetFocus = 1;
+            DWORD targetProcess;
+            GetWindowThreadProcessId(targetWin, &targetProcess);
+            HANDLE hTargetProcess = OpenProcess(SYNCHRONIZE, 0, targetProcess);
+            WaitForInputIdle(hTargetProcess, 200);
+            CloseHandle(hTargetProcess);
+        }
+        MSG msgchk;
+        if (PeekMessage(&msgchk, hwnd, WM_KANCHOKU_NOTIFYIMESTATUS, WM_KANCHOKU_NOTIFYIMESTATUS, PM_NOREMOVE)) {
+            return 0;
+        }
+        inSetFocus = 0;
+    }
+    // ひとまとめ関係ここまで
+    if (hwNewTarget != activeWin) return 0;  // 素通り、あるいはあまりに情報が遅い場合
     if (caus == 0) {
         if (!tc->OPT_onoffLocal) {  // as syncmaster
             if (((wParam >> 25) & 3) == 3 && !tc->OPT_whatisimeon
@@ -709,13 +725,21 @@ int TableWindow::handleNotifyIMEStatus() {
             return 0;
         }
     }
-    if (((wParam >> 25) & 3) == 3) {  // syncslave
-        if (!((wParam >> 24) & 1) && (tc->mode != TCode::OFF)
-            && 2 & tc->OPT_syncslave) {
+    // syncslave
+    bKeepBuffer = (caus == 0);  // ウィンドウ切り替え時はバッファをクリアしない
+    if (((wParam >> 25) & 3) != 3) {
+        if ((tc->mode != TCode::OFF) && 2 & tc->OPT_syncslave) {
             wParam = ACTIVEIME_KEY;
             return handleHotKey();
         }
-        if (((wParam >> (tc->OPT_whatisimeon?16:24)) & 1) != (tc->mode != TCode::OFF)
+    }
+    if (((wParam >> 25) & 3) == 3) {
+        if (!((wParam >> 24) & 1)) {
+            if ((tc->mode != TCode::OFF) && 2 & tc->OPT_syncslave) {
+                wParam = ACTIVEIME_KEY;
+                return handleHotKey();
+            }
+        } else if (((wParam >> (tc->OPT_whatisimeon?16:24)) & 1) != (tc->mode != TCode::OFF)
             && (((wParam >> (tc->OPT_whatisimeon?16:24)) & 1)?1:2) & tc->OPT_syncslave) {
             wParam = ACTIVEIME_KEY;
             return handleHotKey();
@@ -791,30 +815,23 @@ int TableWindow::handleHotKey() {
     // ON/OFF
     if (key == ACTIVE_KEY || key == ACTIVE2_KEY || key == ACTIVEIME_KEY) {
         tc->reset();
-        tc->preBuffer->clear();
-        tc->postBuffer->clear();
-        //<v127c - postInPre>
-        tc->postInPre = 0;
-        tc->postDelete = 0;
-        //</v127c>
-        tc->clearCandGG();
-        int i = 0;
-        if (tc->OPT_offResetModes[i] != '0') tc->hirakataMode = 0;
-        if (tc->OPT_offResetModes[i+1]) i++;
-        if (tc->OPT_offResetModes[i] != '0') tc->hanzenMode = 0;
-        if (tc->OPT_offResetModes[i+1]) i++;
-        if (tc->OPT_offResetModes[i] != '0') tc->punctMode = 0;
-        if (tc->OPT_offResetModes[i+1]) i++;
-        if (tc->OPT_offResetModes[i] != '0') tc->maze2ggMode = tc->OPT_maze2gg;
-        if (tc->OPT_offResetModes[i+1]) i++;
-        if (tc->OPT_offResetModes[i] != '0') tc->unlockStroke();
-
+        if (tc->mode != TCode::OFF && (key != ACTIVEIME_KEY || !bKeepBuffer)) {  // 明示的OFF時のみバッファクリア
+            tc->resetBuffer();
+            int i = 0;
+            if (tc->OPT_offResetModes[i] != '0') tc->hirakataMode = 0;
+            if (tc->OPT_offResetModes[i+1]) i++;
+            if (tc->OPT_offResetModes[i] != '0') tc->hanzenMode = 0;
+            if (tc->OPT_offResetModes[i+1]) i++;
+            if (tc->OPT_offResetModes[i] != '0') tc->punctMode = 0;
+            if (tc->OPT_offResetModes[i+1]) i++;
+            if (tc->OPT_offResetModes[i] != '0') tc->maze2ggMode = tc->OPT_maze2gg;
+            if (tc->OPT_offResetModes[i+1]) i++;
+            if (tc->OPT_offResetModes[i] != '0') tc->unlockStroke();
+        }
         if (tc->mode == TCode::OFF) {
-            tc->mode = TCode::NORMAL;
             activate();
             tc->updateContext();
         } else {
-            tc->mode = TCode::OFF;
             inactivate();
         }
         if (key != ACTIVEIME_KEY
@@ -1448,6 +1465,7 @@ void TableWindow::initTC() {
     tc->OPT_followCaret = OPT_followCaret;
     STRDUP(tc->OPT_offResetModes, OPT_offResetModes);
 
+    inSetFocus = 0;
     WM_KANCHOKU_CHAR = 0;
     WM_KANCHOKU_UNICHAR = 0;
     WM_KANCHOKU_NOTIFYVKPROCESSKEY = 0;

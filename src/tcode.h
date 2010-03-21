@@ -296,7 +296,7 @@ public:
     /* ƒŠƒZƒbƒg
      */
     void reset();
-
+    void resetBuffer();
     void lockStroke();
     void unlockStroke();
 

@@ -243,6 +243,14 @@ void TCode::reset() {
     if (!explicitGG) clearCandGG();
 }
 
+void TCode::resetBuffer() {
+    preBuffer->clear();
+    postBuffer->clear();
+    postInPre = 0;
+    postDelete = 0;
+    clearCandGG();
+}
+
 void TCode::lockStroke() {
     lockedBlock = currentBlock;
     *lockedStroke = *currentStroke;

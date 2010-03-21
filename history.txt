@@ -1,4 +1,8 @@
-2030-03-08
+2010-03-21
+
+	* onoffLocal=1 ‚Ì“®ì‚Ì‰ü‘P
+
+2010-03-08
 
 	* whatIsIMEON Ý’è‚ÌŽÀ‘•A‘¼ syncWithIME Žü‚è‚Ì‰ü‘P
 	* WS_EX_TOPMOST ‚ª‰ðœ‚³‚ê‚Ä‚µ‚Ü‚¤‚±‚Æ‚É‘Î‚µ‚ÄŽb’è‘Îô

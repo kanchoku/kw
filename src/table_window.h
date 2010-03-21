@@ -185,7 +185,8 @@ private:
     UINT WM_KANCHOKU_SETIMESTATUS;
 
     HWND hwNewTarget;
-    HWND hwSnapTarget;
+    int inSetFocus;
+    int bKeepBuffer;
 
     enum HOTKEYMODE { OFF, NORMAL, EDITCLAUSE };
     HOTKEYMODE hotKeyMode;

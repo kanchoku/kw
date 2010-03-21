@@ -4,7 +4,7 @@
 
 #include "kanchar.h"
 
-static const char VERSION[] = "kanchar.dll 2010/03/07";
+static const char VERSION[] = "kanchar.dll 2010/03/17";
 
 UINT WM_KANCHOKU_CHAR=0;
 UINT WM_KANCHOKU_UNICHAR=0;
@@ -106,7 +106,7 @@ BOOL CALLBACK FindWindowProc(HWND hw, LPARAM lp)
             24 IMEがONかどうか(ImmGetOpenStatus)
             25 (ImmGetContext)
             26 (ImmIsIme)
-            27-29 成因 0:WM_SETFOCUS 1:KeyboardLayoutやIMEの変更(未実装)
+            27-29 成因 0:WM_SETFOCUS 1:KeyboardLayoutやIMEの変更
                        2:IMN_SETOPENSTATUS 3:IMN_SETCONVERSIONMODE
     lParam: 送信元のhWnd
   WM_KANCHOKU_SETIMESTATUS: 漢直Win→フォーカスのあるウィンドウ
@@ -127,6 +127,8 @@ EXPORT LRESULT CALLBACK cwpHookProc(int nCode, WPARAM wp, LPARAM lp)
         if (pcwp->hwnd == hwKanchoku) return CallNextHookEx(hCWPHook, nCode, wp, lp);
         // WM_KANCHOKU_NOTIFYIMESTATUS
         if (pcwp->message == WM_SETFOCUS
+            || pcwp->message == WM_IME_SETCONTEXT && pcwp->wParam
+            || pcwp->message == WM_INPUTLANGCHANGE
             || pcwp->message == WM_IME_NOTIFY && !inKanChar
                && (pcwp->wParam == IMN_SETOPENSTATUS
                    || pcwp->wParam == IMN_SETCONVERSIONMODE)) {
@@ -139,6 +141,8 @@ EXPORT LRESULT CALLBACK cwpHookProc(int nCode, WPARAM wp, LPARAM lp)
             DWORD dwConv, dwSent;
             LONG lCompLen, lReadLen;
             if (pcwp->message == WM_SETFOCUS) ;
+            else if (pcwp->message == WM_IME_SETCONTEXT) ;
+            else if (pcwp->message == WM_INPUTLANGCHANGE) wpRet |= 1 << 27;
             else if (pcwp->message == WM_IME_NOTIFY) {
                 if (pcwp->wParam == IMN_SETOPENSTATUS) wpRet |= 2 << 27;
                 else if (pcwp->wParam == IMN_SETCONVERSIONMODE) wpRet |= 3 << 27;
