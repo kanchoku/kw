@@ -1,3 +1,11 @@
+2010-04-11
+
+	* strokeTimeOut 設定を追加 (kanchoku time out [漢直スレ4:343-353])
+	* syncWithIME 設定が常に有効になっていたバグをfix
+	* (outputMethod=KEYEVENTF_UNICODE 関係) makefile で変なことはせず、bcc32.cfg で
+          -DWINVER=0x0410 -D_WIN32_WINNT=0x0410 とする (VCの場合はプロジェクトの設定)
+        * kansaku.c の見直し (tcode.c との依存関係を解消)
+
 2010-03-21
 
 	* onoffLocal=1 の動作の改善

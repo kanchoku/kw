@@ -11,9 +11,6 @@
 #include "st_table.h"
 #include "tc.h"
 #include "debug.h"
-//<multishift2>
-#include "tcode.h"
-//</multishift2>
 
 /* -------------------------------------------------------------------
  *
@@ -162,6 +159,7 @@ int handlePaint(HWND);
 int handleDestroy(HWND);
 
 void initialize(HWND);
+void readDir(DIR_TABLE *, ifstream *);
 void readFromClipboard(HWND);
 void updateEntData(HWND, bool);
 void lookSt(char *, bool);

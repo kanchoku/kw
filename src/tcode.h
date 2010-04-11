@@ -133,6 +133,7 @@ public:
     int OPT_useTTCode;          // 三枚表 T-Code スタイルの文字ヘルプ
     int OPT_win95;              // win95 でのフォントのずれの補正
     char *OPT_offResetModes;    // 各種モードをリセット
+    int OPT_strokeTimeOut;      // 打鍵が取り消されるまでの待ち時間(ms)
 
     //<record>
     // 記録用

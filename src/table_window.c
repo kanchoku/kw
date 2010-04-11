@@ -74,7 +74,20 @@ int TableWindow::wndProc(HWND w, UINT msg, WPARAM wp, LPARAM lp) {
         return 0;
 
     case WM_TIMER:  // SetTimer() は handleHotKey() 内で行っている
-        if (deciSecAfterStroke < 65536) deciSecAfterStroke++;
+        if (deciSecAfterStroke < 1024) deciSecAfterStroke++;
+        if ((tc->mode == TCode::NORMAL || tc->mode == TCode::CAND1)
+            && tc->currentBlock != tc->lockedBlock
+            && deciSecAfterStroke*100 >= tc->OPT_strokeTimeOut) {
+            int bkhardbs = tc->OPT_hardBS;
+            int bkweakbs = tc->OPT_weakBS;
+            tc->OPT_hardBS = 0;
+            tc->OPT_weakBS = 0;
+            wParam = BS_KEY;
+            int r = handleHotKey();
+            tc->OPT_hardBS = bkhardbs;
+            tc->OPT_weakBS = bkweakbs;
+            return r;
+        }
         trigDisp = false;
         if (tc->currentBlock != tc->lockedBlock) {
             if (tc->mode == TCode::NORMAL && !tc->helpMode && !tc->displayOK
@@ -665,6 +678,7 @@ int TableWindow::handlePaint() {
 // -------------------------------------------------------------------
 // WM_KANCHOKU_NOTIFYIMESTATUS
 int TableWindow::handleNotifyIMEStatus() {
+    if (!tc->OPT_syncWithIME) return 0;
             // 入力フォーカスを持つウィンドウを取得
             HWND targetWin = GetForegroundWindow();
             DWORD targetThread = GetWindowThreadProcessId(targetWin, NULL);
@@ -834,7 +848,7 @@ int TableWindow::handleHotKey() {
         } else {
             inactivate();
         }
-        if (key != ACTIVEIME_KEY
+        if (tc->OPT_syncWithIME && key != ACTIVEIME_KEY
             && ((tc->mode != TCode::OFF)?1:2) & tc->OPT_syncmaster) {  // syncmaster
             // 入力フォーカスを持つウィンドウを取得
             HWND targetWin = GetForegroundWindow();
@@ -1269,6 +1283,9 @@ void TableWindow::initTC() {
     GetPrivateProfileString("kanchoku", "offresetmodes", "0",
                             OPT_offResetModes, sizeof(OPT_offResetModes),
                             iniFile);
+
+    // strokeTimeOut
+    int OPT_strokeTimeOut = GetPrivateProfileInt("kanchoku", "strokeTimeOut", 0, iniFile);
     /* ---------------------------------------------------------------
      */
     // キーボードファイルの読み込み
@@ -1464,6 +1481,7 @@ void TableWindow::initTC() {
     tc->OPT_win95 = OPT_win95;
     tc->OPT_followCaret = OPT_followCaret;
     STRDUP(tc->OPT_offResetModes, OPT_offResetModes);
+    tc->OPT_strokeTimeOut = OPT_strokeTimeOut;
 
     inSetFocus = 0;
     WM_KANCHOKU_CHAR = 0;

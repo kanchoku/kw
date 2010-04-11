@@ -260,7 +260,7 @@ void initialize(HWND hwnd) {
     {
         is->open(tableFile/*, is->nocreate*/);
         if (!is->fail()) {
-            TCode::readDir(&dirTable, is);
+            readDir(&dirTable, is);
             is->close();
         }
     }
@@ -304,6 +304,55 @@ void initialize(HWND hwnd) {
     // ‚»‚Ì‘¼
     nEnt = 0;
 }
+
+//<multishift2>
+#define STRCPY(q, p)                                            \
+        do {                                                    \
+            if (*p != '"') {    /* p : raw str */               \
+                strcpy(q, p);                                   \
+            } else {            /* p : quoted ("\"hoge\"") */   \
+                for (p++; *p != '"' && *p != '\0'; p++, q++) {  \
+                    if (IS_ZENKAKU(*p)) { *q++ = *p++; }        \
+                    else if (*p == '\\') { p++; }               \
+                    *q = *p;                                    \
+                }                                               \
+                *q = '\0';                                      \
+            }                                                   \
+        } while (0)
+
+void readDir(DIR_TABLE *pdt, ifstream *is) {
+    char buf[1024], s[1024];
+    int n;
+
+    while (!(is->eof())) {
+        is->getline(buf, sizeof(buf));
+        if (*buf != '#') { continue; }
+        if (sscanf(buf, "#define %s %n", &s, &n) != 1) { continue; }
+
+        if (strcmp(s, "table-name") == 0) {
+            if ((*pdt)[DIR_table_name]) {
+                delete [] (*pdt)[DIR_table_name]; }
+            char *p = buf + n;
+            char *q = (*pdt)[DIR_table_name] = new char[strlen(p) + 1];
+            STRCPY(q, p);
+
+        } else if (strcmp(s, "prefix") == 0) {
+            if ((*pdt)[DIR_prefix]) { delete [] (*pdt)[DIR_prefix]; }
+            char *p = buf + n;
+            char *q = (*pdt)[DIR_prefix] = new char[strlen(p) + 1];
+            strcpy(q, p);
+
+        } else if (strcmp(s, "defguide") == 0) {
+            if ((*pdt)[DIR_defguide]) { delete [] (*pdt)[DIR_defguide]; }
+            char *p = buf + n;
+            char *q = (*pdt)[DIR_defguide] = new char[strlen(p) + 1];
+            STRCPY(q, p);
+        }
+    }
+}
+
+#undef STRCPY
+//</multishift2>
 
 // -------------------------------------------------------------------
 

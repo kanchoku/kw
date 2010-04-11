@@ -32,6 +32,9 @@ using namespace std;
 #ifndef WM_UNICHAR
 #define WM_UNICHAR 0x0109
 #endif
+#ifndef KEYEVENTF_UNICODE
+#define KEYEVENTF_UNICODE     0x0004
+#endif
 
 /* -------------------------------------------------------------------
  * メッセージ

@@ -27,7 +27,8 @@
 //#define VERSION "1.27f-strokelock-20091123"
 //#define VERSION "1.27f-okxkeymacs-20091221"
 //#define VERSION "1.28"          //20100101
-#define VERSION "1.28-syncwithime-20100211"
+//#define VERSION "1.28-syncwithime-20100211"
+#define VERSION "1.28-syncwithime-20100411"
 
 // -------------------------------------------------------------------
 // オリジナル版の value.c のコメント
