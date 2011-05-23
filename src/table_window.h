@@ -41,6 +41,8 @@ using namespace std;
  */
 #define KANCHOKU_ICONCLK 0x1001
 
+#define ID_MYTIMER 32767
+
 /* -------------------------------------------------------------------
  * â°éÊÇËÇ∑ÇÈÉLÅ[
  *
@@ -233,6 +235,7 @@ private:
     int handleDestroy();        // WM_DESTROY
     int handleLButtonDown();    // WM_LBUTTONDOWN
     int handlePaint();          // WM_PAINT
+    int handleTimer();          // WM_TIMER
     int handleNotifyVKPROCESSKEY(); // WM_KANCHOKU_NOTIFYVKPROCESSKEY
     int handleNotifyIMEStatus();    // WM_KANCHOKU_NOTIFYIMESTATUS
     int handleHotKey();         // WM_HOTKEY

@@ -201,7 +201,7 @@ T-Code や TUT-Code などの入力方式の、
   かたかなを半角かなに変換します。
 
 :(({fallbackOnUnshift=((|n|))}))
-  [kanchoku.ini のデフォルト: (省略値); 省略値: ((|enableHankakuKana|))]
+  [kanchoku.ini のデフォルト: (省略値); 省略値: ((|shiftKana|))]
 
   [^[((<ver1.28|変更履歴>))]^]
   ((|n|)) に 1 を指定すると、シフト打鍵の定義がない場合に

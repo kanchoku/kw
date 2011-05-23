@@ -278,13 +278,13 @@ public:
      * - vkbFace[]  : 仮想鍵盤の各キーのフェイス
      * - vkbFG[]    : 仮想鍵盤の各キーの前景色。上記 TC_FG_* を参照。
      * - vkbBG[]    : 仮想鍵盤の各キーの背景色。上記 TC_BG_* を参照。
-     * - displayOK  : displayHelpDelay 経過後かどうか
+     * - waitKeytop : displayHelpDelay 経過前かどうか
      */
     char *vkbFace[TC_NKEYS*2];
     int vkbFG[TC_NKEYS*2];
     int vkbBG[TC_NKEYS];
     int vkbCorner[TC_NKEYS];
-    int displayOK;
+    int waitKeytop;
 
     /* コンストラクタとデストラクタ
      */

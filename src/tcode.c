@@ -237,7 +237,7 @@ void TCode::reset() {
     helpModeSave = 0;
     clearGG(table);
     clearAssignStroke();
-    displayOK = 0;
+    waitKeytop = (!!OPT_displayHelpDelay || OPT_offHide == 2);
     // maze2gg 打ち間違い救済
     // 入力ミスを出力後makeVKBでexplicitGGが落ちて、以降の入力でresetが呼び出されたら完全終了
     if (!explicitGG) clearCandGG();
@@ -384,9 +384,13 @@ void TCode::keyinNormal(int key) {
             *inputtedStroke = *currentStroke;
         } else {
             if (ggCand && !explicitGG) explicitGG = new char[1];  // 打ち間違い救済
-            int d = !ISRESET && displayOK;
-            reset();
-            displayOK = d;
+            int w = waitKeytop;
+            if (ISRESET) {
+                reset();
+            } else {
+                reset();
+                waitKeytop = w;
+            }
         }
         return;
 
@@ -1604,9 +1608,6 @@ void TCode::updateContext() {
         //</gg-defg>
         }
         //</v127a - gg>
-        if (mode == CAND1 || explicitGG) displayOK = 1;
-        else if (!(OPT_offHide == 2 && !OPT_displayHelpDelay)
-            && !OPT_displayHelpDelay) displayOK = 1;
     }
 }
 
@@ -1841,11 +1842,11 @@ void TCode::makeVKB(bool unlock) {
             MOJI moji = hoge.moji(ggCInputted());
             check = stTable->look(moji);
         }
-        if (!displayOK) makeVKBBG(inputtedStroke);
+        if (waitKeytop) makeVKBBG(inputtedStroke);
         else if (check) makeVKBBG(stTable->stroke);
         else makeVKBBG(currentStroke);
         for (int i = 0; i < TC_NKEYS*2; i++) {
-            Block *block = (unlock?table:(displayOK?currentBlock:lockedBlock))->block[i];
+            Block *block = (unlock?table:(waitKeytop?lockedBlock:currentBlock))->block[i];
             if (block == 0) { continue; }
             switch (block->kind()) {
             case STRING_BLOCK:
@@ -1859,7 +1860,7 @@ void TCode::makeVKB(bool unlock) {
                 break;
             case CONTROL_BLOCK:
                 vkbFace[i] = "";
-                if (!unlock && (displayOK?currentBlock:lockedBlock) != table) {
+                if (!unlock && (waitKeytop?lockedBlock:currentBlock) != table) {
                     vkbFace[i] = block->getFace();
                     vkbFG[i] = TC_FG_SPECIAL;
                 }

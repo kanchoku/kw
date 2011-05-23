@@ -55,8 +55,6 @@ int TableWindow::wndProc(HWND w, UINT msg, WPARAM wp, LPARAM lp) {
     wParam = wp;
     lParam = lp;
 
-    bool isShiftNow, trigDisp;
-#define ID_MYTIMER 32767
     // 各メッセージの handler を呼ぶ
     if (msg == WM_KANCHOKU_NOTIFYIMESTATUS) return handleNotifyIMEStatus();
     if (msg == WM_KANCHOKU_NOTIFYVKPROCESSKEY) return handleNotifyVKPROCESSKEY();
@@ -74,44 +72,7 @@ int TableWindow::wndProc(HWND w, UINT msg, WPARAM wp, LPARAM lp) {
         return 0;
 
     case WM_TIMER:  // SetTimer() は handleHotKey() 内で行っている
-        if (deciSecAfterStroke < 1024) deciSecAfterStroke++;
-        if ((tc->mode == TCode::NORMAL || tc->mode == TCode::CAND1)
-            && tc->currentBlock != tc->lockedBlock
-            && deciSecAfterStroke*100 >= tc->OPT_strokeTimeOut) {
-            int bkhardbs = tc->OPT_hardBS;
-            int bkweakbs = tc->OPT_weakBS;
-            tc->OPT_hardBS = 0;
-            tc->OPT_weakBS = 0;
-            wParam = BS_KEY;
-            int r = handleHotKey();
-            tc->OPT_hardBS = bkhardbs;
-            tc->OPT_weakBS = bkweakbs;
-            return r;
-        }
-        trigDisp = false;
-        if (tc->currentBlock != tc->lockedBlock) {
-            if (tc->mode == TCode::NORMAL && !tc->helpMode && !tc->displayOK
-                && !(tc->OPT_offHide == 2 && !tc->OPT_displayHelpDelay)
-                && deciSecAfterStroke*100 >= tc->OPT_displayHelpDelay) {
-                trigDisp = true;
-                tc->displayOK = 1;
-                tc->makeVKB();
-                ShowWindow(w, SW_SHOWNA);
-                InvalidateRect(w, NULL, FALSE);
-            }
-        }
-        isShiftNow = !!(GetKeyState(VK_SHIFT) & 0x8000);  // GetAsyncKeyState じゃなくて大丈夫なのだろうか
-        if ((tc->mode == TCode::NORMAL || tc->mode == TCode::CAND1)
-            && !tc->helpMode 
-            && IsWindowVisible(w)
-            && (tc->isAnyShiftSeq || tc->OPT_shiftLockStroke)
-            && (trigDisp || isShift != isShiftPrev && isShiftNow == isShift)) {
-                if (tc->OPT_shiftLockStroke == 1) tc->makeVKB(tc->lockedBlock!=tc->table&&!isShift);
-                InvalidateRect(w, NULL, FALSE);
-        }
-        isShiftPrev = isShift;
-        isShift = isShiftNow;
-        return 0;
+        return handleTimer();
 
     case WM_PAINT:
         return handlePaint();
@@ -532,7 +493,8 @@ int TableWindow::handleDestroy() {
     if (lpfnMyEndHook) {
         lpfnMyEndHook();
         FreeLibrary(hKanCharDLL);
-        RemoveProp(hwnd, "KanchokuWin_KanCharDLL_NextHook");
+        RemoveProp(hwnd, "KanchokuWin_KanCharDLL_NextCWPHook");
+        RemoveProp(hwnd, "KanchokuWin_KanCharDLL_NextMsgHook");
     }
 
     // タスクトレイから削除
@@ -675,6 +637,59 @@ int TableWindow::handlePaint() {
     return 0;
 }
 
+// OPT_offHide == 0 なら表示しっぱなし、念のためactivate()のたびにShowWindow()
+// OPT_offHide == 1 ならactivate()とinactivate()で制御、念のためhandleHotKey()のたびにShowWindow()
+// OPT_offHide == 2 ならヘルプ表示中か補助変換中か強制練習中かOPT_strokeTimeOut経過後なら表示
+#define ISOFF (tc->mode == TCode::OFF)
+#define ISONNOHELP (tc->mode == TCode::NORMAL && tc->helpMode == 0)
+
+// -------------------------------------------------------------------
+// WM_TIMER
+int TableWindow::handleTimer() {
+    bool isShiftNow, trigDisp;
+    // 計時
+        if (deciSecAfterStroke < 1024) deciSecAfterStroke++;
+    // kanchoku time out
+        if ((tc->mode == TCode::NORMAL || tc->mode == TCode::CAND1)
+            && tc->currentBlock != tc->lockedBlock && tc->OPT_strokeTimeOut
+            && deciSecAfterStroke*100 >= tc->OPT_strokeTimeOut) {
+            int bkhardbs = tc->OPT_hardBS;
+            int bkweakbs = tc->OPT_weakBS;
+            tc->OPT_hardBS = 0;
+            tc->OPT_weakBS = 0;
+            wParam = BS_KEY;
+            int r = handleHotKey();
+            tc->OPT_hardBS = bkhardbs;
+            tc->OPT_weakBS = bkweakbs;
+            return r;
+        }
+    // 
+        trigDisp = false;
+        if (tc->currentBlock != tc->lockedBlock) {
+            if (tc->mode == TCode::NORMAL && !tc->helpMode
+                && tc->waitKeytop && tc->OPT_displayHelpDelay
+                && deciSecAfterStroke*100 >= tc->OPT_displayHelpDelay) {
+                trigDisp = true;
+                tc->waitKeytop = 0;
+                tc->makeVKB();
+                ShowWindow(hwnd, SW_SHOWNA);
+                InvalidateRect(hwnd, NULL, FALSE);
+            }
+        }
+        isShiftNow = !!(GetKeyState(VK_SHIFT) & 0x8000);  // GetAsyncKeyState じゃなくて大丈夫なのだろうか
+        if ((tc->mode == TCode::NORMAL || tc->mode == TCode::CAND1)
+            && !tc->helpMode 
+            && IsWindowVisible(hwnd)
+            && (tc->isAnyShiftSeq || tc->OPT_shiftLockStroke)
+            && (trigDisp || isShift != isShiftPrev && isShiftNow == isShift)) {
+                if (tc->OPT_shiftLockStroke == 1) tc->makeVKB(tc->lockedBlock!=tc->table&&!isShift);
+                InvalidateRect(hwnd, NULL, FALSE);
+        }
+        isShiftPrev = isShift;
+        isShift = isShiftNow;
+        return 0;
+}
+
 // -------------------------------------------------------------------
 // WM_KANCHOKU_NOTIFYIMESTATUS
 int TableWindow::handleNotifyIMEStatus() {
@@ -789,7 +804,7 @@ int TableWindow::handleNotifyVKPROCESSKEY() {
             && tc->helpMode == 0    // helpMode と mode は独立
             && tc->preBuffer->length() == 0 // 補助変換中でない
             && tc->explicitGG == 0 // 強制練習中でない
-            && !tc->displayOK) {
+            && tc->waitKeytop) {
             ShowWindow(hwnd, SW_HIDE);
         } else {
             ShowWindow(hwnd, SW_SHOWNA);
@@ -928,7 +943,7 @@ int TableWindow::handleHotKey() {
             && tc->helpMode == 0    // helpMode と mode は独立
             && tc->preBuffer->length() == 0 // 補助変換中でない
             && tc->explicitGG == 0 // 強制練習中でない
-            && !tc->displayOK) {
+            && tc->waitKeytop) {
             ShowWindow(hwnd, SW_HIDE);
         } else {
             ShowWindow(hwnd, SW_SHOWNA);
@@ -1921,6 +1936,7 @@ void TableWindow::output() {
     // thanx to 816 in 『【原理】T-Code連習マラソン【主義】』
     // <http://pc.2ch.net/test/read.cgi/unix/1014523030/>
     POINT ptCaret;
+    AttachThreadInput(selfThread, targetThread, TRUE);
     if (tc->OPT_followCaret
         && GetCaretPos(&ptCaret)
         && (ptCaret.x || ptCaret.y)
@@ -1940,6 +1956,7 @@ void TableWindow::output() {
         int sY = ptCaret.y + (winRect.bottom - winRect.top) / 5;
         MoveWindow(hwnd, sX, sY, WIDTH + dX, HEIGHT + dY, TRUE);
     }
+    AttachThreadInput(selfThread, targetThread, FALSE);
 
     CloseHandle(hTargetProcess);
 }

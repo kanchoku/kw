@@ -42,10 +42,7 @@ RES	= kanchoku.ico kanmini0.ico kanmini1.ico
 OBJS	= $(SRCS:.c=.obj)
 
 # äøçıëã
-##<multishift2>
-##SRCS2	= kansaku.c block.c moji.c parser.c st_table.c debug.c
-SRCS2	= kansaku.c block.c moji.c parser.c st_table.c debug.c tcode.c
-##</multishift2>
+SRCS2	= kansaku.c block.c moji.c parser.c st_table.c debug.c
 RES2	= kansaku.ico kansakum.ico
 OBJS2	= $(SRCS2:.c=.obj)
 
@@ -135,10 +132,7 @@ table_window.obj: table_window.c table_window.h block.h bushu_dic.h mg_table.h m
 tcode.obj: tcode.c tcode.h tc.h block.h bushu_dic.h mg_table.h moji.h st_table.h table_window.h debug.h gg_dic.h
 ##</v127a - gg>
 debug.obj: debug.c debug.h
-##<multishift2>
-##kansaku.obj: kansaku.c kansaku.h block.h parser.h st_table.h
-kansaku.obj: kansaku.c kansaku.h block.h parser.h st_table.h tcode.c
-##</multishift2>
+kansaku.obj: kansaku.c kansaku.h block.h parser.h st_table.h
 
 wininfo.obj: wininfo.c
 
