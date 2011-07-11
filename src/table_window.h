@@ -35,6 +35,34 @@ using namespace std;
 #ifndef KEYEVENTF_UNICODE
 #define KEYEVENTF_UNICODE     0x0004
 #endif
+typedef struct mytagGUITHREADINFO
+{
+    DWORD   cbSize;
+    DWORD   flags;
+    HWND    hwndActive;
+    HWND    hwndFocus;
+    HWND    hwndCapture;
+    HWND    hwndMenuOwner;
+    HWND    hwndMoveSize;
+    HWND    hwndCaret;
+    RECT    rcCaret;
+} MYGUITHREADINFO, *PMYGUITHREADINFO, FAR * LPMYGUITHREADINFO;
+struct MYHWINEVENTHOOK__ { int unused; };
+typedef struct MYHWINEVENTHOOK__ *MYHWINEVENTHOOK;
+typedef VOID (CALLBACK* MYWINEVENTPROC)(
+    MYHWINEVENTHOOK hWinEventHook,
+    DWORD         event,
+    HWND          hwnd,
+    LONG          idObject,
+    LONG          idChild,
+    DWORD         idEventThread,
+    DWORD         dwmsEventTime);
+#ifndef EVENT_SYSTEM_FOREGROUND
+#define EVENT_SYSTEM_FOREGROUND         0x0003
+#endif
+#ifndef WINEVENT_OUTOFCONTEXT
+#define WINEVENT_OUTOFCONTEXT   0x0000
+#endif
 
 /* -------------------------------------------------------------------
  * メッセージ
@@ -192,6 +220,7 @@ private:
     HWND hwNewTarget;
     int inSetFocus;
     int bKeepBuffer;
+    int bGlobalHotKey;
 
     enum HOTKEYMODE { OFF, NORMAL, EDITCLAUSE };
     HOTKEYMODE hotKeyMode;
@@ -212,6 +241,17 @@ private:
     int styleFontSize;
     int stylePadding;
 
+    // APIの明示的リンク
+    HINSTANCE hUser32;
+    BOOL (WINAPI *myGetGUIThreadInfo)(DWORD, PMYGUITHREADINFO);
+    MYHWINEVENTHOOK (WINAPI *mySetWinEventHook)(DWORD, DWORD, HMODULE, MYWINEVENTPROC, DWORD, DWORD, DWORD);
+    BOOL (WINAPI *myUnhookWinEvent)(MYHWINEVENTHOOK);
+
+    // WinEvent
+    MYHWINEVENTHOOK hEventHook;
+    static VOID CALLBACK WinEventProc(MYHWINEVENTHOOK, DWORD, HWND, LONG, LONG, DWORD, DWORD);
+    typedef struct { MYHWINEVENTHOOK h; void *p; } WEH;
+    static vector<WEH> weh_map;
 public:
     // コンストラクタ
     TableWindow(HINSTANCE i);
@@ -228,6 +268,8 @@ private:
     void setMazeHotKey(int);
     void disableHotKey();
     void resumeHotKey();
+    void disableGlobalHotKey();
+    void resumeGlobalHotKey();
     void setTitleText();        // タイトルバーの文字列設定
 
     // メッセージハンドラ
@@ -238,6 +280,7 @@ private:
     int handleTimer();          // WM_TIMER
     int handleNotifyVKPROCESSKEY(); // WM_KANCHOKU_NOTIFYVKPROCESSKEY
     int handleNotifyIMEStatus();    // WM_KANCHOKU_NOTIFYIMESTATUS
+    int handleForeground(HWND);     // EVENT_SYSTEM_FOREGROUND
     int handleHotKey();         // WM_HOTKEY
 
     // T-Code 関連

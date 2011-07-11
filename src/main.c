@@ -5,6 +5,7 @@
 #include "table_window.h"
 
 TableWindow *tableWindow;
+std::vector<TableWindow::WEH> TableWindow::weh_map;
 ControlWindow *controlWindow;
 
 LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);

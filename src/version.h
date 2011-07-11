@@ -28,7 +28,8 @@
 //#define VERSION "1.27f-okxkeymacs-20091221"
 //#define VERSION "1.28"          //20100101
 //#define VERSION "1.28-syncwithime-20100211"
-#define VERSION "1.28-syncwithime-20100411"
+//#define VERSION "1.28-syncwithime-20100411"
+#define VERSION "1.28-20110711"
 
 // -------------------------------------------------------------------
 // オリジナル版の value.c のコメント

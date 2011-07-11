@@ -34,6 +34,7 @@ typedef std::map<MOJI, struct STATENT> StatMap;
 //</record>
 
 // 対象ウィンドウへの文字出力方法
+#define OUT_DISABLE -1
 #define OUT_WMCHAR 0
 #define OUT_WMIMECHAR 1
 #define OUT_WMKANCHOKUCHAR 2

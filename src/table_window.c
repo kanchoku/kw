@@ -112,6 +112,24 @@ int TableWindow::wndProc(HWND w, UINT msg, WPARAM wp, LPARAM lp) {
     return DefWindowProc(hwnd, msg, wParam, lParam);
 }
 
+VOID CALLBACK TableWindow::WinEventProc(MYHWINEVENTHOOK hWinEventHook, DWORD event, 
+                                        HWND w, LONG idObject, LONG idChild,
+                                        DWORD idEventThread, DWORD dwmsEventtime) {
+    TableWindow *thi = NULL;
+    vector<WEH>::iterator p;
+    for (p=weh_map.begin(); p != weh_map.end(); ++p) {
+        if (p->h == hWinEventHook) {
+            thi = (TableWindow *)p->p;
+            break;
+        }
+    }
+    switch (event) {
+    case EVENT_SYSTEM_FOREGROUND:
+        thi->handleForeground(w);
+    }
+}
+
+
 /* -------------------------------------------------------------------
  * 起動と待機
  */
@@ -259,10 +277,15 @@ void TableWindow::disableHotKey() {
         UnregisterHotKey(hwnd, CJ_KEY);
         UnregisterHotKey(hwnd, CI_KEY);
     }
+    disableGlobalHotKey();
+}
+
+void TableWindow::disableGlobalHotKey() {
     if (tc->OPT_hotKey)
         UnregisterHotKey(hwnd, ACTIVE_KEY); // HotKey を削除
     if (tc->OPT_unmodifiedHotKey)
         UnregisterHotKey(hwnd, ACTIVE2_KEY); // HotKey を削除
+    bGlobalHotKey = 0;
 }
 
 void TableWindow::resumeHotKey() {
@@ -293,10 +316,15 @@ void TableWindow::resumeHotKey() {
         RegisterHotKey(hwnd, CJ_KEY, MOD_CONTROL, 'J');
         RegisterHotKey(hwnd, CI_KEY, MOD_CONTROL, 'I');
     }
+    resumeGlobalHotKey();
+}
+
+void TableWindow::resumeGlobalHotKey() {
     if (tc->OPT_hotKey)
         RegisterHotKey(hwnd, ACTIVE_KEY, MOD_CONTROL, tc->OPT_hotKey);
     if (tc->OPT_unmodifiedHotKey)
         RegisterHotKey(hwnd, ACTIVE2_KEY, 0, tc->OPT_unmodifiedHotKey);
+    bGlobalHotKey = 1;
 }
 
 // -------------------------------------------------------------------
@@ -369,6 +397,7 @@ int TableWindow::handleCreate() {
         RegisterHotKey(hwnd, ACTIVE_KEY, MOD_CONTROL, tc->OPT_hotKey);
     if (tc->OPT_unmodifiedHotKey)
         RegisterHotKey(hwnd, ACTIVE2_KEY, 0, tc->OPT_unmodifiedHotKey);
+    bGlobalHotKey = 1;
     //</OKA>
 
     // 待機状態に
@@ -477,6 +506,7 @@ int TableWindow::handleDestroy() {
         UnregisterHotKey(hwnd, ACTIVE_KEY); // HotKey を削除
     if (tc->OPT_unmodifiedHotKey)
         UnregisterHotKey(hwnd, ACTIVE2_KEY); // HotKey を削除
+    bGlobalHotKey = 0;
     //</OKA>
 
     //<record>
@@ -496,6 +526,8 @@ int TableWindow::handleDestroy() {
         RemoveProp(hwnd, "KanchokuWin_KanCharDLL_NextCWPHook");
         RemoveProp(hwnd, "KanchokuWin_KanCharDLL_NextMsgHook");
     }
+    if (myUnhookWinEvent && hEventHook) myUnhookWinEvent(hEventHook);
+    if (hUser32) FreeLibrary(hUser32);
 
     // タスクトレイから削除
     NOTIFYICONDATA nid;
@@ -828,6 +860,34 @@ int TableWindow::handleNotifyVKPROCESSKEY() {
     //RedrawWindow(hwnd, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ERASE);
     InvalidateRect(hwnd, NULL, TRUE);
     //</v127c>
+    return 0;
+}
+
+// -------------------------------------------------------------------
+// EVENT_SYSTEM_FOREGROUND
+int TableWindow::handleForeground(HWND w) {
+    // アプリケーションごとの設定で自動OFF + ホットキー([Ctrl]+[\]等)も無効にする [漢直スレ4:569]
+    // 入力フォーカスを持つウィンドウを取得
+    HWND targetWin = GetForegroundWindow();
+    if (w != targetWin) return 0;
+    DWORD targetThread = GetWindowThreadProcessId(targetWin, NULL);
+    DWORD selfThread = GetCurrentThreadId();
+    AttachThreadInput(selfThread, targetThread, TRUE);
+    HWND activeWin = GetFocus();
+    if (!activeWin) activeWin = targetWin;  // コマンドプロンプトではGetFocusが0を返すため対策
+    // スレッドを切り離す
+    AttachThreadInput(selfThread, targetThread, FALSE);
+    if (getOutputMethod(activeWin) == OUT_DISABLE) {
+        if (bGlobalHotKey) disableGlobalHotKey();
+        // 明示的にOUT_DISABLEとした場合のみ、OFFへの一方通行
+        if (tc->mode != TCode::OFF) {
+            bKeepBuffer = 1;
+            wParam = ACTIVEIME_KEY;
+            return handleHotKey();
+        }
+    } else {
+        if (!bGlobalHotKey) resumeGlobalHotKey();
+    }
     return 0;
 }
 
@@ -1301,6 +1361,26 @@ void TableWindow::initTC() {
 
     // strokeTimeOut
     int OPT_strokeTimeOut = GetPrivateProfileInt("kanchoku", "strokeTimeOut", 0, iniFile);
+
+    /* ---------------------------------------------------------------
+     */
+    myGetGUIThreadInfo = NULL;
+    hUser32 = LoadLibrary("user32.dll");
+    if (hUser32) {
+        myGetGUIThreadInfo = (BOOL (WINAPI *)(DWORD, PMYGUITHREADINFO))GetProcAddress(hUser32,
+                "GetGUIThreadInfo");
+        mySetWinEventHook = (MYHWINEVENTHOOK (WINAPI *)(DWORD, DWORD, HMODULE, MYWINEVENTPROC, DWORD, DWORD, DWORD))
+                GetProcAddress(hUser32, "SetWinEventHook");
+        myUnhookWinEvent = (BOOL (WINAPI *)(MYHWINEVENTHOOK))GetProcAddress(hUser32,
+                "UnhookWinEvent");
+    }
+    weh_map.clear();
+    if (mySetWinEventHook && myUnhookWinEvent) {
+        hEventHook = mySetWinEventHook(EVENT_SYSTEM_FOREGROUND, EVENT_SYSTEM_FOREGROUND,
+                      GetModuleHandle(NULL), (MYWINEVENTPROC)WinEventProc, 0, 0, WINEVENT_OUTOFCONTEXT);
+        WEH weh = { hEventHook, this };
+        weh_map.push_back(weh);
+    }
     /* ---------------------------------------------------------------
      */
     // キーボードファイルの読み込み
@@ -1593,6 +1673,9 @@ void TableWindow::readTargetWindowSetting(char *iniFile) {
                    stricmp(outputMethod, "KEYEVENTF_UNICODE") == 0 ||
                    stricmp(outputMethod, "4")                 == 0) {
             m = OUT_KEYEVENTFUNICODE;
+        } else if (stricmp(outputMethod, "DISABLE") == 0 ||
+                   stricmp(outputMethod, "-1")      == 0) {
+            m = OUT_DISABLE;
         } else {
             warn("outputMethodに指定されている値が正しくありません。");
             continue;
@@ -1674,6 +1757,7 @@ void TableWindow::output() {
     DWORD selfThread = GetCurrentThreadId();
     AttachThreadInput(selfThread, targetThread, TRUE);
     HWND activeWin = GetFocus();
+    if (!activeWin) activeWin = targetWin;  // コマンドプロンプトではGetFocusが0を返すため対策
     // スレッドを切り離す
     AttachThreadInput(selfThread, targetThread, FALSE);
     DWORD targetProcess;
@@ -1840,7 +1924,7 @@ void TableWindow::output() {
                         PostMessageW(activeWin, WM_IME_CHAR, (LPARAM)wc[1], 1);
                     }
                 } else {
-                    PostMessageW(activeWin, WM_IME_CHAR,
+                    PostMessage(activeWin, WM_IME_CHAR,
                             (((unsigned char)h << 8 ) | (unsigned char)l), 1);
                 }
                 break;
@@ -1851,7 +1935,7 @@ void TableWindow::output() {
                         PostMessageW(activeWin, WM_IME_CHAR, (LPARAM)wc[1], 1);
                     }
                 } else {
-                    PostMessage(activeWin, WM_CHAR, (unsigned char)h, 1);
+                    PostMessage(activeWin, WM_CHAR, (unsigned char)h, 1);  // SendInputに合わせてlParam=0x40000001のほうがよいかもしれない
                     PostMessage(activeWin, WM_CHAR, (unsigned char)l, 1);
                 }
                 break;
@@ -1935,7 +2019,33 @@ void TableWindow::output() {
     // カーソルに追従
     // thanx to 816 in 『【原理】T-Code連習マラソン【主義】』
     // <http://pc.2ch.net/test/read.cgi/unix/1014523030/>
+    // GetGUIThreadInfoでCaretの下端座標を得る（2k以降専用）
+    // 
     POINT ptCaret;
+   if (myGetGUIThreadInfo) {
+    MYGUITHREADINFO guiThreadInfo;
+    guiThreadInfo.cbSize = sizeof(MYGUITHREADINFO);
+    if (tc->OPT_followCaret
+        && myGetGUIThreadInfo(targetThread, &guiThreadInfo)
+        && guiThreadInfo.hwndCaret != NULL
+        && ((ptCaret.x = guiThreadInfo.rcCaret.left) , (ptCaret.y = guiThreadInfo.rcCaret.bottom) , (ptCaret.x || ptCaret.y))
+        && ClientToScreen(activeWin, &ptCaret)) {
+        // 外枠の大きさを取得
+        RECT winRect;
+        GetWindowRect(hwnd, &winRect);
+        // 中身の大きさを取得
+        RECT clientRect;
+        GetClientRect(hwnd, &clientRect);
+        // 外枠と中身の差を取得
+        int dX = (winRect.right - winRect.left)
+            - (clientRect.right - clientRect.left);
+        int dY = (winRect.bottom - winRect.top)
+            - (clientRect.bottom - clientRect.top);
+        int sX = ptCaret.x - (winRect.right - winRect.left) / 2;
+        int sY = ptCaret.y + (winRect.bottom - winRect.top) / 10;
+        MoveWindow(hwnd, sX, sY, WIDTH + dX, HEIGHT + dY, TRUE);
+    }
+   } else {
     AttachThreadInput(selfThread, targetThread, TRUE);
     if (tc->OPT_followCaret
         && GetCaretPos(&ptCaret)
@@ -1957,6 +2067,7 @@ void TableWindow::output() {
         MoveWindow(hwnd, sX, sY, WIDTH + dX, HEIGHT + dY, TRUE);
     }
     AttachThreadInput(selfThread, targetThread, FALSE);
+   }
 
     CloseHandle(hTargetProcess);
 }
