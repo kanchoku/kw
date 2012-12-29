@@ -80,6 +80,8 @@ typedef VOID (CALLBACK* MYWINEVENTPROC)(
  */
 #define ACTIVE_KEY (0x100 + 1) // ON/OFF の切り替えキー
 #define ACTIVE2_KEY (0x100 + 2) // ON/OFF の切り替えキー、その2
+#define INACTIVE_KEY (0x100 + 3) // OFF への切り替えキー
+#define INACTIVE2_KEY (0x100 + 4) // OFF への切り替えキー、その2
 #define ACTIVEIME_KEY (0x100 + 6) // IME連動による ON/OFF の切り替え (漢直Winが従)
 
 #define ESC_KEY    (0x100 + 11) // ESC

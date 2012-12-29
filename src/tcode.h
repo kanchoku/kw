@@ -84,6 +84,8 @@ public:
 //<OKA> support unmodified hot key
     int OPT_unmodifiedHotKey;   // CTRLやSHIFTなどのmodifierなしでもHotKeyとして働く
 //</OKA>
+    int OPT_offHotKey;          // OFF キー
+    int OPT_unmodifiedOffHotKey;// OFF キー(modifierなし)
     char *OPT_keyboard;         // キーボード定義ファイル
     char *OPT_tableFile;        // テーブル定義ファイル
 
