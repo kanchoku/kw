@@ -975,6 +975,7 @@ int TableWindow::handleHotKey() {
     int check;
     do {
         check = 0;
+        while (tc->isReducibleByKata())  { tc->reduceByKata();  check = 1; }
         while (tc->isReducibleByBushu()) { tc->reduceByBushu(); check = 1; }
         while (tc->isReducibleByMaze())  { tc->reduceByMaze();  check = 1; }
     } while (check != 0);

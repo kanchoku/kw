@@ -223,6 +223,7 @@ public:
     int postDelete;
     //<v127c - postInPre>
     int postInPre;
+    int postKataPrevLen; // 直前の後置型のかたかな変換で変換した文字数
     //</v127c>
     MojiBuffer *helpBuffer;
     int helpOffset;
@@ -307,6 +308,8 @@ public:
      * NORMAL, CAND, HIST の各モードに対応する、キー入力処理ルーチン
      */
     void keyinNormal(int);
+    void keyinNormalKataPost(int);
+    void keyinNormalKataPostShrink(int);
     void keyinCand(int);
     void keyinCand1(int);
     void keyinHist(int);
@@ -324,16 +327,20 @@ public:
      * いずれも、preBuffer の内容に関するもの。
      * - isReducibleByBushu()   : 部首合成変換を実行すべき内容かどうか。
      * - isReducibleByMaze()    : 交ぜ書き変換を実行すべき内容かどうか。
+     * - isReducibleByKata()    : かたかな変換を実行すべき内容かどうか。
      * - reduceByBushu()        : 部首合成変換を実行。
      * - reduceByMaze()         : 交ぜ書き変換を実行。
+     * - reduceByKata()         : かたかな変換を実行。
      * - nfer()                 : 無変換で確定。
      * - nferHirkata()          : ひらがな/かたかな変換を行い、確定。
      * - isComplete()           : 部首合成や交ぜ書き変換が完了したかどうか。
      */
     int isReducibleByBushu();
     int isReducibleByMaze();
+    int isReducibleByKata();
     void reduceByBushu();
     void reduceByMaze();
+    void reduceByKata();
     void finishCand(char *);
     void makeMazeYomiLonger();
     void makeMazeYomiShorter();

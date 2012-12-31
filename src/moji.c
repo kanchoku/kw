@@ -341,6 +341,16 @@ MOJI mojiHirakata(MOJI moji) {
     return mojiChange(moji, tblHirakata);
 }
 
+MOJI mojiKata(MOJI moji) {
+    MOJI (*m)[2] = tblHirakata;
+    for (; (*m)[0] != 0; m++) {
+        if (moji == (*m)[0]) {
+            return (*m)[1];
+        }
+    }
+    return moji;
+}
+
 MOJI mojiHanzen(MOJI moji) {
     return mojiChange(moji, tblHanzen);
 }
