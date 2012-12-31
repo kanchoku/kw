@@ -145,6 +145,7 @@ TCode::TCode(int *v, ControlBlock *t, MgTable *m, BushuDic *b, GgDic *g) {
     ittaku = 0;
     lockedBlock = table;
     lockedStroke = new std::vector<STROKE>;
+    postKataPrevLen = 0;
 
     OPT_keyboard = 0;
     OPT_tableFile = 0;
@@ -248,6 +249,7 @@ void TCode::resetBuffer() {
     postBuffer->clear();
     postInPre = 0;
     postDelete = 0;
+    postKataPrevLen = 0;
     clearCandGG();
 }
 
@@ -543,7 +545,8 @@ void TCode::keyinNormal(int key) {
          * - @q     : preBuffer の内容をクリアし、通常入力モードに戻す
          * - @h @H  : helpMode をセットし、ポインタをセットする
          * - @v     : 第一打鍵を preBuffer に入れる
-         * - @B @1..@9 : 変換の読み・部品を postBuffer から取ってきて、
+         * - @B @1..@9 @Q..@Y @- @$..@)
+         *             : 変換の読み・部品を postBuffer から取ってきて、
          *               変換開始マークとともに preBuffer に入れる。
          *               また、遅延デリート量を設定する。
          * - @D @P  : 直前の入力文字を postBuffer から取ってきて、
@@ -754,6 +757,34 @@ void TCode::keyinNormal(int key) {
             preBuffer->pushSoft((MOJI)' '); // 変換終了マーク
             return;
 
+        case F_KATA_POST9: n += 1; /* go down */
+        case F_KATA_POST8: n += 1; /* go down */
+        case F_KATA_POST7: n += 1; /* go down */
+        case F_KATA_POST6: n += 1; /* go down */
+        case F_KATA_POST5: n += 1; /* go down */
+        case F_KATA_POST4: n += 1; /* go down */
+        case F_KATA_POST3: n += 1; /* go down */
+        case F_KATA_POST2: n += 1; /* go down */
+        case F_KATA_POST1: n += 1; // この時点で n == 1 ～ 9
+        case F_KATA_POST0:
+            keyinNormalKataPost(n);
+            return;
+        case F_KATA_POSTH6: n -= 1;
+        case F_KATA_POSTH5: n -= 1;
+        case F_KATA_POSTH4: n -= 1;
+        case F_KATA_POSTH3: n -= 1;
+        case F_KATA_POSTH2: n -= 1;
+        case F_KATA_POSTH1: n -= 1; // F_KATA_POSTH[1-6]の場合、n == -1 .. -6
+            keyinNormalKataPost(n);
+            return;
+        case F_KATA_POSTS5: n += 1;
+        case F_KATA_POSTS4: n += 1;
+        case F_KATA_POSTS3: n += 1;
+        case F_KATA_POSTS2: n += 1;
+        case F_KATA_POSTS1: n += 1; // F_KATA_POSTS[1-5]の場合、n == 1 .. 5
+            keyinNormalKataPostShrink(n);
+            return;
+
 #define DAKUTEN_HANDAKUTEN(MOJI_CHANGE_FUNC             \
         /**<hankana>**/ , DAKU2, DAKU1 /**</hankaha>**/ \
         )                                               \
@@ -834,6 +865,103 @@ void TCode::keyinNormal(int key) {
         ;
     } // switch block kind
                                 // ここにも来ないはず
+}
+
+// 後置型のかたかな変換
+void TCode::keyinNormalKataPost(int n) {
+    reset();
+    //<record>
+    // XXX: ?
+    record.nspecial += 1;
+    //</record>
+    if (!ISEMPTY) {
+        // 前置変換との組み合わせ
+        int isYomiToKata = 0;
+        if (n <= 0) {
+            int len = preBuffer->length();
+            int offset;
+            for (offset = len - 1; 0 <= offset; offset--) {
+                MOJI m = preBuffer->moji(offset);
+                if (m == MOJI_MAZE) {
+                    // 交ぜ書き変換の読みをかたかなに変換
+                    isYomiToKata = 1;
+                    break;
+                }
+                if (mojitype(m) == MOJI_SPECIAL) break;
+            }
+            if (!isYomiToKata && n < 0)
+                offset += -n; // 指定文字数を除いてかたかなに変換
+            n = len - offset - 1;
+            if (n <= 0) return;
+        } else {
+            if (preBuffer->length() < n + 1) return;
+            for (int i = -1; -n <= i; i--) {
+                MOJI m = preBuffer->moji(i);
+                if (mojitype(m) == MOJI_SPECIAL) return;
+            }
+        }
+        postInPre = n;
+        strcpy(yomi, preBuffer->string(-n));
+        preBuffer->popN(n);
+        if (isYomiToKata) preBuffer->pop(); // MOJI_MAZE
+        preBuffer->pushSoft(MOJI_MAZE);
+        preBuffer->pushSoft(yomi);
+        preBuffer->pushSoft((MOJI)'\t'); // 変換終了マーク
+        return;
+    }
+    if (n <= 0) {
+        // XXX: 空定義の文字の場合postBufferに入らないので無視される。
+        // 例: 「あ+い」→「あアイ」(「+」が無視される)
+        // F_VERB_THISとして定義すれば回避は可能。
+        int len = postBuffer->length();
+        int offset;
+        for (offset = len - 1; 0 <= offset; offset--) {
+// TRUEの文字が続く間、後置型かたかな変換対象とする(ひらがな、「ー」)
+#define IN_KATARANGE(m) ((MOJI2H(m) == 0x82 && \
+                          0x9f <= MOJI2L(m) && MOJI2L(m) <= 0xf1) || \
+                         (MOJI2H(m) == 0x81 && MOJI2L(m) == 0x5b))
+            MOJI m = postBuffer->moji(offset);
+            if (!IN_KATARANGE(m)) break;
+        }
+        if (n < 0)
+            offset += -n; // 指定文字数を除いてかたかなに変換
+        n = len - offset - 1;
+        if (n <= 0) return;
+    }
+    if (postBuffer->length() < n) { return; }
+    postDelete = n;
+    strcpy(yomi, postBuffer->string(-postDelete));
+    preBuffer->pushSoft(MOJI_MAZE);
+    preBuffer->pushSoft(yomi);
+    preBuffer->pushSoft((MOJI)'\t'); // 変換終了マーク
+}
+
+// 直前の後置型のかたかな変換を縮める
+// 例: 「例えばあぷりけーしょん」ひらがなが続く間かたかなに変換
+//   →「例エバアプリケーション」2文字縮める
+//   →「例えばアプリケーション」
+void TCode::keyinNormalKataPostShrink(int n) {
+    reset();
+    record.nspecial += 1;
+    if (postKataPrevLen == 0) return;
+    if (!ISEMPTY) return; // 前置型変換中の場合はたぶん不要
+    int len = postBuffer->length();
+    if (len < postKataPrevLen) { return; }
+    int kataLen = postKataPrevLen - n;
+    if (kataLen > 0)
+        strcpy(yomi, postBuffer->string(-kataLen));
+    else
+        kataLen = 0;
+    postDelete = postKataPrevLen;
+    // 縮めることでひらがなになる文字列
+    for (int i = len - postKataPrevLen; i < len - kataLen && i < len; i++) {
+        MOJI m = postBuffer->moji(i);
+        preBuffer->pushSoft(mojiHirakata(m));
+    }
+    if (kataLen > 0) {
+        preBuffer->pushSoft(yomi); // かたかなのままにする文字列
+    }
+    postKataPrevLen = kataLen; // 繰り返しShrinkできるように
 }
 
 /* 交ぜ書き変換の候補選択モードでのキー入力
@@ -1197,6 +1325,59 @@ void TCode::reduceByMaze() {
     } else {
         mode = CAND;
     }
+}
+
+/* isReducibleByKata()
+ * -------------------
+ * preBuffer の内容がかたかな変換可能かどうか。
+ * すなわち、preBuffer の末尾が「◇ <読み> \t」の形をしているか。
+ */
+int TCode::isReducibleByKata() {
+    if (mode != NORMAL) { return 0; }
+    if (preBuffer->length() < 3) { return 0; }
+    MOJI m = preBuffer->moji(-1);
+    if (m != MC('\t') && m != MV(VK_TAB)) { return 0; }
+
+    int len = preBuffer->length();
+    int offset;
+    for (offset = len - 2; 0 <= offset; offset--) {
+        m = preBuffer->moji(offset);
+        if (m == MOJI_MAZE) {
+            yomiLen = len - offset - 2;
+            return 1;
+        }
+        if (mojitype(m) == MOJI_SPECIAL) { return 0; }  // XXX チェック甘
+    }
+    return 0;
+}
+
+/* reduceByKata()
+ * --------------
+ * isReducibleByKata() == 1 である時に、
+ * preBuffer の末尾に対して、かたかな変換を実行する。
+ */
+void TCode::reduceByKata() {
+    preBuffer->pop();           // 変換終了マーク
+
+    MojiBuffer tmpMB(TC_BUFFER_SIZE);
+    tmpMB.clear();
+    for (int i = preBuffer->length() - yomiLen; i < preBuffer->length(); i++) {
+        MOJI m = preBuffer->moji(i);
+        if (mojitype(m) != MOJI_SPECIAL) {
+            // mojiHirakata()だと、後置型のかたかな変換で最初に指定したかたかな
+            // 文字数が足りず1文字増やしてもう1回変換する場合に反転されて困る
+            tmpMB.pushSoft(mojiKata(m));
+        }
+    }
+
+    preBuffer->popN(yomiLen + 1);
+    if (postInPre) {
+        postInPre = 0;
+    }
+    for (int i = 0; i < tmpMB.length(); i++) {
+        preBuffer->pushSoft(tmpMB.moji(i));
+    }
+    postKataPrevLen = yomiLen;
 }
 
 void TCode::finishCand(char *cand) {

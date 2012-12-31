@@ -285,6 +285,10 @@ void TableWindow::disableGlobalHotKey() {
         UnregisterHotKey(hwnd, ACTIVE_KEY); // HotKey を削除
     if (tc->OPT_unmodifiedHotKey)
         UnregisterHotKey(hwnd, ACTIVE2_KEY); // HotKey を削除
+    if (tc->OPT_offHotKey)
+        UnregisterHotKey(hwnd, INACTIVE_KEY); // HotKey を削除
+    if (tc->OPT_unmodifiedOffHotKey)
+        UnregisterHotKey(hwnd, INACTIVE2_KEY); // HotKey を削除
     bGlobalHotKey = 0;
 }
 
@@ -324,6 +328,10 @@ void TableWindow::resumeGlobalHotKey() {
         RegisterHotKey(hwnd, ACTIVE_KEY, MOD_CONTROL, tc->OPT_hotKey);
     if (tc->OPT_unmodifiedHotKey)
         RegisterHotKey(hwnd, ACTIVE2_KEY, 0, tc->OPT_unmodifiedHotKey);
+    if (tc->OPT_offHotKey)
+        RegisterHotKey(hwnd, INACTIVE_KEY, MOD_CONTROL, tc->OPT_offHotKey);
+    if (tc->OPT_unmodifiedOffHotKey)
+        RegisterHotKey(hwnd, INACTIVE2_KEY, 0, tc->OPT_unmodifiedOffHotKey);
     bGlobalHotKey = 1;
 }
 
@@ -399,6 +407,10 @@ int TableWindow::handleCreate() {
         RegisterHotKey(hwnd, ACTIVE2_KEY, 0, tc->OPT_unmodifiedHotKey);
     bGlobalHotKey = 1;
     //</OKA>
+    if (tc->OPT_offHotKey)
+        RegisterHotKey(hwnd, INACTIVE_KEY, MOD_CONTROL, tc->OPT_offHotKey);
+    if (tc->OPT_unmodifiedOffHotKey)
+        RegisterHotKey(hwnd, INACTIVE2_KEY, 0, tc->OPT_unmodifiedOffHotKey);
 
     // 待機状態に
     inactivate();
@@ -508,6 +520,10 @@ int TableWindow::handleDestroy() {
         UnregisterHotKey(hwnd, ACTIVE2_KEY); // HotKey を削除
     bGlobalHotKey = 0;
     //</OKA>
+    if (tc->OPT_offHotKey)
+        UnregisterHotKey(hwnd, INACTIVE_KEY); // HotKey を削除
+    if (tc->OPT_unmodifiedOffHotKey)
+        UnregisterHotKey(hwnd, INACTIVE2_KEY); // HotKey を削除
 
     //<record>
     // 記録を出力
@@ -902,7 +918,7 @@ int TableWindow::handleHotKey() {
     }
 
     // ON/OFF
-    if (key == ACTIVE_KEY || key == ACTIVE2_KEY || key == ACTIVEIME_KEY) {
+    if (key == ACTIVE_KEY || key == ACTIVE2_KEY || key == ACTIVEIME_KEY || key == INACTIVE_KEY || key == INACTIVE2_KEY) {
         tc->reset();
         if (tc->mode != TCode::OFF && (key != ACTIVEIME_KEY || !bKeepBuffer)) {  // 明示的OFF時のみバッファクリア
             tc->resetBuffer();
@@ -918,10 +934,16 @@ int TableWindow::handleHotKey() {
             if (tc->OPT_offResetModes[i] != '0') tc->unlockStroke();
         }
         if (tc->mode == TCode::OFF) {
-            activate();
-            tc->updateContext();
+            if (key != INACTIVE_KEY && key != INACTIVE2_KEY) {
+                activate();
+                tc->updateContext();
+            }
         } else {
-            inactivate();
+            if (key == INACTIVE_KEY || key == INACTIVE2_KEY || key == ACTIVEIME_KEY
+                || key == ACTIVE_KEY && !tc->OPT_offHotKey
+                || key == ACTIVE2_KEY && !tc->OPT_unmodifiedOffHotKey) {
+                inactivate();
+            }
         }
         if (tc->OPT_syncWithIME && key != ACTIVEIME_KEY
             && ((tc->mode != TCode::OFF)?1:2) & tc->OPT_syncmaster) {  // syncmaster
@@ -975,6 +997,7 @@ int TableWindow::handleHotKey() {
     int check;
     do {
         check = 0;
+        while (tc->isReducibleByKata())  { tc->reduceByKata();  check = 1; }
         while (tc->isReducibleByBushu()) { tc->reduceByBushu(); check = 1; }
         while (tc->isReducibleByMaze())  { tc->reduceByMaze();  check = 1; }
     } while (check != 0);
@@ -1057,6 +1080,9 @@ int TableWindow::handleHotKey() {
  *
  * - hotKey=<xx>            dc (C-\)    ON/OFF のキー (仮想キーコード)
  * - unmodifiedHotKey=<xx>  (無指定)    無修飾のホットキー <v127d/>
+ * - offHotKey=<xx>         (無指定)    OFF キー (仮想キーコード)
+ * - unmodifiedOffHotKey=<xx>
+ *                          (無指定)    無修飾の OFF ホットキー
  * - keyboard="file"        106.key     キーボード定義ファイル
  * - tableFile="file"       t.tbl       テーブル定義ファイル
  *
@@ -1121,6 +1147,18 @@ void TableWindow::initTC() {
         error("「hotkey|unmodifiedHotKey=(16 進キーコード)」の設定がまちがっているようです");
     }
     //</OKA>
+    GetPrivateProfileString("kanchoku", "OffHotKey", "",
+                            hotKey, sizeof(hotKey), iniFile);
+    int OPT_offHotKey = (int)strtol(hotKey, NULL, 16);
+    if (OPT_offHotKey == OPT_hotKey) {
+        OPT_offHotKey = 0;
+    }
+    GetPrivateProfileString("kanchoku", "UnmodifiedOffHotKey", "",
+                            hotKey, sizeof(hotKey), iniFile);
+    int OPT_unmodifiedOffHotKey = (int)strtol(hotKey, NULL, 16);
+    if (OPT_unmodifiedOffHotKey == OPT_unmodifiedHotKey) {
+        OPT_unmodifiedOffHotKey = 0;
+    }
 
     // keyboard file
     char keyFile[255];      // キーボードファイル名
@@ -1472,6 +1510,8 @@ void TableWindow::initTC() {
     //<OKA> support unmodified hot key
     tc->OPT_unmodifiedHotKey = OPT_unmodifiedHotKey;
     //</OKA>
+    tc->OPT_offHotKey = OPT_offHotKey;
+    tc->OPT_unmodifiedOffHotKey = OPT_unmodifiedOffHotKey;
     tc->bushuReady = bushuReady;
     tc->mazeReady = mazeReady;
     //<v127a - gg>
