@@ -111,6 +111,27 @@ SpecialBlock::SpecialBlock(char c) {
         function = F_DAKUTEN; break;
     case 'P':                   // 後置型の半濁点
         function = F_HANDAKUTEN; break;
+    case '-': function = F_KATA_POST0; break; // 後置型のかたかな変換 (X 文字)
+    case 'Q': function = F_KATA_POST1; break; // 後置型のかたかな変換 (1 文字)
+    case 'R': function = F_KATA_POST2; break; // 後置型のかたかな変換 (2 文字)
+    case 'S': function = F_KATA_POST3; break; // 後置型のかたかな変換 (3 文字)
+    case 'T': function = F_KATA_POST4; break; // 後置型のかたかな変換 (4 文字)
+    case 'U': function = F_KATA_POST5; break; // 後置型のかたかな変換 (5 文字)
+    case 'V': function = F_KATA_POST6; break; // 後置型のかたかな変換 (6 文字)
+    case 'W': function = F_KATA_POST7; break; // 後置型のかたかな変換 (7 文字)
+    case 'X': function = F_KATA_POST8; break; // 後置型のかたかな変換 (8 文字)
+    case 'Y': function = F_KATA_POST9; break; // 後置型のかたかな変換 (9 文字)
+    case ')': function = F_KATA_POSTH1; break; // 後置型かたかな変換 (1 文字除)
+    case '(': function = F_KATA_POSTH2; break; // 後置型かたかな変換 (2 文字除)
+    case '\'': function = F_KATA_POSTH3; break; // 後置型かたかな変換 (3 文字除)
+    case '&': function = F_KATA_POSTH4; break; // 後置型かたかな変換 (4 文字除)
+    case '%': function = F_KATA_POSTH5; break; // 後置型かたかな変換 (5 文字除)
+    case '$': function = F_KATA_POSTH6; break; // 後置型かたかな変換 (6 文字除)
+    case '@': function = F_KATA_POSTS1; break; // 後置型かたかな変換縮 (1 文字)
+    case '[': function = F_KATA_POSTS2; break; // 後置型かたかな変換縮 (2 文字)
+    case ';': function = F_KATA_POSTS3; break; // 後置型かたかな変換縮 (3 文字)
+    case ':': function = F_KATA_POSTS4; break; // 後置型かたかな変換縮 (4 文字)
+    case ']': function = F_KATA_POSTS5; break; // 後置型かたかな変換縮 (5 文字)
 
     case 'h':                   // 文字ヘルプ (前の文字)
         function = F_HELP_BACKW; break;
@@ -154,6 +175,26 @@ char *SpecialBlock::getFace() {
     case F_MAZE_POST9:  return "変";
     case F_DAKUTEN:     return "゛";
     case F_HANDAKUTEN:  return "゜";
+    case F_KATA_POST1:  return "カ";
+    case F_KATA_POST2:  return "カ";
+    case F_KATA_POST3:  return "カ";
+    case F_KATA_POST4:  return "カ";
+    case F_KATA_POST5:  return "カ";
+    case F_KATA_POST6:  return "カ";
+    case F_KATA_POST7:  return "カ";
+    case F_KATA_POST8:  return "カ";
+    case F_KATA_POST9:  return "カ";
+    case F_KATA_POSTH1:  return "ヵ";
+    case F_KATA_POSTH2:  return "ヵ";
+    case F_KATA_POSTH3:  return "ヵ";
+    case F_KATA_POSTH4:  return "ヵ";
+    case F_KATA_POSTH5:  return "ヵ";
+    case F_KATA_POSTH6:  return "ヵ";
+    case F_KATA_POSTS1:  return "か";
+    case F_KATA_POSTS2:  return "か";
+    case F_KATA_POSTS3:  return "か";
+    case F_KATA_POSTS4:  return "か";
+    case F_KATA_POSTS5:  return "か";
 
     case F_HELP_BACKW:  return "≪";
     case F_HELP_FORW:   return "≫";
