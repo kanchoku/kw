@@ -72,6 +72,7 @@ char *moji2strcat(char *, MOJI);
 /* -------------------------------------------------------------------
  * MOJI Œ^‚ÌŠeí•ÏŠ·
  * - mojiHirakata() : ‚Ğ‚ç‚ª‚È/‚©‚½‚©‚È•ÏŠ·
+ * - mojiKata()     : ‚©‚½‚©‚È‚Ö‚Ì•ÏŠ·(‚©‚½‚©‚È¨‚Ğ‚ç‚ª‚È•ÏŠ·‚Ís‚í‚È‚¢)
  * - mojiHanzen()   : ”¼Šp/‘SŠp•ÏŠ· (ASCII •¶š)
  * - mojiDaku()     : ´‰¹/‘÷‰¹•ÏŠ·
  * - mojiHandaku()  : ´‰¹/”¼‘÷‰¹•ÏŠ·
@@ -79,6 +80,7 @@ char *moji2strcat(char *, MOJI);
  * - mojiHankana()  : <hankana/> ‘SŠp‚©‚È ¨ ”¼Šp‚©‚È ‚Ì•ÏŠ·
  */
 MOJI mojiHirakata(MOJI);
+MOJI mojiKata(MOJI);
 MOJI mojiHanzen(MOJI);
 MOJI mojiDaku(MOJI);
 MOJI mojiHandaku(MOJI);
