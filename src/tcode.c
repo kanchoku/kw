@@ -917,11 +917,23 @@ void TCode::keyinNormalKataPost(int n) {
         int offset;
         for (offset = len - 1; 0 <= offset; offset--) {
 // TRUEの文字が続く間、後置型かたかな変換対象とする(ひらがな、「ー」)
+#define TYOON(m) (MOJI2H(m) == 0x81 && MOJI2L(m) == 0x5b)
 #define IN_KATARANGE(m) ((MOJI2H(m) == 0x82 && \
                           0x9f <= MOJI2L(m) && MOJI2L(m) <= 0xf1) || \
-                         (MOJI2H(m) == 0x81 && MOJI2L(m) == 0x5b))
+                         TYOON(m))
             MOJI m = postBuffer->moji(offset);
-            if (!IN_KATARANGE(m)) break;
+            if (!IN_KATARANGE(m)) {
+                // 「キーとばりゅー」に対し1文字残してかたかな変換で
+                // 「キーとバリュー」になるように「ー」は除く
+                while (offset < len - 1) {
+                    m = postBuffer->moji(offset + 1);
+                    if (TYOON(m))
+                        offset++;
+                    else
+                        break;
+                }
+                break;
+            }
         }
         if (n < 0)
             offset += -n; // 指定文字数を除いてかたかなに変換
