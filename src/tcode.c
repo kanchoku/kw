@@ -315,9 +315,11 @@ void TCode::keyinNormal(int key) {
     case CH_KEY:
     case CG_KEY:
     case CI_KEY:
+    case CLEFT_KEY:
+    case CRIGHT_KEY:
         currentCtrl = 1;
     }
-    if (OPT_useCtrlKey == 2 && currentCtrl) {
+    if (OPT_useCtrlKey == 2 && currentCtrl && key != CLEFT_KEY && key != CRIGHT_KEY) {
         currentCtrl = 0;
         switch (key) {
         case CM_KEY:
@@ -435,6 +437,42 @@ void TCode::keyinNormal(int key) {
             preBuffer->pushSoft(MV(vkey[TC_UNSHIFT(currentStroke->at(0))]));
         }
         reset();
+        return;
+
+#define pushPre_clearPost(k) do { \
+    if (!ISEMPTY) { \
+        preBuffer->clear(); postDelete = 0; \
+    } \
+    vk = k; \
+    preBuffer->pushSoft(M_V(vk)); \
+    postBuffer->clear(); \
+    reset(); \
+} while (0)
+    case LEFT_KEY:
+    case CLEFT_KEY:
+        pushPre_clearPost(VK_LEFT);
+        return;
+    case RIGHT_KEY:
+    case CRIGHT_KEY:
+        pushPre_clearPost(VK_RIGHT);
+        return;
+    case UP_KEY:
+        pushPre_clearPost(VK_UP);
+        return;
+    case DOWN_KEY:
+        pushPre_clearPost(VK_DOWN);
+        return;
+    case HOME_KEY:
+        pushPre_clearPost(VK_HOME);
+        return;
+    case END_KEY:
+        pushPre_clearPost(VK_END);
+        return;
+    case PAGEUP_KEY:
+        pushPre_clearPost(VK_PRIOR);
+        return;
+    case PAGEDOWN_KEY:
+        pushPre_clearPost(VK_NEXT);
         return;
 
     default:

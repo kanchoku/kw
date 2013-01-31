@@ -133,6 +133,7 @@ public:
     int OPT_hardBS;             // BS で常に文字を消去
     int OPT_weakBS;             // BS で1ストロークだけ戻る
     int OPT_useCtrlKey;         // C-h などを BS などとして扱う
+    int OPT_clearBufOnMove;     // カーソル移動で後置型変換用バッファを空にする
     int OPT_useTTCode;          // 三枚表 T-Code スタイルの文字ヘルプ
     int OPT_win95;              // win95 でのフォントのずれの補正
     char *OPT_offResetModes;    // 各種モードをリセット

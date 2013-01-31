@@ -14,6 +14,7 @@ TableWindow::TableWindow(HINSTANCE i) {
     hLFont = 0;
     instance = i;
     tc = 0;
+    enabledCursorHotKey = FALSE;
     COLORREF defStyleCol[20] = {
     /*"off_BtnFrame", "COL_OFF_LN"*/ GRAYTONE(0x60),
     /*"off_BtnFace", "COL_OFF_K1"*/ GRAYTONE(0xf8),
@@ -179,6 +180,8 @@ void TableWindow::activate() {
         RegisterHotKey(hwnd, CJ_KEY, MOD_CONTROL, 'J');
         RegisterHotKey(hwnd, CI_KEY, MOD_CONTROL, 'I');
     }
+    if (tc->OPT_clearBufOnMove)
+        setCursorHotKey(TRUE);
 
     // ’Êíƒ‚[ƒh‚É‚·‚é
     tc->mode = TCode::NORMAL;
@@ -228,6 +231,8 @@ void TableWindow::inactivate() {
         UnregisterHotKey(hwnd, CJ_KEY);
         UnregisterHotKey(hwnd, CI_KEY);
     }
+    if (tc->OPT_clearBufOnMove)
+        setCursorHotKey(FALSE);
 
     tc->mode = TCode::OFF;
 }
@@ -247,6 +252,40 @@ void TableWindow::setMazeHotKey(int onoff) {
             RegisterHotKey(hwnd, LT_KEY, MOD_SHIFT, 0xbc);  //VK_OEM_COMMA
         if (tc_gt_key == -1 || !tc->isShiftKana[tc_gt_key])
             RegisterHotKey(hwnd, GT_KEY, MOD_SHIFT, 0xbe);  //VK_OEM_PERIOD
+    }
+}
+
+void TableWindow::setCursorHotKey(int enable) {
+    if (!tc->OPT_clearBufOnMove)
+        return;
+    if (enable) {
+        if (enabledCursorHotKey)
+            return;
+        RegisterHotKey(hwnd, LEFT_KEY, 0, VK_LEFT);
+        RegisterHotKey(hwnd, RIGHT_KEY, 0, VK_RIGHT);
+        RegisterHotKey(hwnd, CLEFT_KEY, MOD_CONTROL, VK_LEFT);
+        RegisterHotKey(hwnd, CRIGHT_KEY, MOD_CONTROL, VK_RIGHT);
+        RegisterHotKey(hwnd, UP_KEY, 0, VK_UP);
+        RegisterHotKey(hwnd, DOWN_KEY, 0, VK_DOWN);
+        RegisterHotKey(hwnd, HOME_KEY, 0, VK_HOME);
+        RegisterHotKey(hwnd, END_KEY, 0, VK_END);
+        RegisterHotKey(hwnd, PAGEUP_KEY, 0, VK_PRIOR);
+        RegisterHotKey(hwnd, PAGEDOWN_KEY, 0, VK_NEXT);
+        enabledCursorHotKey = TRUE;
+    } else {
+        if (!enabledCursorHotKey)
+            return;
+        UnregisterHotKey(hwnd, LEFT_KEY);
+        UnregisterHotKey(hwnd, RIGHT_KEY);
+        UnregisterHotKey(hwnd, CLEFT_KEY);
+        UnregisterHotKey(hwnd, CRIGHT_KEY);
+        UnregisterHotKey(hwnd, UP_KEY);
+        UnregisterHotKey(hwnd, DOWN_KEY);
+        UnregisterHotKey(hwnd, HOME_KEY);
+        UnregisterHotKey(hwnd, END_KEY);
+        UnregisterHotKey(hwnd, PAGEUP_KEY);
+        UnregisterHotKey(hwnd, PAGEDOWN_KEY);
+        enabledCursorHotKey = FALSE;
     }
 }
 
@@ -277,6 +316,8 @@ void TableWindow::disableHotKey() {
         UnregisterHotKey(hwnd, CJ_KEY);
         UnregisterHotKey(hwnd, CI_KEY);
     }
+    if (tc->OPT_clearBufOnMove)
+        setCursorHotKey(FALSE);
     disableGlobalHotKey();
 }
 
@@ -320,6 +361,8 @@ void TableWindow::resumeHotKey() {
         RegisterHotKey(hwnd, CJ_KEY, MOD_CONTROL, 'J');
         RegisterHotKey(hwnd, CI_KEY, MOD_CONTROL, 'I');
     }
+    if (tc->OPT_clearBufOnMove)
+        setCursorHotKey(TRUE);
     resumeGlobalHotKey();
 }
 
@@ -990,6 +1033,25 @@ int TableWindow::handleHotKey() {
     default:                    // ‚±‚±‚É‚Í—ˆ‚È‚¢‚Í‚¸‚¾‚ª
         goto DRAW; break;
     }
+    if (tc->OPT_clearBufOnMove) {
+        switch (key) {
+        case LEFT_KEY:
+        case RIGHT_KEY:
+        case CLEFT_KEY:
+        case CRIGHT_KEY:
+        case UP_KEY:
+        case DOWN_KEY:
+        case HOME_KEY:
+        case END_KEY:
+        case PAGEUP_KEY:
+        case PAGEDOWN_KEY:
+            setCursorHotKey(FALSE);
+            break;
+        default:
+            setCursorHotKey(TRUE);
+            break;
+        }
+    }
 
     /* ---------------------------------------------------------------
      * •ÏŠ·
@@ -1376,6 +1438,8 @@ void TableWindow::initTC() {
     // useCtrlKkey
     int OPT_useCtrlKey = GetPrivateProfileInt("kanchoku", "usectrlkey", 0,
                                               iniFile);
+    int OPT_clearBufOnMove = GetPrivateProfileInt("kanchoku", "clearbufonmove", 0,
+                                              iniFile);
     // useTTCode
     //<multishift>
     // !!! `useTTCode=1' option in "kanchoku.ini" is now obsolete.
@@ -1607,6 +1671,7 @@ void TableWindow::initTC() {
     tc->OPT_hardBS = OPT_hardBS;
     tc->OPT_weakBS = OPT_weakBS;
     tc->OPT_useCtrlKey = OPT_useCtrlKey;
+    tc->OPT_clearBufOnMove = OPT_clearBufOnMove;
     //<multishift>
     //tc->OPT_useTTCode = OPT_useTTCode;
     if (OPT_useTTCode) {

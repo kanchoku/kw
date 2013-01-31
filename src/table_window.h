@@ -100,6 +100,17 @@ typedef VOID (CALLBACK* MYWINEVENTPROC)(
 #define LT_KEY     (0x100 + 51) // "<"
 #define GT_KEY     (0x100 + 52) // ">"
 
+#define LEFT_KEY   (0x100 + 61) // ←
+#define RIGHT_KEY  (0x100 + 62) // →
+#define UP_KEY     (0x100 + 63) // ↑
+#define DOWN_KEY   (0x100 + 64) // ↓
+#define HOME_KEY   (0x100 + 65) // Home
+#define END_KEY    (0x100 + 66) // End
+#define PAGEUP_KEY   (0x100 + 67) // PgUp
+#define PAGEDOWN_KEY (0x100 + 68) // PgDown
+#define CLEFT_KEY  (0x100 + 71) // Ctrl+←
+#define CRIGHT_KEY (0x100 + 72) // Ctrl+→
+
 
 /* -------------------------------------------------------------------
  * 仮想鍵盤 (1) - フォントとウィンドウの大きさ
@@ -231,6 +242,9 @@ private:
     int tc_lt_key;
     int tc_gt_key;
 
+    // カーソル移動でpostBufferクリア後、Unregisterするため(でないと移動遅い)
+    int enabledCursorHotKey;
+
     // Shift押下検出（仮想鍵盤表示用）
     bool isShift;
     bool isShiftPrev;
@@ -268,6 +282,7 @@ private:
     void inactivate();          // 待機 (HotKey の解放)
     //void setSpecialHotKey();    // 特殊 HotKey の確保と解放
     void setMazeHotKey(int);
+    void setCursorHotKey(int);
     void disableHotKey();
     void resumeHotKey();
     void disableGlobalHotKey();
