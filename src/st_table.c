@@ -1,6 +1,8 @@
 #ifdef _MSC_VER //<OKA>
 #pragma warning(disable:4786)
+#if _MSC_VER < 1700
 #define for if(0);else for
+#endif
 #endif          //</OKA>
 #include "st_table.h"
 #include "tc.h"

@@ -6,7 +6,9 @@
 #include "debug.h"
 
 #ifdef _MSC_VER //<OKA>
+#if _MSC_VER < 1700
 #define for if(0);else for
+#endif
 #endif          //</OKA>
 
 /* -------------------------------------------------------------------
