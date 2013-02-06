@@ -1,5 +1,7 @@
 #ifdef _MSC_VER //<OKA>
+#if _MSC_VER < 1700
 #define for if(0);else for
+#endif
 #endif          //</OKA>
 #include "table_window.h"
 #include "debug.h"
@@ -428,6 +430,7 @@ void TableWindow::setTitleText() {
 int TableWindow::handleCreate() {
     // T-Code 変換器の初期化
     initTC();
+	if (!tc) return -1;
 
     // タスクトレイに登録
     //NOTIFYICONDATA nid;
@@ -554,6 +557,7 @@ void TableWindow::makeStyle() {
 // -------------------------------------------------------------------
 // WM_DESTROY
 int TableWindow::handleDestroy() {
+	if (!tc) return 0;
 
     inactivate();               // 待機状態にする
     //<OKA> support unmodified hot key
@@ -1466,30 +1470,11 @@ void TableWindow::initTC() {
 
     /* ---------------------------------------------------------------
      */
-    myGetGUIThreadInfo = NULL;
-    hUser32 = LoadLibrary("user32.dll");
-    if (hUser32) {
-        myGetGUIThreadInfo = (BOOL (WINAPI *)(DWORD, PMYGUITHREADINFO))GetProcAddress(hUser32,
-                "GetGUIThreadInfo");
-        mySetWinEventHook = (MYHWINEVENTHOOK (WINAPI *)(DWORD, DWORD, HMODULE, MYWINEVENTPROC, DWORD, DWORD, DWORD))
-                GetProcAddress(hUser32, "SetWinEventHook");
-        myUnhookWinEvent = (BOOL (WINAPI *)(MYHWINEVENTHOOK))GetProcAddress(hUser32,
-                "UnhookWinEvent");
-    }
-    weh_map.clear();
-    if (mySetWinEventHook && myUnhookWinEvent) {
-        hEventHook = mySetWinEventHook(EVENT_SYSTEM_FOREGROUND, EVENT_SYSTEM_FOREGROUND,
-                      GetModuleHandle(NULL), (MYWINEVENTPROC)WinEventProc, 0, 0, WINEVENT_OUTOFCONTEXT);
-        WEH weh = { hEventHook, this };
-        weh_map.push_back(weh);
-    }
-    /* ---------------------------------------------------------------
-     */
     // キーボードファイルの読み込み
     int *vkey;
     vkey = new int[TC_NKEYS];
     FILE *fp = fopen(keyFile, "r");
-    if (fp == 0) { error("キーボードファイルが開けません"); }
+    if (fp == 0) { error("キーボードファイルが開けません"); return; }
     for (int i = 0; i < TC_NKEYS; i++) {
         int vCode;
         fscanf(fp, "%x,", &vCode);
@@ -1507,7 +1492,7 @@ void TableWindow::initTC() {
 
     // テーブルファイルの読み込み
     is->open(tableFile/*, is->nocreate*/);
-    if (is->fail()) { error("テーブルファイルが開けません"); }
+    if (is->fail()) { error("テーブルファイルが開けません"); return; }
     // パーズする
     Parser *parser = new Parser(is, hwnd);
     ControlBlock *table = parser->parse();
@@ -1731,6 +1716,25 @@ void TableWindow::initTC() {
     tc->hirakataMode = 0;
     tc->hanzenMode = 0;
     tc->punctMode = 0;
+    /* ---------------------------------------------------------------
+     */
+    myGetGUIThreadInfo = NULL;
+    hUser32 = LoadLibrary("user32.dll");
+    if (hUser32) {
+        myGetGUIThreadInfo = (BOOL (WINAPI *)(DWORD, PMYGUITHREADINFO))GetProcAddress(hUser32,
+                "GetGUIThreadInfo");
+        mySetWinEventHook = (MYHWINEVENTHOOK (WINAPI *)(DWORD, DWORD, HMODULE, MYWINEVENTPROC, DWORD, DWORD, DWORD))
+                GetProcAddress(hUser32, "SetWinEventHook");
+        myUnhookWinEvent = (BOOL (WINAPI *)(MYHWINEVENTHOOK))GetProcAddress(hUser32,
+                "UnhookWinEvent");
+    }
+    weh_map.clear();
+    if (mySetWinEventHook && myUnhookWinEvent) {
+        hEventHook = mySetWinEventHook(EVENT_SYSTEM_FOREGROUND, EVENT_SYSTEM_FOREGROUND,
+                      GetModuleHandle(NULL), (MYWINEVENTPROC)WinEventProc, 0, 0, WINEVENT_OUTOFCONTEXT);
+        WEH weh = { hEventHook, this };
+        weh_map.push_back(weh);
+    }
 }
 
 // -------------------------------------------------------------------
