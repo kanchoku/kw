@@ -977,7 +977,8 @@ int TableWindow::handleAsSoftKbd() {
 
     // ヒストリ入力モード
     if (tc->mode == TCode::HIST) {
-        return 0;
+        wParam = getFromVKB10(x);
+        return handleHotKey();
     }
 
     // 唯一候補表示モード
@@ -988,7 +989,8 @@ int TableWindow::handleAsSoftKbd() {
 
     // 少数候補表示モード
     if (tc->mode == TCode::CAND && tc->currentCand->size() <= 10) {
-        return 0;
+        wParam = getFromVKB10(x);
+        return handleHotKey();
     }
 
     // 多数候補表示モード
@@ -2782,25 +2784,41 @@ int TableWindow::getFromVKB50(int x, int y) {
     }
 
     // drawFrameOFF()の逆
-    int i, j;
-    j = (y - MARGIN_SIZE) / BLOCK_SIZE;
+    int j = (y - MARGIN_SIZE) / BLOCK_SIZE;
     if (j < 0) { j = 0; }
     else if (j > 4) { j = 4; }
 
-    static const int OFFSET_RIGHT = MARGIN_SIZE + BLOCK_SIZE * 6;
+    int tmp = x - MARGIN_SIZE;
     if (j == 4) {
-        i = (x - MARGIN_SIZE - BLOCK_SIZE / 2) / BLOCK_SIZE;
-    } else if (OFFSET_RIGHT < x) {
-        i = (x - MARGIN_SIZE - BLOCK_SIZE) / BLOCK_SIZE;
-    } else {
-        i = (x - MARGIN_SIZE) / BLOCK_SIZE;
+        tmp -= BLOCK_SIZE / 2;
+    } else if (BLOCK_SIZE * 6 < tmp) {
+        tmp -= BLOCK_SIZE; // 柱のBLOCKを除く
     }
+    int i = tmp / BLOCK_SIZE;
     if (i < 0) { i = 0; }
     else if (i > 9) { i = 9; }
 
     return j * 10 + i; // キー番号
 }
 
+// 仮想鍵盤上のクリック位置をもとに、対応するキーを返す (10 鍵)
+int TableWindow::getFromVKB10(int x) {
+    // 柱
+    if (x >= MARGIN_SIZE + BLOCK_SIZE * 5
+            && x <= MARGIN_SIZE + BLOCK_SIZE * 6 + 1) {
+        return RET_KEY;
+    }
+
+    int tmp = x - MARGIN_SIZE;
+    if (BLOCK_SIZE * 6 < tmp) {
+        tmp -= BLOCK_SIZE;
+    }
+    int i = tmp / BLOCK_SIZE;
+    if (i < 0) { i = 0; }
+    else if (i > 9) { i = 9; }
+
+    return 20 + i; // 20:ホームポジションの段のキー番号
+}
 
 /* -------------------------------------------------------------------
  * エラー処理
