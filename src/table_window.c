@@ -5,6 +5,7 @@
 #endif          //</OKA>
 #include "table_window.h"
 #include "debug.h"
+#include <windowsx.h>
 // -------------------------------------------------------------------
 
 //BOOL CALLBACK CtlProc(HWND, UINT, WPARAM, LPARAM);
@@ -80,13 +81,12 @@ int TableWindow::wndProc(HWND w, UINT msg, WPARAM wp, LPARAM lp) {
     case WM_PAINT:
         return handlePaint();
 
-    case WM_LBUTTONUP:          // 左クリックで ON/OFF
-        wParam = ACTIVE_KEY;
-        return handleHotKey();
+    case WM_LBUTTONUP:          // 左クリックでソフトキーボード相当動作
+        return handleAsSoftKbd();
 
-    case WM_RBUTTONUP:          // 右クリックでバージョン情報
-                                // 名前とくい違ってるけど
-        return handleLButtonDown();
+    case WM_RBUTTONUP:          // 右クリックで ON/OFF
+        wParam = (tc->mode == TCode::OFF) ? ACTIVE_KEY : INACTIVE_KEY;
+        return handleHotKey();
 
     case WM_DESTROY:
         KillTimer(w, ID_MYTIMER);
@@ -103,8 +103,10 @@ int TableWindow::wndProc(HWND w, UINT msg, WPARAM wp, LPARAM lp) {
 
     case KANCHOKU_ICONCLK:
         if (lParam == WM_LBUTTONDOWN) {
-            wParam = ACTIVE_KEY;
+            wParam = (tc->mode == TCode::OFF) ? ACTIVE_KEY : INACTIVE_KEY;
             return handleHotKey();
+        } else if (lParam == WM_RBUTTONDOWN) { // 右クリックでバージョン情報
+            return showVersionDialog();
         }
         return 0;
 
@@ -605,8 +607,8 @@ int TableWindow::handleDestroy() {
 }
 
 // -------------------------------------------------------------------
-// WM_LBUTTONDOWN
-int TableWindow::handleLButtonDown() {
+// バージョン情報ダイアログを表示
+int TableWindow::showVersionDialog() {
     char s[1024];
     sprintf(s,
             "漢直窓 %s\n"
@@ -950,6 +952,55 @@ int TableWindow::handleForeground(HWND w) {
         }
     } else {
         if (!bGlobalHotKey) resumeGlobalHotKey();
+    }
+    return 0;
+}
+
+// -------------------------------------------------------------------
+// WM_LBUTTONUP
+// 左クリックでソフトキーボード相当動作
+int TableWindow::handleAsSoftKbd() {
+    int x = GET_X_LPARAM(lParam);
+    int y = GET_Y_LPARAM(lParam);
+
+    // OFF 時
+    if (tc->mode == TCode::OFF) {
+        wParam = getFromVKB50(x, y);
+        return handleHotKey();
+    }
+
+    // 文字ヘルプ表示モード
+    if (tc->helpMode) {
+        wParam = getFromVKB50(x, y);
+        return handleHotKey();
+    }
+
+    // ヒストリ入力モード
+    if (tc->mode == TCode::HIST) {
+        return 0;
+    }
+
+    // 唯一候補表示モード
+    if (tc->mode == TCode::CAND1) {
+        wParam = getFromVKB50(x, y);
+        return handleHotKey();
+    }
+
+    // 少数候補表示モード
+    if (tc->mode == TCode::CAND && tc->currentCand->size() <= 10) {
+        return 0;
+    }
+
+    // 多数候補表示モード
+    if (tc->mode == TCode::CAND && 10 < tc->currentCand->size()) {
+        wParam = getFromVKB50(x, y);
+        return handleHotKey();
+    }
+
+    // 通常入力モード
+    if (tc->mode == TCode::NORMAL) {
+        wParam = getFromVKB50(x, y);
+        return handleHotKey();
     }
     return 0;
 }
@@ -2719,6 +2770,37 @@ void TableWindow::drawMiniBuffer(HDC hdc, int height, COLORREF col,
 
     DeleteObject(br);
 }
+
+// -------------------------------------------------------------------
+// 仮想鍵盤上のクリック位置をもとに、対応するキーを返す (50 鍵)
+int TableWindow::getFromVKB50(int x, int y) {
+    // 柱
+    if (y <= MARGIN_SIZE + BLOCK_SIZE * 4 + 1
+            && x >= MARGIN_SIZE + BLOCK_SIZE * 5
+            && x <= MARGIN_SIZE + BLOCK_SIZE * 6 + 1) {
+        return RET_KEY;
+    }
+
+    // drawFrameOFF()の逆
+    int i, j;
+    j = (y - MARGIN_SIZE) / BLOCK_SIZE;
+    if (j < 0) { j = 0; }
+    else if (j > 4) { j = 4; }
+
+    static const int OFFSET_RIGHT = MARGIN_SIZE + BLOCK_SIZE * 6;
+    if (j == 4) {
+        i = (x - MARGIN_SIZE - BLOCK_SIZE / 2) / BLOCK_SIZE;
+    } else if (OFFSET_RIGHT < x) {
+        i = (x - MARGIN_SIZE - BLOCK_SIZE) / BLOCK_SIZE;
+    } else {
+        i = (x - MARGIN_SIZE) / BLOCK_SIZE;
+    }
+    if (i < 0) { i = 0; }
+    else if (i > 9) { i = 9; }
+
+    return j * 10 + i; // キー番号
+}
+
 
 /* -------------------------------------------------------------------
  * エラー処理

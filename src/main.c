@@ -44,7 +44,7 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prevInstance,
 
     // ウィンドウを作る
     HWND hwnd;
-    hwnd = CreateWindowEx(WS_EX_TOPMOST | WS_EX_TOOLWINDOW,
+    hwnd = CreateWindowEx(WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE,
                           appName,
                           "漢直窓",
                           WS_DLGFRAME | WS_SYSMENU,

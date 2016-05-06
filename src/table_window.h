@@ -292,13 +292,15 @@ private:
     // メッセージハンドラ
     int handleCreate();         // WM_CREATE
     int handleDestroy();        // WM_DESTROY
-    int handleLButtonDown();    // WM_LBUTTONDOWN
     int handlePaint();          // WM_PAINT
     int handleTimer();          // WM_TIMER
     int handleNotifyVKPROCESSKEY(); // WM_KANCHOKU_NOTIFYVKPROCESSKEY
     int handleNotifyIMEStatus();    // WM_KANCHOKU_NOTIFYIMESTATUS
     int handleForeground(HWND);     // EVENT_SYSTEM_FOREGROUND
+    int handleAsSoftKbd();      // WM_LBUTTONUP
     int handleHotKey();         // WM_HOTKEY
+
+    int showVersionDialog();    // バージョン情報ダイアログを表示
 
     // T-Code 関連
     void initTC();              // T-Code 変換器の初期化
@@ -312,6 +314,9 @@ private:
     void drawVKB10(HDC);        // 少数候補選択時の仮想鍵盤
     void drawMiniBuffer(HDC, int, COLORREF, MojiBuffer *);
                                 // ミニバッファ
+
+    // 仮想鍵盤上のクリック位置をもとに、対応するキーを返す
+    int getFromVKB50(int x, int y);
 
     // エラー処理
     void error(char *);         // エラーを表示し、終了
