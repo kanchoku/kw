@@ -112,6 +112,9 @@ int TableWindow::wndProc(HWND w, UINT msg, WPARAM wp, LPARAM lp) {
 
     case WM_HOTKEY:
         return handleHotKey();
+
+    case WM_MOUSEACTIVATE:
+        return MA_NOACTIVATE;
     }
 
     return DefWindowProc(hwnd, msg, wParam, lParam);
