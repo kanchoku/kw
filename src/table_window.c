@@ -980,7 +980,7 @@ int TableWindow::handleAsSoftKbd() {
 
     // ヒストリ入力モード
     if (tc->mode == TCode::HIST) {
-        wParam = getFromVKB10(x);
+        wParam = getFromVKB10(x, y);
         return handleHotKey();
     }
 
@@ -992,7 +992,7 @@ int TableWindow::handleAsSoftKbd() {
 
     // 少数候補表示モード
     if (tc->mode == TCode::CAND && tc->currentCand->size() <= 10) {
-        wParam = getFromVKB10(x);
+        wParam = getFromVKB10(x, y);
         return handleHotKey();
     }
 
@@ -2779,13 +2779,6 @@ void TableWindow::drawMiniBuffer(HDC hdc, int height, COLORREF col,
 // -------------------------------------------------------------------
 // 仮想鍵盤上のクリック位置をもとに、対応するキーを返す (50 鍵)
 int TableWindow::getFromVKB50(int x, int y) {
-    // 柱
-    if (y <= MARGIN_SIZE + BLOCK_SIZE * 4 + 1
-            && x >= MARGIN_SIZE + BLOCK_SIZE * 5
-            && x <= MARGIN_SIZE + BLOCK_SIZE * 6 + 1) {
-        return RET_KEY;
-    }
-
     // drawFrameOFF()の逆
     int j = (y - MARGIN_SIZE) / BLOCK_SIZE;
     if (j < 0) { j = 0; }
@@ -2794,31 +2787,56 @@ int TableWindow::getFromVKB50(int x, int y) {
     int tmp = x - MARGIN_SIZE;
     if (j == 4) {
         tmp -= BLOCK_SIZE / 2;
-    } else if (BLOCK_SIZE * 6 < tmp) {
-        tmp -= BLOCK_SIZE; // 柱のBLOCKを除く
+        if (tmp < 0) {
+            return LEFT_KEY;
+        }
+    } else if (j < 4 && BLOCK_SIZE * 5 <= tmp && tmp < BLOCK_SIZE * 6) { // 柱
+        switch (j) {
+            case 0: return BS_KEY;
+            case 1: return RET_KEY;
+            case 2: return (tc->mode == TCode::OFF) ? ACTIVE_KEY : INACTIVE_KEY;
+            case 3: return ESC_KEY;
+        }
+    } else if (BLOCK_SIZE * 6 <= tmp) {
+        tmp -= BLOCK_SIZE; // 柱のBLOCK分を引く
+    }
+    if (tmp < 0) {
+        return LEFT_KEY;
     }
     int i = tmp / BLOCK_SIZE;
-    if (i < 0) { i = 0; }
-    else if (i > 9) { i = 9; }
+    if (i > 9) {
+        return RIGHT_KEY;
+    }
 
     return j * 10 + i; // キー番号
 }
 
 // 仮想鍵盤上のクリック位置をもとに、対応するキーを返す (10 鍵)
-int TableWindow::getFromVKB10(int x) {
-    // 柱
-    if (x >= MARGIN_SIZE + BLOCK_SIZE * 5
-            && x <= MARGIN_SIZE + BLOCK_SIZE * 6 + 1) {
-        return RET_KEY;
-    }
-
+int TableWindow::getFromVKB10(int x, int y) {
     int tmp = x - MARGIN_SIZE;
-    if (BLOCK_SIZE * 6 < tmp) {
+    if (BLOCK_SIZE * 5 <= tmp && tmp < BLOCK_SIZE * 6) { // 柱
+        int j = (y - MARGIN_SIZE) / BLOCK_SIZE;
+        if (j <= 0) {
+            return BS_KEY;
+        } else if (j == 1) {
+            return RET_KEY;
+        } else if (j == 2) {
+            return (tc->mode == TCode::OFF) ? ACTIVE_KEY : INACTIVE_KEY;
+        } else if (j == 3) {
+            return LT_KEY;
+        } else {
+            return GT_KEY;
+        }
+    } else if (BLOCK_SIZE * 6 <= tmp) {
         tmp -= BLOCK_SIZE;
     }
+    if (tmp < 0) {
+        return LEFT_KEY;
+    }
     int i = tmp / BLOCK_SIZE;
-    if (i < 0) { i = 0; }
-    else if (i > 9) { i = 9; }
+    if (i > 9) {
+        return RIGHT_KEY;
+    }
 
     return 20 + i; // 20:ホームポジションの段のキー番号
 }

@@ -317,7 +317,7 @@ private:
 
     // 仮想鍵盤上のクリック位置をもとに、対応するキーを返す
     int getFromVKB50(int x, int y);
-    int getFromVKB10(int x);
+    int getFromVKB10(int x, int y);
 
     // エラー処理
     void error(char *);         // エラーを表示し、終了
