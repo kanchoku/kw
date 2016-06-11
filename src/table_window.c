@@ -787,6 +787,10 @@ int TableWindow::handleTimer() {
         }
         isShiftPrev = isShift;
         isShift = isShiftNow;
+        if (isSoftKbdClicked) {
+            isSoftKbdClicked = FALSE;
+            InvalidateRect(hwnd, NULL, FALSE);
+        }
         return 0;
 }
 
@@ -963,6 +967,7 @@ int TableWindow::handleForeground(HWND w) {
 // WM_LBUTTONUP
 // 左クリックでソフトキーボード相当動作
 int TableWindow::handleAsSoftKbd() {
+    isSoftKbdClicked = TRUE;
     int x = GET_X_LPARAM(lParam);
     int y = GET_Y_LPARAM(lParam);
 
@@ -1007,6 +1012,7 @@ int TableWindow::handleAsSoftKbd() {
         wParam = getFromVKB50(x, y);
         return handleHotKey();
     }
+    isSoftKbdClicked = FALSE;
     return 0;
 }
 
@@ -2529,12 +2535,17 @@ void TableWindow::drawVKB50(HDC hdc, bool isWithBothSide) {
     HBRUSH brSP = CreateSolidBrush(COL_DK_CYAN);
     HBRUSH brGG = CreateSolidBrush(COL_DK_MAGENTA);
     HBRUSH brNO = CreateSolidBrush(COL_BLACK);
+    HBRUSH brCL = CreateSolidBrush(COL_OFF_LN); // for isSoftKbdClicked
 
     HGDIOBJ brSave = SelectObject(hdc, GetStockObject(NULL_BRUSH));
     HGDIOBJ pnSave = SelectObject(hdc, GetStockObject(NULL_PEN));
     HGDIOBJ fnSave = SelectObject(hdc, hFont);
 
     SetBkMode(hdc, TRANSPARENT);
+    if (isSoftKbdClicked) {
+        SelectObject(hdc, brCL);
+        Rectangle(hdc, clickx + 1, clicky + 1, clickx + clickw + 1, clicky + clickh + 1);
+    }
     for (int y = 0; y < 5; y++) {
         int py = MARGIN_SIZE + BLOCK_SIZE * y;
         for (int x = 0; x < 10; x++) {
@@ -2661,6 +2672,7 @@ void TableWindow::drawVKB50(HDC hdc, bool isWithBothSide) {
     DeleteObject(brSP);
     DeleteObject(brGG);
     DeleteObject(brNO);
+    DeleteObject(brCL);
 }
 
 // -------------------------------------------------------------------
@@ -2784,27 +2796,42 @@ int TableWindow::getFromVKB50(int x, int y) {
     if (j < 0) { j = 0; }
     else if (j > 4) { j = 4; }
 
+    clicky = MARGIN_SIZE + BLOCK_SIZE * j;
+    clickx = 0;
+    clickw = clickh = BLOCK_SIZE;
+
     int tmp = x - MARGIN_SIZE;
     if (j == 4) {
         tmp -= BLOCK_SIZE / 2;
         if (tmp < 0) {
+            clickw = MARGIN_SIZE + BLOCK_SIZE / 2;
             return LEFT_KEY;
         }
     } else if (j < 4 && BLOCK_SIZE * 5 <= tmp && tmp < BLOCK_SIZE * 6) { // 柱
+        clickx = MARGIN_SIZE + BLOCK_SIZE * 5;
         switch (j) {
             case 0: return BS_KEY;
             case 1: return RET_KEY;
             case 2: return (tc->mode == TCode::OFF) ? ACTIVE_KEY : INACTIVE_KEY;
-            case 3: return ESC_KEY;
+            case 3:
+            default: return ESC_KEY;
         }
     } else if (BLOCK_SIZE * 6 <= tmp) {
         tmp -= BLOCK_SIZE; // 柱のBLOCK分を引く
     }
     if (tmp < 0) {
+        clickw = MARGIN_SIZE;
         return LEFT_KEY;
     }
     int i = tmp / BLOCK_SIZE;
+
+    clickx = MARGIN_SIZE + BLOCK_SIZE * i;
+    if (j == 4) { clickx += BLOCK_SIZE / 2; }
+    else if (4 < i) { clickx += BLOCK_SIZE; }
+
     if (i > 9) {
+        clickw = MARGIN_SIZE;
+        if (j == 4) { clickw += BLOCK_SIZE / 2; }
         return RIGHT_KEY;
     }
 
@@ -2813,9 +2840,17 @@ int TableWindow::getFromVKB50(int x, int y) {
 
 // 仮想鍵盤上のクリック位置をもとに、対応するキーを返す (10 鍵)
 int TableWindow::getFromVKB10(int x, int y) {
+    clicky = MARGIN_SIZE;
+    clickx = 0;
+    clickw = BLOCK_SIZE;
+    clickh = BLOCK_SIZE * 5;
+
     int tmp = x - MARGIN_SIZE;
     if (BLOCK_SIZE * 5 <= tmp && tmp < BLOCK_SIZE * 6) { // 柱
         int j = (y - MARGIN_SIZE) / BLOCK_SIZE;
+        clickx = MARGIN_SIZE + BLOCK_SIZE * 5;
+        clicky = MARGIN_SIZE + BLOCK_SIZE * j;
+        clickh = BLOCK_SIZE;
         if (j <= 0) {
             return BS_KEY;
         } else if (j == 1) {
@@ -2831,10 +2866,16 @@ int TableWindow::getFromVKB10(int x, int y) {
         tmp -= BLOCK_SIZE;
     }
     if (tmp < 0) {
+        clickw = MARGIN_SIZE;
         return LEFT_KEY;
     }
     int i = tmp / BLOCK_SIZE;
+
+    clickx = MARGIN_SIZE + BLOCK_SIZE * i;
+    if (i > 4) { clickx += BLOCK_SIZE; }
+
     if (i > 9) {
+        clickw = MARGIN_SIZE;
         return RIGHT_KEY;
     }
 
