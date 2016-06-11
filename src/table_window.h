@@ -28,6 +28,7 @@ using namespace std;
 
 #ifndef MAPVK_VK_TO_VSC
 #define MAPVK_VK_TO_VSC (0)
+#define MAPVK_VK_TO_CHAR (2)
 #endif
 #ifndef WM_UNICHAR
 #define WM_UNICHAR 0x0109
@@ -312,6 +313,7 @@ private:
     void drawFrameOFF(HDC hdc); // OFF 時の仮想鍵盤の枠
     void drawFrame50(HDC hdc);  // 通常時の仮想鍵盤の枠
     void drawFrame10(HDC hdc);  // 少数候補選択時の仮想鍵盤の枠
+    void drawVKBOFF(HDC hdc);   // OFF時の仮想鍵盤
     void drawVKB50(HDC hdc, bool isWithBothSide = false);        // 通常時の仮想鍵盤
     void drawVKB10(HDC);        // 少数候補選択時の仮想鍵盤
     void drawMiniBuffer(HDC, int, COLORREF, MojiBuffer *);

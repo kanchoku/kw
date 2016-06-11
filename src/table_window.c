@@ -661,6 +661,7 @@ int TableWindow::handlePaint() {
     // OFF 時
     if (tc->mode == TCode::OFF) {
         drawFrameOFF(hdc);
+        drawVKBOFF(hdc);
         goto END_PAINT;
     }
 
@@ -747,6 +748,10 @@ int TableWindow::handlePaint() {
 // WM_TIMER
 int TableWindow::handleTimer() {
     bool isShiftNow, trigDisp;
+    if (isSoftKbdClicked) {
+        isSoftKbdClicked = FALSE;
+        InvalidateRect(hwnd, NULL, FALSE);
+    }
     // 計時
         if (deciSecAfterStroke < 1024) deciSecAfterStroke++;
     // kanchoku time out
@@ -787,10 +792,6 @@ int TableWindow::handleTimer() {
         }
         isShiftPrev = isShift;
         isShift = isShiftNow;
-        if (isSoftKbdClicked) {
-            isSoftKbdClicked = FALSE;
-            InvalidateRect(hwnd, NULL, FALSE);
-        }
         return 0;
 }
 
@@ -973,8 +974,33 @@ int TableWindow::handleAsSoftKbd() {
 
     // OFF 時
     if (tc->mode == TCode::OFF) {
+        int vk = -1;
         wParam = getFromVKB50(x, y);
-        return handleHotKey();
+        if (wParam < TC_NKEYS) {
+            vk = tc->vkey[wParam];
+        } else {
+            switch (wParam) {
+            case ACTIVE_KEY:
+            case INACTIVE_KEY: return handleHotKey();
+            case ESC_KEY:   vk = VK_ESCAPE; break;
+            case BS_KEY:    vk = VK_BACK;   break;
+            case RET_KEY:   vk = VK_RETURN; break;
+            case LEFT_KEY:  vk = VK_LEFT;   break;
+            case RIGHT_KEY: vk = VK_RIGHT;  break;
+            //XXX: getFromVKB50()からこれら以外のキーを返す場合は追加要
+            }
+        }
+        if (vk != -1) {
+            int sc = MapVirtualKey(vk, MAPVK_VK_TO_VSC);
+            keybd_event(vk, sc, 0, NULL);
+            keybd_event(vk, sc, KEYEVENTF_KEYUP, NULL);
+
+            // どのキーが押されたと認識されたかを一瞬背景色を変えて表示
+            InvalidateRect(hwnd, NULL, FALSE);
+            SetTimer(hwnd, ID_MYTIMER, 100, NULL);
+            deciSecAfterStroke = 0;
+        }
+        return 0;
     }
 
     // 文字ヘルプ表示モード
@@ -1182,7 +1208,7 @@ int TableWindow::handleHotKey() {
     InvalidateRect(hwnd, NULL, TRUE);
     //</v127c>
 
-    if (tc->mode != TCode::OFF) {
+    if (tc->mode != TCode::OFF || tc->OPT_softKeyboard) {
         SetTimer(hwnd, ID_MYTIMER, 100, NULL);
         isShift = isShiftPrev = !!(GetKeyState(VK_SHIFT) & 0x8000);
         deciSecAfterStroke = 0;
@@ -1489,6 +1515,8 @@ void TableWindow::initTC() {
     // displayHelpDelay
     int OPT_displayHelpDelay = GetPrivateProfileInt("kanchoku", "displayHelpDelay", 0, iniFile);
 
+    int OPT_softKeyboard = GetPrivateProfileInt("kanchoku", "softKeyboard", 0, iniFile);
+
     // style
     readStyleSetting();
 
@@ -1715,6 +1743,7 @@ void TableWindow::initTC() {
     tc->OPT_xLoc = OPT_xLoc;
     tc->OPT_yLoc = OPT_yLoc;
     tc->OPT_displayHelpDelay = OPT_displayHelpDelay;
+    tc->OPT_softKeyboard = OPT_softKeyboard;
     tc->OPT_hardBS = OPT_hardBS;
     tc->OPT_weakBS = OPT_weakBS;
     tc->OPT_useCtrlKey = OPT_useCtrlKey;
@@ -2520,6 +2549,54 @@ void TableWindow::drawFrame10(HDC hdc) {
     DeleteObject(pnM1);
     DeleteObject(pnM2);
     DeleteObject(pnM3);
+}
+
+// -------------------------------------------------------------------
+// 仮想鍵盤のキー (OFF 時)
+void TableWindow::drawVKBOFF(HDC hdc) {
+    if (!tc->OPT_softKeyboard) {
+        return;
+    }
+
+    HBRUSH brCL = CreateSolidBrush(COL_OFF_LN); // for isSoftKbdClicked
+
+    HGDIOBJ brSave = SelectObject(hdc, GetStockObject(NULL_BRUSH));
+    HGDIOBJ pnSave = SelectObject(hdc, GetStockObject(NULL_PEN));
+    HGDIOBJ fnSave = SelectObject(hdc, hFont);
+
+    SetBkMode(hdc, TRANSPARENT);
+    if (isSoftKbdClicked) {
+        SelectObject(hdc, brCL);
+        Rectangle(hdc, clickx + 1, clicky + 1, clickx + clickw + 1, clicky + clickh + 1);
+    }
+    for (int y = 0; y < 5; y++) {
+        int py = MARGIN_SIZE + BLOCK_SIZE * y;
+        for (int x = 0; x < 10; x++) {
+            int k = y * 10 + x;
+            if (TC_NKEYS <= k) { goto END; }
+
+            int px = MARGIN_SIZE + BLOCK_SIZE * x;
+            if (y == 4) { px += BLOCK_SIZE / 2; }
+            else if (5 <= x) { px += BLOCK_SIZE; }
+
+            SelectObject(hdc, GetStockObject(NULL_BRUSH));
+            Rectangle(hdc, px + 2, py + 2, px + BLOCK_SIZE, py + BLOCK_SIZE);
+
+            char ch = LOWORD(MapVirtualKey(tc->vkey[k], MAPVK_VK_TO_CHAR));
+            if (ch) {
+                int dx = tc->OPT_win95 ? 0 : 1;
+                RECT rctmp = { 0, 0, CHAR_SIZE, CHAR_SIZE };
+                int dy = (CHAR_SIZE-DrawText(hdc, "亜", 2, &rctmp, DT_CALCRECT))/3;
+                TextOut(hdc, px + stylePadding*3/2 + dx + (CHAR_SIZE / 4), py + stylePadding*3/2 + dy, &ch, 1);
+            }
+        }
+    }
+ END:
+    SelectObject(hdc, brSave);
+    SelectObject(hdc, pnSave);
+    SelectObject(hdc, fnSave);
+
+    DeleteObject(brCL);
 }
 
 // -------------------------------------------------------------------
