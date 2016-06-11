@@ -931,7 +931,7 @@ int TableWindow::handleNotifyVKPROCESSKEY() {
     //<v127c>
     // [連習スレ2:517] キーリピート時の問題
     //RedrawWindow(hwnd, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ERASE);
-    InvalidateRect(hwnd, NULL, TRUE);
+    InvalidateRect(hwnd, isSoftKbdClicked ? &rcClick : NULL, TRUE);
     //</v127c>
     return 0;
 }
@@ -981,7 +981,8 @@ int TableWindow::handleAsSoftKbd() {
         } else {
             switch (wParam) {
             case ACTIVE_KEY:
-            case INACTIVE_KEY: return handleHotKey();
+            case INACTIVE_KEY:
+                return handleHotKey();
             case ESC_KEY:   vk = VK_ESCAPE; break;
             case BS_KEY:    vk = VK_BACK;   break;
             case RET_KEY:   vk = VK_RETURN; break;
@@ -996,7 +997,7 @@ int TableWindow::handleAsSoftKbd() {
             keybd_event(vk, sc, KEYEVENTF_KEYUP, NULL);
 
             // どのキーが押されたと認識されたかを一瞬背景色を変えて表示
-            InvalidateRect(hwnd, NULL, FALSE);
+            InvalidateRect(hwnd, &rcClick, FALSE);
             SetTimer(hwnd, ID_MYTIMER, 100, NULL);
             deciSecAfterStroke = 0;
         }
@@ -1205,7 +1206,7 @@ int TableWindow::handleHotKey() {
     //<v127c>
     // [連習スレ2:517] キーリピート時の問題
     //RedrawWindow(hwnd, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ERASE);
-    InvalidateRect(hwnd, NULL, TRUE);
+    InvalidateRect(hwnd, isSoftKbdClicked ? &rcClick : NULL, TRUE);
     //</v127c>
 
     if (tc->mode != TCode::OFF || tc->OPT_softKeyboard) {
@@ -2567,7 +2568,7 @@ void TableWindow::drawVKBOFF(HDC hdc) {
     SetBkMode(hdc, TRANSPARENT);
     if (isSoftKbdClicked) {
         SelectObject(hdc, brCL);
-        Rectangle(hdc, clickx + 1, clicky + 1, clickx + clickw + 1, clicky + clickh + 1);
+        Rectangle(hdc, rcClick.left, rcClick.top, rcClick.right, rcClick.bottom);
     }
     for (int y = 0; y < 5; y++) {
         int py = MARGIN_SIZE + BLOCK_SIZE * y;
@@ -2621,7 +2622,7 @@ void TableWindow::drawVKB50(HDC hdc, bool isWithBothSide) {
     SetBkMode(hdc, TRANSPARENT);
     if (isSoftKbdClicked) {
         SelectObject(hdc, brCL);
-        Rectangle(hdc, clickx + 1, clicky + 1, clickx + clickw + 1, clicky + clickh + 1);
+        Rectangle(hdc, rcClick.left, rcClick.top, rcClick.right, rcClick.bottom);
     }
     for (int y = 0; y < 5; y++) {
         int py = MARGIN_SIZE + BLOCK_SIZE * y;
@@ -2873,19 +2874,21 @@ int TableWindow::getFromVKB50(int x, int y) {
     if (j < 0) { j = 0; }
     else if (j > 4) { j = 4; }
 
-    clicky = MARGIN_SIZE + BLOCK_SIZE * j;
-    clickx = 0;
-    clickw = clickh = BLOCK_SIZE;
+    rcClick.top = MARGIN_SIZE + BLOCK_SIZE * j + 1;
+    rcClick.left = 1;
+    rcClick.right = rcClick.left + BLOCK_SIZE;
+    rcClick.bottom = rcClick.top + BLOCK_SIZE;
 
     int tmp = x - MARGIN_SIZE;
     if (j == 4) {
         tmp -= BLOCK_SIZE / 2;
         if (tmp < 0) {
-            clickw = MARGIN_SIZE + BLOCK_SIZE / 2;
+            rcClick.right = rcClick.left + MARGIN_SIZE + BLOCK_SIZE / 2;
             return LEFT_KEY;
         }
     } else if (j < 4 && BLOCK_SIZE * 5 <= tmp && tmp < BLOCK_SIZE * 6) { // 柱
-        clickx = MARGIN_SIZE + BLOCK_SIZE * 5;
+        rcClick.left = MARGIN_SIZE + BLOCK_SIZE * 5 + 1;
+        rcClick.right = rcClick.left + BLOCK_SIZE;
         switch (j) {
             case 0: return BS_KEY;
             case 1: return RET_KEY;
@@ -2897,18 +2900,19 @@ int TableWindow::getFromVKB50(int x, int y) {
         tmp -= BLOCK_SIZE; // 柱のBLOCK分を引く
     }
     if (tmp < 0) {
-        clickw = MARGIN_SIZE;
+        rcClick.right = rcClick.left + MARGIN_SIZE;
         return LEFT_KEY;
     }
     int i = tmp / BLOCK_SIZE;
 
-    clickx = MARGIN_SIZE + BLOCK_SIZE * i;
-    if (j == 4) { clickx += BLOCK_SIZE / 2; }
-    else if (4 < i) { clickx += BLOCK_SIZE; }
+    rcClick.left = MARGIN_SIZE + BLOCK_SIZE * i + 1;
+    if (j == 4) { rcClick.left += BLOCK_SIZE / 2; }
+    else if (4 < i) { rcClick.left += BLOCK_SIZE; }
+    rcClick.right = rcClick.left + BLOCK_SIZE;
 
     if (i > 9) {
-        clickw = MARGIN_SIZE;
-        if (j == 4) { clickw += BLOCK_SIZE / 2; }
+        rcClick.right = rcClick.left + MARGIN_SIZE;
+        if (j == 4) { rcClick.right += BLOCK_SIZE / 2; }
         return RIGHT_KEY;
     }
 
@@ -2917,17 +2921,18 @@ int TableWindow::getFromVKB50(int x, int y) {
 
 // 仮想鍵盤上のクリック位置をもとに、対応するキーを返す (10 鍵)
 int TableWindow::getFromVKB10(int x, int y) {
-    clicky = MARGIN_SIZE;
-    clickx = 0;
-    clickw = BLOCK_SIZE;
-    clickh = BLOCK_SIZE * 5;
+    rcClick.top = MARGIN_SIZE + 1;
+    rcClick.left = 1;
+    rcClick.right = rcClick.left + BLOCK_SIZE;
+    rcClick.bottom = rcClick.top + BLOCK_SIZE * 5;
 
     int tmp = x - MARGIN_SIZE;
     if (BLOCK_SIZE * 5 <= tmp && tmp < BLOCK_SIZE * 6) { // 柱
         int j = (y - MARGIN_SIZE) / BLOCK_SIZE;
-        clickx = MARGIN_SIZE + BLOCK_SIZE * 5;
-        clicky = MARGIN_SIZE + BLOCK_SIZE * j;
-        clickh = BLOCK_SIZE;
+        rcClick.left = MARGIN_SIZE + BLOCK_SIZE * 5 + 1;
+        rcClick.top = MARGIN_SIZE + BLOCK_SIZE * j + 1;
+        rcClick.right = rcClick.left + BLOCK_SIZE;
+        rcClick.bottom = rcClick.top + BLOCK_SIZE;
         if (j <= 0) {
             return BS_KEY;
         } else if (j == 1) {
@@ -2943,16 +2948,17 @@ int TableWindow::getFromVKB10(int x, int y) {
         tmp -= BLOCK_SIZE;
     }
     if (tmp < 0) {
-        clickw = MARGIN_SIZE;
+        rcClick.right = rcClick.left + MARGIN_SIZE;
         return LEFT_KEY;
     }
     int i = tmp / BLOCK_SIZE;
 
-    clickx = MARGIN_SIZE + BLOCK_SIZE * i;
-    if (i > 4) { clickx += BLOCK_SIZE; }
+    rcClick.left = MARGIN_SIZE + BLOCK_SIZE * i + 1;
+    if (i > 4) { rcClick.left += BLOCK_SIZE; }
+    rcClick.right = rcClick.left + BLOCK_SIZE;
 
     if (i > 9) {
-        clickw = MARGIN_SIZE;
+        rcClick.right = rcClick.left + MARGIN_SIZE;
         return RIGHT_KEY;
     }
 

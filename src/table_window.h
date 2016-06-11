@@ -252,7 +252,7 @@ private:
     // Timeout判定用
     int deciSecAfterStroke;
     bool isSoftKbdClicked; // ソフトキーボードがクリックされた場合
-    int clickx, clicky, clickw, clickh; // ソフトキーボードクリック時反転表示
+    RECT rcClick; // ソフトキーボードクリック時反転表示
 
     // スタイル設定
     COLORREF styleCol[20];
