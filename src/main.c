@@ -44,6 +44,8 @@ int WINAPI WinMain(HINSTANCE instance, HINSTANCE prevInstance,
 
     // ウィンドウを作る
     HWND hwnd;
+    // XXX: ソフトキーボード動作用にWS_EX_NOACTIVATEを指定すると、
+    // Windows7だとマウスでのウィンドウ移動時に枠が表示されない
     hwnd = CreateWindowEx(WS_EX_TOPMOST | WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE,
                           appName,
                           "漢直窓",

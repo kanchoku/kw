@@ -564,6 +564,23 @@ void TableWindow::makeStyle() {
 int TableWindow::handleDestroy() {
 	if (!tc) return 0;
 
+    if (tc->OPT_saveXYLoc) {
+        RECT winRect;
+        if (GetWindowRect(hwnd, &winRect)
+                && (winRect.left != tc->OPT_xLoc
+                    || winRect.top != tc->OPT_yLoc)) {
+            char iniFile[MAX_PATH + 1];
+            GetCurrentDirectory(sizeof(iniFile), iniFile);
+            strcat(iniFile, "\\kanchoku.ini");
+            // XXX: たまたま値が-1の場合、初期位置指定無しとみなされる
+            char val[20];
+            sprintf(val, "%d", winRect.left);
+            WritePrivateProfileString("kanchoku", "xloc", val, iniFile);
+            sprintf(val, "%d", winRect.top);
+            WritePrivateProfileString("kanchoku", "yloc", val, iniFile);
+        }
+    }
+
     inactivate();               // 待機状態にする
     //<OKA> support unmodified hot key
     if (tc->OPT_hotKey)
@@ -1555,6 +1572,7 @@ void TableWindow::initTC() {
     // xLoc, yLoc
     int OPT_xLoc = GetPrivateProfileInt("kanchoku", "xloc", -1, iniFile);
     int OPT_yLoc = GetPrivateProfileInt("kanchoku", "yloc", -1, iniFile);
+    int OPT_saveXYLoc = GetPrivateProfileInt("kanchoku", "savexyloc", 0, iniFile);
 
     // displayHelpDelay
     int OPT_displayHelpDelay = GetPrivateProfileInt("kanchoku", "displayHelpDelay", 0, iniFile);
@@ -1786,6 +1804,7 @@ void TableWindow::initTC() {
     tc->OPT_offHide = OPT_offHide;
     tc->OPT_xLoc = OPT_xLoc;
     tc->OPT_yLoc = OPT_yLoc;
+    tc->OPT_saveXYLoc = OPT_saveXYLoc;
     tc->OPT_displayHelpDelay = OPT_displayHelpDelay;
     tc->OPT_softKeyboard = OPT_softKeyboard;
     tc->OPT_hardBS = OPT_hardBS;
