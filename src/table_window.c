@@ -470,6 +470,12 @@ int TableWindow::handleCreate() {
 }
 
 void TableWindow::makeStyle() {
+    if (tc->OPT_softKeyboard) { // ソフトキーボードとして使う->WS_EX_NOACTIVATE
+        LONG exs = GetWindowLong(hwnd, GWL_EXSTYLE);
+        SetWindowLong(hwnd, GWL_EXSTYLE, exs | WS_EX_NOACTIVATE);
+        SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+    }
+
     // 外枠の大きさを取得
     RECT winRect;
     GetWindowRect(hwnd, &winRect);
@@ -564,7 +570,7 @@ void TableWindow::makeStyle() {
 int TableWindow::handleDestroy() {
 	if (!tc) return 0;
 
-    if (tc->OPT_saveXYLoc) {
+    if (tc->OPT_saveXYLoc) { // ウィンドウ位置をkanchoku.iniに保存する
         RECT winRect;
         if (GetWindowRect(hwnd, &winRect)) {
             // たまたま値が-1の場合、初期位置指定無しとして扱われるので0に
