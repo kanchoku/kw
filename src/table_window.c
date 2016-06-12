@@ -661,6 +661,11 @@ int TableWindow::handlePaint() {
     // OFF Žž
     if (tc->mode == TCode::OFF) {
         drawFrameOFF(hdc);
+        if (tc->OPT_softKeyboard) {
+            MojiBuffer mb(4);
+            mb.clear(); mb.pushSoft("BRŠ¿E"); // BS, RET, ON/OFF, ESC
+            drawMiniBuffer(hdc, 4, COL_OFF_M1, &mb);
+        }
         drawVKBOFF(hdc);
         goto END_PAINT;
     }
@@ -727,6 +732,10 @@ int TableWindow::handlePaint() {
             work.pushSoft(tc->explicitGG);
             work.popN(work.length()-tc->ittaku);
             drawMiniBuffer(hdc, 4, COL_ON_K1, &work);
+        } else if (tc->OPT_softKeyboard) {
+            MojiBuffer mb(4);
+            mb.clear(); mb.pushSoft("BRŠ¿E"); // BS, RET, ON/OFF, ESC
+            drawMiniBuffer(hdc, 4, COL_ON_M1, &mb);
         }
         drawVKB50(hdc, tc->isAnyShiftSeq || tc->OPT_shiftLockStroke);
         goto END_PAINT;
