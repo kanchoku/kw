@@ -749,7 +749,7 @@ int TableWindow::handlePaint() {
 int TableWindow::handleTimer() {
     bool isShiftNow, trigDisp;
     if (isSoftKbdClicked) {
-        isSoftKbdClicked = FALSE;
+        isSoftKbdClicked = false;
         InvalidateRect(hwnd, NULL, FALSE);
     }
     // 計時
@@ -781,7 +781,11 @@ int TableWindow::handleTimer() {
                 InvalidateRect(hwnd, NULL, FALSE);
             }
         }
-        isShiftNow = !!(GetKeyState(VK_SHIFT) & 0x8000);  // GetAsyncKeyState じゃなくて大丈夫なのだろうか
+        if (tc->OPT_softKeyboard && isSoftKbdShift) {
+            isShiftNow = isSoftKbdShift;
+        } else {
+            isShiftNow = !!(GetKeyState(VK_SHIFT) & 0x8000);  // GetAsyncKeyState じゃなくて大丈夫なのだろうか
+        }
         if ((tc->mode == TCode::NORMAL || tc->mode == TCode::CAND1)
             && !tc->helpMode 
             && IsWindowVisible(hwnd)
@@ -968,7 +972,7 @@ int TableWindow::handleForeground(HWND w) {
 // WM_LBUTTONUP
 // 左クリックでソフトキーボード相当動作
 int TableWindow::handleAsSoftKbd() {
-    isSoftKbdClicked = TRUE;
+    isSoftKbdClicked = true;
     int x = GET_X_LPARAM(lParam);
     int y = GET_Y_LPARAM(lParam);
 
@@ -978,6 +982,8 @@ int TableWindow::handleAsSoftKbd() {
         wParam = getFromVKB50(x, y);
         if (wParam < TC_NKEYS) {
             vk = tc->vkey[wParam];
+        } else if (TC_ISSHIFTED(wParam)) {
+            vk = tc->vkey[TC_UNSHIFT(wParam)];
         } else {
             switch (wParam) {
             case ACTIVE_KEY:
@@ -988,13 +994,24 @@ int TableWindow::handleAsSoftKbd() {
             case RET_KEY:   vk = VK_RETURN; break;
             case LEFT_KEY:  vk = VK_LEFT;   break;
             case RIGHT_KEY: vk = VK_RIGHT;  break;
+            case VK_LSHIFT: vk = VK_SHIFT;  break;
             //XXX: getFromVKB50()からこれら以外のキーを返す場合は追加要
             }
         }
         if (vk != -1) {
-            int sc = MapVirtualKey(vk, MAPVK_VK_TO_VSC);
-            keybd_event(vk, sc, 0, NULL);
-            keybd_event(vk, sc, KEYEVENTF_KEYUP, NULL);
+            if (vk != VK_SHIFT) {
+                int ssc = 0;
+                if (TC_ISSHIFTED(wParam)) {
+                    ssc = MapVirtualKey(VK_SHIFT, MAPVK_VK_TO_VSC);
+                    keybd_event(VK_SHIFT, ssc, 0, NULL);
+                }
+                int sc = MapVirtualKey(vk, MAPVK_VK_TO_VSC);
+                keybd_event(vk, sc, 0, NULL);
+                keybd_event(vk, sc, KEYEVENTF_KEYUP, NULL);
+                if (TC_ISSHIFTED(wParam)) {
+                    keybd_event(VK_SHIFT, ssc, KEYEVENTF_KEYUP, NULL);
+                }
+            }
 
             // どのキーが押されたと認識されたかを一瞬背景色を変えて表示
             InvalidateRect(hwnd, &rcClick, FALSE);
@@ -1007,6 +1024,9 @@ int TableWindow::handleAsSoftKbd() {
     // 文字ヘルプ表示モード
     if (tc->helpMode) {
         wParam = getFromVKB50(x, y);
+        if (wParam == VK_LSHIFT) {
+            return 0;
+        }
         return handleHotKey();
     }
 
@@ -1019,6 +1039,9 @@ int TableWindow::handleAsSoftKbd() {
     // 唯一候補表示モード
     if (tc->mode == TCode::CAND1) {
         wParam = getFromVKB50(x, y);
+        if (wParam == VK_LSHIFT) {
+            return 0;
+        }
         return handleHotKey();
     }
 
@@ -1031,15 +1054,21 @@ int TableWindow::handleAsSoftKbd() {
     // 多数候補表示モード
     if (tc->mode == TCode::CAND && 10 < tc->currentCand->size()) {
         wParam = getFromVKB50(x, y);
+        if (wParam == VK_LSHIFT) {
+            return 0;
+        }
         return handleHotKey();
     }
 
     // 通常入力モード
     if (tc->mode == TCode::NORMAL) {
         wParam = getFromVKB50(x, y);
+        if (wParam == VK_LSHIFT) {
+            return 0;
+        }
         return handleHotKey();
     }
-    isSoftKbdClicked = FALSE;
+    isSoftKbdClicked = false;
     return 0;
 }
 
@@ -1056,6 +1085,7 @@ int TableWindow::handleHotKey() {
     // ON/OFF
     if (key == ACTIVE_KEY || key == ACTIVE2_KEY || key == ACTIVEIME_KEY || key == INACTIVE_KEY || key == INACTIVE2_KEY) {
         tc->reset();
+        isSoftKbdShift = false;
         if (tc->mode != TCode::OFF && (key != ACTIVEIME_KEY || !bKeepBuffer)) {  // 明示的OFF時のみバッファクリア
             tc->resetBuffer();
             int i = 0;
@@ -1211,7 +1241,11 @@ int TableWindow::handleHotKey() {
 
     if (tc->mode != TCode::OFF || tc->OPT_softKeyboard) {
         SetTimer(hwnd, ID_MYTIMER, 100, NULL);
-        isShift = isShiftPrev = !!(GetKeyState(VK_SHIFT) & 0x8000);
+        if (isSoftKbdClicked) {
+            isShift = isShiftPrev = isSoftKbdShift;
+        } else {
+            isShift = isShiftPrev = !!(GetKeyState(VK_SHIFT) & 0x8000);
+        }
         deciSecAfterStroke = 0;
     }
 
@@ -2583,7 +2617,7 @@ void TableWindow::drawVKBOFF(HDC hdc) {
             SelectObject(hdc, GetStockObject(NULL_BRUSH));
             Rectangle(hdc, px + 2, py + 2, px + BLOCK_SIZE, py + BLOCK_SIZE);
 
-            char ch = LOWORD(MapVirtualKey(tc->vkey[k], MAPVK_VK_TO_CHAR));
+            char ch = toAscii(tc->vkey[k], isSoftKbdShift);
             if (ch) {
                 int dx = tc->OPT_win95 ? 0 : 1;
                 RECT rctmp = { 0, 0, CHAR_SIZE, CHAR_SIZE };
@@ -2598,6 +2632,18 @@ void TableWindow::drawVKBOFF(HDC hdc) {
     SelectObject(hdc, fnSave);
 
     DeleteObject(brCL);
+}
+
+// -------------------------------------------------------------------
+// VK_XXXに対応する表示用文字を返す
+char TableWindow::toAscii(UINT vk, bool shift) {
+    static BYTE keystate[256];
+    WORD ch[2] = {0, 0};
+    keystate[VK_SHIFT] = shift ? 0x80 : 0;
+    if (::ToAscii(vk, 0, keystate, ch, 0) > 0) {
+        return ch[0];
+    }
+    return 0;
 }
 
 // -------------------------------------------------------------------
@@ -2916,7 +2962,16 @@ int TableWindow::getFromVKB50(int x, int y) {
         return RIGHT_KEY;
     }
 
-    return j * 10 + i; // キー番号
+    int k = j * 10 + i; // キー番号
+    if (k == 49) {
+        isSoftKbdShift = !isSoftKbdShift;
+        return VK_LSHIFT; // キー番号とかぶるのでVK_SHIFT(16)は使わない
+    }
+    if (isSoftKbdShift) {
+        isSoftKbdShift = false;
+        return TC_SHIFT(k);
+    }
+    return k;
 }
 
 // 仮想鍵盤上のクリック位置をもとに、対応するキーを返す (10 鍵)

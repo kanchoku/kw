@@ -251,8 +251,11 @@ private:
     bool isShiftPrev;
     // Timeout判定用
     int deciSecAfterStroke;
+
+    // ソフトキーボードとしての動作関係
     bool isSoftKbdClicked; // ソフトキーボードがクリックされた場合
     RECT rcClick; // ソフトキーボードクリック時反転表示
+    bool isSoftKbdShift; // ソフトキーボード上シフトキーがオン
 
     // スタイル設定
     COLORREF styleCol[20];
@@ -329,6 +332,7 @@ private:
 
     void readTargetWindowSetting(char *); // 出力先ウィンドウごとの設定の読込
     int getOutputMethod(HWND);  // 指定したウィンドウに対するoutputMethodを取得
+    char toAscii(UINT vk, bool isShift); // VK_XXXに対応する表示用文字を返す
 
     void makeStyle();
     void readStyleSetting();
