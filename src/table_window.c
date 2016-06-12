@@ -969,7 +969,7 @@ int TableWindow::handleNotifyVKPROCESSKEY() {
     //<v127c>
     // [連習スレ2:517] キーリピート時の問題
     //RedrawWindow(hwnd, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ERASE);
-    InvalidateRect(hwnd, isSoftKbdClicked ? &rcClick : NULL, TRUE);
+    InvalidateRect(hwnd, (tc->OPT_softKeyboard && isSoftKbdClicked) ? &rcClick : NULL, TRUE);
     //</v127c>
     return 0;
 }
@@ -1270,7 +1270,7 @@ int TableWindow::handleHotKey() {
     //<v127c>
     // [連習スレ2:517] キーリピート時の問題
     //RedrawWindow(hwnd, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ERASE);
-    InvalidateRect(hwnd, isSoftKbdClicked ? &rcClick : NULL, TRUE);
+    InvalidateRect(hwnd, (tc->OPT_softKeyboard && isSoftKbdClicked) ? &rcClick : NULL, TRUE);
     //</v127c>
 
     if (tc->mode != TCode::OFF || tc->OPT_softKeyboard) {
