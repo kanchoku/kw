@@ -566,18 +566,20 @@ int TableWindow::handleDestroy() {
 
     if (tc->OPT_saveXYLoc) {
         RECT winRect;
-        if (GetWindowRect(hwnd, &winRect)
-                && (winRect.left != tc->OPT_xLoc
-                    || winRect.top != tc->OPT_yLoc)) {
-            char iniFile[MAX_PATH + 1];
-            GetCurrentDirectory(sizeof(iniFile), iniFile);
-            strcat(iniFile, "\\kanchoku.ini");
-            // XXX: たまたま値が-1の場合、初期位置指定無しとみなされる
-            char val[20];
-            sprintf(val, "%d", winRect.left);
-            WritePrivateProfileString("kanchoku", "xloc", val, iniFile);
-            sprintf(val, "%d", winRect.top);
-            WritePrivateProfileString("kanchoku", "yloc", val, iniFile);
+        if (GetWindowRect(hwnd, &winRect)) {
+            // たまたま値が-1の場合、初期位置指定無しとして扱われるので0に
+            int x = (winRect.left == -1) ? 0 : winRect.left;
+            int y = (winRect.top == -1) ? 0 : winRect.top;
+            if (x != tc->OPT_xLoc || y != tc->OPT_yLoc) {
+                char iniFile[MAX_PATH + 1];
+                GetCurrentDirectory(sizeof(iniFile), iniFile);
+                strcat(iniFile, "\\kanchoku.ini");
+                char val[20];
+                sprintf(val, "%d", x);
+                WritePrivateProfileString("kanchoku", "xloc", val, iniFile);
+                sprintf(val, "%d", y);
+                WritePrivateProfileString("kanchoku", "yloc", val, iniFile);
+            }
         }
     }
 
