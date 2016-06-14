@@ -471,6 +471,18 @@ int TableWindow::handleCreate() {
 
 void TableWindow::makeStyle() {
     if (tc->OPT_softKeyboard) { // ソフトキーボードとして使う->WS_EX_NOACTIVATE
+        if (tc->OPT_softKeyboard >= 2) {
+            // Alt-Tabで直前のアクティブなウィンドウに切り替え
+            // でないと、漢直Win起動後、入力したいウィンドウのアクティブ化操作要
+            int sc1 = MapVirtualKey(VK_MENU, MAPVK_VK_TO_VSC);
+            keybd_event(VK_MENU, sc1, 0, NULL);
+            int sc2 = MapVirtualKey(VK_TAB, MAPVK_VK_TO_VSC);
+            keybd_event(VK_TAB, sc2, 0, NULL);
+            Sleep(tc->OPT_outputSleep);
+            keybd_event(VK_TAB, sc2, KEYEVENTF_KEYUP, NULL);
+            keybd_event(VK_MENU, sc1, KEYEVENTF_KEYUP, NULL);
+        }
+
         LONG exs = GetWindowLong(hwnd, GWL_EXSTYLE);
         SetWindowLong(hwnd, GWL_EXSTYLE, exs | WS_EX_NOACTIVATE);
         SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_FRAMECHANGED);
