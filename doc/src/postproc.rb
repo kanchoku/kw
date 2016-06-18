@@ -3,11 +3,11 @@
 # usage: postproc.rb RD_OUTPUT_HTML
 
 =begin
-== RD ‚Å‚Í–‘«‚Å‚«‚È‚¢l‚Ì‚½‚ß‚ÌAƒ^ƒO’Ç‰Á dirty trick
+== RD ã§ã¯æº€è¶³ã§ããªã„äººã®ãŸã‚ã®ã€ã‚¿ã‚°è¿½åŠ  dirty trick
 
-* [^hoge^]  ¨ <span class="sup">hoge</span>
-* [{fuga}hoge] ¨ <span class="fuga">hoge</span>
-* [:tag:] ¨ <tag>
+* [^hoge^]  â†’ <span class="sup">hoge</span>
+* [{fuga}hoge] â†’ <span class="fuga">hoge</span>
+* [:tag:] â†’ <tag>
 =end
 
 $_.gsub!(/\[\^(.*?)\^\]/) { "<span class=\"sup\">#{$1}</span>" }

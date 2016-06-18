@@ -1,461 +1,461 @@
 =begin
 
-== �J�X�^�}�C�Y
+== カスタマイズ
 
-�u����Win�v�̃J�X�^�}�C�Y�Ɋ֘A����t�@�C���́A
-���� 3 ��ł��B
+「漢直Win」のカスタマイズに関連するファイルは、
+次の 3 種です。
 
-* ((<�����ݒ�t�@�C��>)) (kanchoku.ini)
-* ((<�L�[�{�[�h�t�@�C��>)) (106.key, 101.key �Ȃ�)
-* ((<�e�[�u���t�@�C��>)) (t.tbl, tut.tbl �Ȃ�)
+* ((<初期設定ファイル>)) (kanchoku.ini)
+* ((<キーボードファイル>)) (106.key, 101.key など)
+* ((<テーブルファイル>)) (t.tbl, tut.tbl など)
 
-((<�����ݒ�t�@�C��>)) (kanchoku.ini) �́A
-�u����Win�v�̓����ݒ肷��ݒ�t�@�C���ł��B
-�ʏ�́A���̃t�@�C����ҏW���邾���ł悢�ł��傤�B
+((<初期設定ファイル>)) (kanchoku.ini) は、
+「漢直Win」の動作を設定する設定ファイルです。
+通常は、このファイルを編集するだけでよいでしょう。
 
-((<�L�[�{�[�h�t�@�C��>)) (*.key) �́A
-�u����Win�v�Ŏg�p����L�[��ݒ肷��ݒ�t�@�C���ł��B
-�ʏ�́A���̃t�@�C����ύX����K�v�͂���܂��񂪁A
-����ȃL�[�{�[�h���g�p������A�L�[���C�A�E�g��ύX�����肵�Ă���ꍇ�́A
-�L�[�{�[�h�t�@�C����ҏW������A
-�V�����쐬�����肷��K�v�����邩���m��܂���B
+((<キーボードファイル>)) (*.key) は、
+「漢直Win」で使用するキーを設定する設定ファイルです。
+通常は、このファイルを変更する必要はありませんが、
+特殊なキーボードを使用したり、キーレイアウトを変更したりしている場合は、
+キーボードファイルを編集したり、
+新しく作成したりする必要があるかも知れません。
 
-((<�e�[�u���t�@�C��>)) (*.tbl) �́A
-T-Code �� TUT-Code �Ȃǂ̓��͕����́A
-�����ƃX�g���[�N�̑Ή����`����ݒ�t�@�C���ł��B
-���񍇐�����������ϊ��A�������ȃ��[�h�Ȃǂ̋@�\�L�[�̊��蓖�Ă��A
-���̃t�@�C���Őݒ肵�܂��B
-�܂��A�Ǝ��̃R�[�h���쐬����ꍇ�́A
-�e�[�u���t�@�C����V�����쐬���邱�ƂɂȂ�܂��B
+((<テーブルファイル>)) (*.tbl) は、
+T-Code や TUT-Code などの入力方式の、
+文字とストロークの対応を定義する設定ファイルです。
+部首合成や交ぜ書き変換、かたかなモードなどの機能キーの割り当ても、
+このファイルで設定します。
+また、独自のコードを作成する場合は、
+テーブルファイルを新しく作成することになります。
 
-=== �����ݒ�t�@�C��
+=== 初期設定ファイル
 
-�����ݒ�t�@�C�� kanchoku.ini �́A
-�u����Win�v�̓����ݒ肷��ݒ�t�@�C���ł��B
+初期設定ファイル kanchoku.ini は、
+「漢直Win」の動作を設定する設定ファイルです。
 
-�g�p������͕��� (T-Code, TUT-Code �Ȃ�) ��
-�L�[�{�[�h���w�肷��ɂ́A���̐ݒ�t�@�C����ҏW���܂��B
+使用する入力方式 (T-Code, TUT-Code など) や
+キーボードを指定するには、この設定ファイルを編集します。
 
-* kanchoku.ini �̏����́AWindows �ň�ʓI�ɗp������ INI �`���ł��B
-* �Z�~�R���� ((({;}))) ����s���܂ł́A�R�����g�Ƃ��ēǂ݂Ƃ΂���܂��B
-* �u����Win�v�̐ݒ�I�v�V�����́A
-  (({[kanchoku]})) �Z�N�V�����ɋL�q���܂��B
+* kanchoku.ini の書式は、Windows で一般的に用いられる INI 形式です。
+* セミコロン ((({;}))) から行末までは、コメントとして読みとばされます。
+* 「漢直Win」の設定オプションは、
+  (({[kanchoku]})) セクションに記述します。
 
-  ��(({[kansaku]})) �Z�N�V�����ɂ́A
-  ((<������>)) �̐ݒ�I�v�V�������L�q����ꏊ�Ȃ̂ŁA�����ɂ�
-  �u����Win�v�̐ݒ�������Ȃ��悤�ɂ��܂��傤�B��
+  ■(({[kansaku]})) セクションには、
+  ((<漢索窓>)) の設定オプションを記述する場所なので、ここには
+  「漢直Win」の設定を書かないようにしましょう。□
 
-==== �u����Win�v�̋N��
-�u����Win�v�̋N���Ɋւ���I�v�V�����ł��B
+==== 「漢直Win」の起動
+「漢直Win」の起動に関するオプションです。
 :(({hotKey=((|xx|))}))
-  [kanchoku.ini �̃f�t�H���g: dc (���Ȃ킿�A((%Ctrl%))+((%\%))); �ȗ���: dc]
+  [kanchoku.ini のデフォルト: dc (すなわち、((%Ctrl%))+((%\%))); 省略時: dc]
 
-  ((|xx|)) �ɁA�z�b�g�L�[ (ON/OFF �̃g�O���Ɏg�p����L�[) ���A
-  16 �i�\�L�� ((<���z�L�[�R�[�h>)) �Ŏw�肵�܂��B
-  �����Ŏw�肵���L�[�ƁA((%Ctrl%)) �𓯎��ɉ������ƂŁAON/OFF ���g�O�����܂��B
+  ((|xx|)) に、ホットキー (ON/OFF のトグルに使用するキー) を、
+  16 進表記の ((<仮想キーコード>)) で指定します。
+  ここで指定したキーと、((%Ctrl%)) を同時に押すことで、ON/OFF をトグルします。
 
-  ���Ƃ��΁A((%Ctrl%))+((%Space%)) ���z�b�g�L�[�ɂ���ɂ́A
-  ���̂悤�ɋL�q���܂��B
+  たとえば、((%Ctrl%))+((%Space%)) をホットキーにするには、
+  次のように記述します。
     hotKey=20
 
 :(({unmodifiedHotKey=((|xx|))}))
-  [kanchoku.ini �̃f�t�H���g: (�Ȃ�); �ȗ���: (�Ȃ�)]
+  [kanchoku.ini のデフォルト: (なし); 省略時: (なし)]
 
-  [^[((<ver1.27d|�ύX����>))]^]
-  (({hotKey=((|xx|))})) �Ɠ��l�ł����A
-  �����Őݒ肵���z�b�g�L�[�͒P�Ƃœ����A((%Ctrl%)) �������K�v������܂���B
+  [^[((<ver1.27d|変更履歴>))]^]
+  (({hotKey=((|xx|))})) と同様ですが、
+  ここで設定したホットキーは単独で働き、((%Ctrl%)) を押す必要がありません。
 
-  ���Ƃ��΁A((%�ϊ�%)) �L�[���z�b�g�L�[�ɂ���ɂ́A
-  ���̂悤�ɋL�q���܂��B
+  たとえば、((%変換%)) キーをホットキーにするには、
+  次のように記述します。
     unmodifiedHotKey=1c
 
-(({hotKey=((|xx|))})) �� (({unmodifiedHotKey=((|xx|))})) �̎w��͗������܂��B
-���Ƃ��΁A
+(({hotKey=((|xx|))})) と (({unmodifiedHotKey=((|xx|))})) の指定は両立します。
+たとえば、
   hotKey=1c
   unmodifiedHotKey=1c
-�ƋL�q����΁A((%�ϊ�%)) �� ((%Ctrl%))+((%�ϊ�%)) �̗�����
-�z�b�g�L�[�ɂȂ�܂��B
+と記述すれば、((%変換%)) と ((%Ctrl%))+((%変換%)) の両方が
+ホットキーになります。
 
 :(({offHotKey=((|xx|))}))
-  [kanchoku.ini �̃f�t�H���g: (�Ȃ�); �ȗ���: (�Ȃ�)]
+  [kanchoku.ini のデフォルト: (なし); 省略時: (なし)]
 
-  ((|xx|)) �ɁA�u����Win�v�� OFF �ɂ���L�[���A
-  16 �i�\�L�� ((<���z�L�[�R�[�h>)) �Ŏw�肵�܂��B
-  �����Ŏw�肵���L�[�ƁA((%Ctrl%)) �𓯎��ɉ������ƂŁA
-  �u����Win�v�� OFF �ɂ��܂��B
+  ((|xx|)) に、「漢直Win」を OFF にするキーを、
+  16 進表記の ((<仮想キーコード>)) で指定します。
+  ここで指定したキーと、((%Ctrl%)) を同時に押すことで、
+  「漢直Win」を OFF にします。
 
-  (({offHotKey=((|xx|))})) ���w�肵���ꍇ�A
-  (({hotKey=((|xx|))})) �Ŏw�肵���L�[�́A
-  ON/OFF �̃g�O���ł͂Ȃ��AON �ɂ���L�[�Ƃ��ē����܂��B
+  (({offHotKey=((|xx|))})) を指定した場合、
+  (({hotKey=((|xx|))})) で指定したキーは、
+  ON/OFF のトグルではなく、ON にするキーとして働きます。
 
 :(({unmodifiedOffHotKey=((|xx|))}))
-  [kanchoku.ini �̃f�t�H���g: (�Ȃ�); �ȗ���: (�Ȃ�)]
+  [kanchoku.ini のデフォルト: (なし); 省略時: (なし)]
 
-  (({offHotKey=((|xx|))})) �Ɠ��l�ł����A
-  �����Őݒ肵���z�b�g�L�[�͒P�Ƃœ����A((%Ctrl%)) �������K�v������܂���B
+  (({offHotKey=((|xx|))})) と同様ですが、
+  ここで設定したホットキーは単独で働き、((%Ctrl%)) を押す必要がありません。
 
-  (({unmodifiedOffHotKey=((|xx|))})) ���w�肵���ꍇ�A
-  (({unmodifiedHotKey=((|xx|))})) �Ŏw�肵���L�[�́A
-  ON/OFF �̃g�O���ł͂Ȃ��AON �ɂ���L�[�Ƃ��ē����܂��B
+  (({unmodifiedOffHotKey=((|xx|))})) を指定した場合、
+  (({unmodifiedHotKey=((|xx|))})) で指定したキーは、
+  ON/OFF のトグルではなく、ON にするキーとして働きます。
 
-�z�b�g�L�[�ɐݒ肵���L�[ (((%Ctrl%))+((%\%)) �� ((%�ϊ�%)) �Ȃ�) �́A
-�˂Ɂu����Win�v������Ă��܂��̂ŁA
-(�u����Win�v���I�����Ȃ������) �\�t�g�ɓn�����Ƃ͂ł��Ȃ��Ȃ�܂��B
-((*((*�L�[�͐T�d�ɑI��ł��������B*))*))
+ホットキーに設定したキー (((%Ctrl%))+((%\%)) や ((%変換%)) など) は、
+つねに「漢直Win」が取ってしまうので、
+(「漢直Win」を終了しない限りは) ソフトに渡すことはできなくなります。
+((*((*キーは慎重に選んでください。*))*))
 
-==== ���͕���
-���͕����֘A�̃I�v�V�����ł��B
+==== 入力方式
+入力方式関連のオプションです。
 :(({keyboard=((|file|))}))
-  [kanchoku.ini �̃f�t�H���g: 106.key; �ȗ���: 106.key]
+  [kanchoku.ini のデフォルト: 106.key; 省略時: 106.key]
 
-  ((|file|)) �ɁA((<�L�[�{�[�h�t�@�C��>)) ���w�肵�܂��B
-  * 106.key �c ���{��z��̃L�[�{�[�h (106 �z��A109 �z��)
-  * 101.key �c �p��z��̃L�[�{�[�h (101 �z��A104 �z��)
-  * dvorak.key �c Dvorak �z��̃L�[�{�[�h
+  ((|file|)) に、((<キーボードファイル>)) を指定します。
+  * 106.key … 日本語配列のキーボード (106 配列、109 配列)
+  * 101.key … 英語配列のキーボード (101 配列、104 配列)
+  * dvorak.key … Dvorak 配列のキーボード
 :(({tableFile=((|file|))}))
-  [kanchoku.ini �̃f�t�H���g: t.tbl; �ȗ���: t.tbl]
+  [kanchoku.ini のデフォルト: t.tbl; 省略時: t.tbl]
 
-  ((|file|)) �ɁA((<�e�[�u���t�@�C��>)) ���w�肵�܂��B
-  * t.tbl �c T-Code
-  * tut.tbl �c TUT-Code
-  * g.tbl �c G-Code
+  ((|file|)) に、((<テーブルファイル>)) を指定します。
+  * t.tbl … T-Code
+  * tut.tbl … TUT-Code
+  * g.tbl … G-Code
 
-==== �⏕����
-�⏕���͊֘A�̃I�v�V�����ł��B
+==== 補助入力
+補助入力関連のオプションです。
 :(({bushu=((|file|))}))
-  [kanchoku.ini �̃f�t�H���g: kwbushu.rev; �ȗ���: (�Ȃ�)]
+  [kanchoku.ini のデフォルト: kwbushu.rev; 省略時: (なし)]
 
-  ((|file|)) �ɁA���񍇐��ϊ��̎����t�@�C�����w�肵�܂��B
-  �w�肵�Ȃ��ꍇ�́A���񍇐��ϊ����g�p���Ȃ��ݒ�ɂȂ�܂��B
+  ((|file|)) に、部首合成変換の辞書ファイルを指定します。
+  指定しない場合は、部首合成変換を使用しない設定になります。
 :(({bushuAlgo=[OKA | YAMANOBE]}))
-  [kanchoku.ini �̃f�t�H���g: YAMANOBE; �ȗ���: OKA]
+  [kanchoku.ini のデフォルト: YAMANOBE; 省略時: OKA]
   
-  [^[((<ver1.27f|�ύX����>))]^]
-  ���񍇐��ϊ��̃A���S���Y�����w�肵�܂��B
+  [^[((<ver1.27f|変更履歴>))]^]
+  部首合成変換のアルゴリズムを指定します。
   * (({bushuAlgo=OKA})) 
-    �c ������ɂ��A���S���Y�����g�p���܂��B
+    … 岡さんによるアルゴリズムを使用します。
   * (({bushuAlgo=YAMANOBE})) 
-    �c �R�ӂ���ɂ��A���S���Y�� [tcode-ml:2652] ���g�p���܂��B
-  ������̃A���S���Y���́A����Win �̏]���̃A���S���Y���ł��B
-  �R�ӂ���̃A���S���Y���́A���������ׂ����������č������s�����̂ŁA
-  ���Ƃ��΁A�u�� + �V�v�́u�`�v�ł͂Ȃ��u���v�ƂȂ�܂��B
-  ������̃A���S���Y���́A
-  tc.el �� 
-  ((<T-Code for Macintosh|URL:http://openlab.jp/tcode/soft.html">)) �Ȃǂɋ߂��A
-  �R�ӂ���̃A���S���Y���́A((<tc2|"���ړ��̓\�t�g">)) 
-  (���Ƀo�[�W���� 2.2 �ȍ~?) �ɋ߂��Ǝv���܂��B
+    … 山辺さんによるアルゴリズム [tcode-ml:2652] を使用します。
+  岡さんのアルゴリズムは、漢直Win の従来のアルゴリズムです。
+  山辺さんのアルゴリズムは、文字をより細かく分解して合成を行うもので、
+  たとえば、「準 + シ」は「汁」ではなく「隼」となります。
+  岡さんのアルゴリズムは、
+  tc.el や 
+  ((<T-Code for Macintosh|URL:http://openlab.jp/tcode/soft.html">)) などに近く、
+  山辺さんのアルゴリズムは、((<tc2|"直接入力ソフト">)) 
+  (特にバージョン 2.2 以降?) に近いと思われます。
   
-  �w�肵�Ȃ��ꍇ�́A������ɂ��A���S���Y����p���܂��B
+  指定しない場合は、岡さんによるアルゴリズムを用います。
 :(({mazegaki=((|file|))}))
-  [kanchoku.ini �̃f�t�H���g: kwmaze.dic; �ȗ���: (�Ȃ�)]
+  [kanchoku.ini のデフォルト: kwmaze.dic; 省略時: (なし)]
 
-  ((|file|)) �ɁA���������ϊ��̎����t�@�C�����w�肵�܂��B
-  �w�肵�Ȃ��ꍇ�́A���������ϊ����g�p���Ȃ��ݒ�ɂȂ�܂��B
+  ((|file|)) に、交ぜ書き変換の辞書ファイルを指定します。
+  指定しない場合は、交ぜ書き変換を使用しない設定になります。
 :(({conjugationalMaze=((|n|))}))
-  [kanchoku.ini �̃f�t�H���g: 2; �ȗ���: 1]
+  [kanchoku.ini のデフォルト: 2; 省略時: 1]
 
-  ���p������������ϊ�����ۂ́A�ǂ݂̓��͂̂��������w�肵�܂��B
-  ���Ƃ��΁A
-  ((<���������ϊ�����>))�� (({�͂ȁ\ /�b/})) �Ƃ����G���g��������Ƃ��āA
-  �u�b�v�ƕϊ����悤�Ƃ����Ƃ��A
+  活用語を交ぜ書き変換する際の、読みの入力のしかたを指定します。
+  たとえば、
+  ((<交ぜ書き変換辞書>))に (({はな― /話/})) というエントリがあるとして、
+  「話」と変換しようとしたとき、
   * (({conjugationalMaze=0})) 
-    �c �u�͂ȁ\�v(�����ɏ����Ă��邻�̂܂܂̌`) �ł̂݁A�ϊ��\�B
+    … 「はな―」(辞書に書いてあるそのままの形) でのみ、変換可能。
   * (({conjugationalMaze=1})) 
-    �c �u�͂ȁ\�v�A�u�͂ȁv(�ꊲ) �ł̂݁A�ϊ��\
+    … 「はな―」、「はな」(語幹) でのみ、変換可能
   * (({conjugationalMaze=2})) 
-    �c �u�͂Ȃ��v�u�͂Ȃ��Ȃ��v�u�͂Ȃ��܂��v�Ȃǂ̊��p�`�ŕϊ��\[^[((<ver1.27f|�ύX����>))]^]
-  �ƂȂ�܂��B
+    … 「はなす」「はなさない」「はなします」などの活用形で変換可能[^[((<ver1.27f|変更履歴>))]^]
+  となります。
 
 :(({gg=((|file|))}))
-  [kanchoku.ini �̃f�t�H���g: (�Ȃ�); �ȗ���: (�Ȃ�)]
+  [kanchoku.ini のデフォルト: (なし); 省略時: (なし)]
 
-  [^[((<ver1.27a|�ύX����>))]^]
-  ((|file|)) �� ((<�n��K�C�h>)) �̎����t�@�C�����w�肵�܂��B
-  �w�肵�Ȃ��ꍇ�́A�n��K�C�h���g�p���Ȃ��ݒ�ɂȂ�܂��B
+  [^[((<ver1.27a|変更履歴>))]^]
+  ((|file|)) に ((<熟語ガイド>)) の辞書ファイルを指定します。
+  指定しない場合は、熟語ガイドを使用しない設定になります。
 
 :(({defg=((|string|))}))
-  [kanchoku.ini �̃f�t�H���g: (�Ȃ�); �ȗ���: (�Ȃ�)]
+  [kanchoku.ini のデフォルト: (なし); 省略時: (なし)]
 
-  [^[((<ver1.27e|�ύX����>))]^]
-  ((<�n��K�C�h>)) �g�p���ɁA�f�t�H���g�̏�� (�K�C�h���ׂ��������Ȃ��ꍇ)
-  �ŕ\�����镶������ׂĎw�肵�܂��B
+  [^[((<ver1.27e|変更履歴>))]^]
+  ((<熟語ガイド>)) 使用時に、デフォルトの状態 (ガイドすべき文字がない場合)
+  で表示する文字を並べて指定します。
 
 :(({prefixautoassign=((|string|))}))
-  [kanchoku.ini �̃f�t�H���g: (�Ȃ�); �ȗ���: (�Ȃ�)]
+  [kanchoku.ini のデフォルト: (なし); 省略時: (なし)]
 
-  [^[((<ver1.28|�ύX����>))]^]
-  ((<�n��K�C�h>)) �g�p���ɁA�O���Ɉꎞ�I�ɃX�g���[�N������U��@�\�ŗp����
-  �X�g���[�N�����`�`���Ŏw�肵�܂��B
+  [^[((<ver1.28|変更履歴>))]^]
+  ((<熟語ガイド>)) 使用時に、外字に一時的にストロークを割り振る機能で用いる
+  ストロークを矢印定義形式で指定します。
 
 :(({maze2gg=((|n|))}))
-  [kanchoku.ini �̃f�t�H���g: 0; �ȗ���: 0]
+  [kanchoku.ini のデフォルト: 0; 省略時: 0]
 
-  [^[((<ver1.28|�ύX����>))]^]
-  �u����Win�v�N������ ((<�������K���[�h>)) ���L�����ǂ������w�肵�܂��B
+  [^[((<ver1.28|変更履歴>))]^]
+  「漢直Win」起動時に ((<強制練習モード>)) が有効かどうかを指定します。
 
 :(({record=((|file|))}))
 :(({stat=((|file|))}))
-  [kanchoku.ini �̃f�t�H���g: kwrecord.txt, kwstat.txt; �ȗ���: (�Ȃ�)]
+  [kanchoku.ini のデフォルト: kwrecord.txt, kwstat.txt; 省略時: (なし)]
 
-  [^[((<ver1.27f|�ύX����>))]^]
-  ((<���͂̓��v>))���L�^����t�@�C�������w�肵�܂��B
+  [^[((<ver1.27f|変更履歴>))]^]
+  ((<入力の統計>))を記録するファイル名を指定します。
 
-==== ��������
-�������͂Ɋւ���I�v�V�����ł��B
+==== 文字入力
+文字入力に関するオプションです。
 :(({shiftKana=((|n|))}))
-  [kanchoku.ini �̃f�t�H���g: 0; �ȗ���: 0]
+  [kanchoku.ini のデフォルト: 0; 省略時: 0]
 
-  ((|n|)) �� 1 ���w�肷��ƁA�V�t�g�Ō��ŁA
-  �Ђ炪�Ȃ��������Ȃɕϊ����ē��͂��܂��B
-  [:del:]�������A
-  �{���V�t�g��p���ē��͂��镶�� (�啶����L���Ȃ�) �͓��͂ł��Ȃ��Ȃ�܂��B
+  ((|n|)) に 1 を指定すると、シフト打鍵で、
+  ひらがなをかたかなに変換して入力します。
+  [:del:]ただし、
+  本来シフトを用いて入力する文字 (大文字や記号など) は入力できなくなります。
   [:/del:]
-  �Ȃ��A
-  �V�t�g�Ō��́A���ȕ����̓��͂Ɏg���L�[�������u����Win�v���Ŏ��A
-  ����ȊO�̃L�[�̃V�t�g�Ō��́A
-  �ʏ�̑Ō��Ƃ��Ĉ����܂�[^[((<ver1.27a|�ύX����>))]^]�B
+  なお、
+  シフト打鍵は、かな文字の入力に使うキーだけを「漢直Win」側で取り、
+  それ以外のキーのシフト打鍵は、
+  通常の打鍵として扱われます[^[((<ver1.27a|変更履歴>))]^]。
 
 :(({enableHankakuKana=((|n|))}))
-  [kanchoku.ini �̃f�t�H���g: 0; �ȗ��l: 0]
+  [kanchoku.ini のデフォルト: 0; 省略値: 0]
 
-  [^[((<ver1.27f|�ύX����>))]^]
-  ((|n|)) �� 1 ���w�肷��ƁA((<�S�p���[�h>)) ���ɁA
-  �������Ȃ𔼊p���Ȃɕϊ����܂��B
+  [^[((<ver1.27f|変更履歴>))]^]
+  ((|n|)) に 1 を指定すると、((<全角モード>)) 時に、
+  かたかなを半角かなに変換します。
 
 :(({fallbackOnUnshift=((|n|))}))
-  [kanchoku.ini �̃f�t�H���g: (�ȗ��l); �ȗ��l: ((|shiftKana|))]
+  [kanchoku.ini のデフォルト: (省略値); 省略値: ((|shiftKana|))]
 
-  [^[((<ver1.28|�ύX����>))]^]
-  ((|n|)) �� 1 ���w�肷��ƁA�V�t�g�Ō��̒�`���Ȃ��ꍇ��
-  �V�t�g�Ȃ��Ō��̒�`�ő�p���܂��B
+  [^[((<ver1.28|変更履歴>))]^]
+  ((|n|)) に 1 を指定すると、シフト打鍵の定義がない場合に
+  シフトなし打鍵の定義で代用します。
 
-  �����I�ɃV�t�g�Ō����`�����e�[�u���t�@�C�����g�p����ꍇ��A
-  lockStrokeByShift��p����ꍇ�Ɏw�肵�ĉ������B
+  部分的にシフト打鍵を定義したテーブルファイルを使用する場合や、
+  lockStrokeByShiftを用いる場合に指定して下さい。
 
 :(({lockStrokeByShift=((|n|))}))
-  [kanchoku.ini �̃f�t�H���g: 0; �ȗ��l: 0]
+  [kanchoku.ini のデフォルト: 0; 省略値: 0]
 
-  [^[((<ver1.28|�ύX����>))]^]
-  �Ō����V�t�g�Ƒg�ݍ��킹�邱�ƂŃX�g���[�N���b�N�@�\�������܂��B�Ȃ��A���ׂĂ̕����L�[
-  �i�L�[�{�[�h�t�@�C���ɂ���L�[�j�̃V�t�g�Ō����u����Win�v���Ŏ���Ă��܂����߁A
-  �{���V�t�g��p���ē��͂��镶�� (�啶����L���Ȃ�) �� F_VERB_FIRST ���g�������Ȃ���
-  ���͂ł��Ȃ��Ȃ�܂��B
+  [^[((<ver1.28|変更履歴>))]^]
+  打鍵をシフトと組み合わせることでストロークロック機能が働きます。なお、すべての文字キー
+  （キーボードファイルにあるキー）のシフト打鍵を「漢直Win」側で取ってしまうため、
+  本来シフトを用いて入力する文字 (大文字や記号など) は F_VERB_FIRST を使う等しないと
+  入力できなくなります。
 
-  * 1 �c �V�t�g�Ȃ��Ō��̃X�g���[�N���V�t�g�Ō��Ń��b�N����A�V�t�g�Ō��������ԃ��b�N����A
-    �V�t�g�Ȃ��Ō�������ƃ��b�N���������̑Ō������łƂȂ�܂��B
-    ���������b�N������Ԃő��ł��V�t�g�Ō����Ă����b�N���ꂸ�A�����ăV�t�g�Ō������
-    ���ł����b�N�ΏۂƂȂ�܂��B
+  * 1 … シフトなし打鍵のストロークがシフト打鍵でロックされ、シフト打鍵が続く間ロックされ、
+    シフトなし打鍵が来るとロック解除＆その打鍵が第一打となります。
+    ただしロック解除状態で第一打をシフト打鍵してもロックされず、続けてシフト打鍵すると
+    第一打がロック対象となります。
 
 
-==== ���o���b�Z�[�W
-���o���b�Z�[�W�Ɋւ���I�v�V�����ł��B
+==== 送出メッセージ
+送出メッセージに関するオプションです。
 :(({outputMethod=((|n|))}))
 :(({useWMIMECHAR=((|n|))}))
-  [kanchoku.ini �̃f�t�H���g: 0; �ȗ���: 0]
+  [kanchoku.ini のデフォルト: 0; 省略時: 0]
 
-  �u����Win�v���A�v���P�[�V�����ɕ����𑗏o����Ƃ��ɗp����
-  ���o���b�Z�[�W���w�肵�܂��B�w��ł���l�́A
+  「漢直Win」がアプリケーションに文字を送出するときに用いる
+  送出メッセージを指定します。指定できる値は、
   * 0 (WM_CHAR)
   * 1 (WM_IME_CHAR)
-  * 2 (WM_KANCHOKU_CHAR; �t�b�N�� ImmSetCompositionString ��g�ݍ��킹��
-    ���͂��邽�߂̓Ǝ��̃��b�Z�[�W
-    [^[((<ver1.27f|�ύX����>))]^])
+  * 2 (WM_KANCHOKU_CHAR; フックと ImmSetCompositionString を組み合わせて
+    入力するための独自のメッセージ
+    [^[((<ver1.27f|変更履歴>))]^])
   * 3 (WM_UNICHAR
-    [^[((<ver1.28|�ύX����>))]^])
-  �ł��B
+    [^[((<ver1.28|変更履歴>))]^])
+  です。
 
-  WindowsNT/2000/XP �ł� 0 ���A
-  Windows95/98/Me �ł� 1 ���w�肵�Ă��������������悤�ł��B
+  WindowsNT/2000/XP では 0 を、
+  Windows95/98/Me では 1 を指定しておいた方がいいようです。
   
-  ����̃A�v���P�[�V�����Łu����Win�v���g���Ȃ��ꍇ�́A
-  ��q�� ((<�E�B���h�E�N���X���Ƃɑ��o���b�Z�[�W���w��>)) �̕��@��
-  �����Ă݂Ă�������[^[((<ver1.27f|�ύX����>))]^]�B
+  特定のアプリケーションで「漢直Win」が使えない場合は、
+  後述の ((<ウィンドウクラスごとに送出メッセージを指定>)) の方法を
+  試してみてください[^[((<ver1.27f|変更履歴>))]^]。
 :(({enableWMKANCHOKUCHAR=((|n|))}))
-  [kanchoku.ini �̃f�t�H���g: 1; �ȗ���: 0]
+  [kanchoku.ini のデフォルト: 1; 省略時: 0]
 
-  [^[((<ver1.27f|�ύX����>))]^]
-  (({outputMethod=2})) ���g�p����ꍇ�́A((|n|)) �� 1 ���w�肵�Ă����܂��B
+  [^[((<ver1.27f|変更履歴>))]^]
+  (({outputMethod=2})) を使用する場合は、((|n|)) に 1 を指定しておきます。
 
 :(({outputSleep=((|n|))}))
-  [kanchoku.ini �̃f�t�H���g: 2; �ȗ���: 0]
+  [kanchoku.ini のデフォルト: 2; 省略時: 0]
 
-  [^[((<ver1.27a,f,1.28|�ύX����>))]^]
-  �L�[���o���� Sleep() ����҂����� (�P�ʂ̓~���b) ���w�肵�܂��B
-  �f�t�H���g�� 2 �ł����A
-  ���̂悤�ȏꍇ�ɂ́A�K���ɒl�𑝂₵�Ďw�肵�Ă݂Ă��������B
-  * ((<��u�^�̕ϊ�>)) �ŁA
-    �ϊ��������������܂��u���������Ȃ��ꍇ
-  * ���͂̎�肱�ڂ�������ꍇ
-  * ((%BackSpace%)) �� ((%Enter%)) ���d�����ē��͂���Ă��܂��ꍇ
-  �������A(({useCtrlKey=2})) �̏ꍇ�� XKeymacs ���𕹗p���Ă���ꍇ�ɂ́A
-  ���܂�l�𑝂₷�� ((%C-h%)) �� ((%h%)) �ɉ�����Ƃ������ʂ̖�肪�����܂��B
+  [^[((<ver1.27a,f,1.28|変更履歴>))]^]
+  キー送出時に Sleep() する待ち時間 (単位はミリ秒) を指定します。
+  デフォルトは 2 ですが、
+  次のような場合には、適当に値を増やして指定してみてください。
+  * ((<後置型の変換>)) で、
+    変換した文字がうまく置き換えられない場合
+  * 入力の取りこぼしがある場合
+  * ((%BackSpace%)) や ((%Enter%)) が重複して入力されてしまう場合
+  ただし、(({useCtrlKey=2})) の場合や XKeymacs 等を併用している場合には、
+  あまり値を増やすと ((%C-h%)) が ((%h%)) に化けるといった別の問題が生じます。
 :(({outputVKeyMethod=((|n|))}))
-  [kanchoku.ini �̃f�t�H���g: 0; �ȗ���: 0]
+  [kanchoku.ini のデフォルト: 0; 省略時: 0]
 
-  [^[((<ver1.28|�ύX����>))]^]
-  �u����Win�v���A�v���P�[�V������ ((%BackSpace%)) �� ((%Enter%)) ���̉��z�L�[��
-  ���o����Ƃ��ɗp���鑗�o���b�Z�[�W���w�肵�܂��B�w��ł���l�́A
-  * 0 (WM_KEYDOWN, WM_KEYUP �� PostMessage)
+  [^[((<ver1.28|変更履歴>))]^]
+  「漢直Win」がアプリケーションに ((%BackSpace%)) や ((%Enter%)) 等の仮想キーを
+  送出するときに用いる送出メッセージを指定します。指定できる値は、
+  * 0 (WM_KEYDOWN, WM_KEYUP を PostMessage)
   * 1 (keybd_event)
-  �ł��B1 ���w�肷�邱�ƂŁAIME �ɃL�[���삪�`���悤�ɂȂ�AF_VERB_FIRST ���ł�
-  IME �Ƀ��[�}�����͂��ł���悤�ɂȂ�܂��B���������݂́u����Win�v�� IME
-  �̖��m�蕶���񓙂ւ̃P�A������܂���̂ŁA�g�p�̍ۂ͂����ӂ��������B
+  です。1 を指定することで、IME にキー操作が伝わるようになり、F_VERB_FIRST 等では
+  IME にローマ字入力ができるようになります。ただし現在の「漢直Win」は IME
+  の未確定文字列等へのケアがありませんので、使用の際はご注意ください。
 
 :(({outputAlphabetAsVKey=((|n|))}))
-  [kanchoku.ini �̃f�t�H���g: 0; �ȗ���: 0]
+  [kanchoku.ini のデフォルト: 0; 省略時: 0]
 
-  [^[((<ver1.28a|�ύX����>))]^]
-  ((|n|)) �� 1 ���w�肷��ƁA�e�[�u���t�@�C���̕������`���̉p��������
-  ���z�L�[�Ƃ��đ��o�����悤�ɂȂ�܂��B(({outputVKeyMethod=1})) �ƕ��p���āA
-  �u����Win�v�����Ȕz��J�X�^�}�C�Y�\�t�g�Ƃ��Ďg���邩������܂���B
+  [^[((<ver1.28a|変更履歴>))]^]
+  ((|n|)) に 1 を指定すると、テーブルファイルの文字列定義中の英小文字が
+  仮想キーとして送出されるようになります。(({outputVKeyMethod=1})) と併用して、
+  「漢直Win」をかな配列カスタマイズソフトとして使えるかもしれません。
 
-==== �E�B���h�E�N���X���Ƃɑ��o���b�Z�[�W���w��
-[^[((<ver1.27f|�ύX����>))]^] 
-���o���b�Z�[�W (({outputMethod})) �́A
-�A�v���P�[�V�������Ƃ� (���m�ɂ́A�E�B���h�E�N���X���Ƃ�) 
-�w�肷�邱�Ƃ��ł��܂��B
+==== ウィンドウクラスごとに送出メッセージを指定
+[^[((<ver1.27f|変更履歴>))]^] 
+送出メッセージ (({outputMethod})) は、
+アプリケーションごとに (正確には、ウィンドウクラスごとに) 
+指定することができます。
 
-�w�肵�����A�v���P�[�V�������ƂɁA���̂悤�ȋL�q��K�X�ǉ����Ă��������B
-  [<���ʎq>]
-  className=<�E�B���h�E�N���X��>
-  outputMethod=<���o���b�Z�[�W>
+指定したいアプリケーションごとに、次のような記述を適宜追加してください。
+  [<識別子>]
+  className=<ウィンドウクラス名>
+  outputMethod=<送出メッセージ>
 
-(({<���ʎq>})) �́A���ł��悢�̂ł����A
-�ΏۃA�v���P�[�V�����̖��O���p���ŏ����̂��悢�ł��傤�B
-���̂��̂ƂԂ���Ȃ��悤�ɓK���ɖ������܂��B
+(({<識別子>})) は、何でもよいのですが、
+対象アプリケーションの名前を英字で書くのがよいでしょう。
+他のものとぶつからないように適当に命名します。
 
-(({<�E�B���h�E�N���X��>})) �́A�ݒ���s�������E�B���h�E�N���X�����w�肵�܂��B
-�E�B���h�E�N���X���́A�t���̃c�[�� wininfo.exe �Œ��ׂ邱�Ƃ��ł��܂��B
-wininfo.exe ���N���� (�u����Win�v�͏I�����Ă����܂�)�A
-���ׂ����E�B���h�E���A�N�e�B�u�ɂ��āA((%Ctrl%))+((%\%)) �L�[�������ƁA
-���̓t�H�[�J�X�����E�B���h�E�̃N���X�����擾�����̂ŁA
-����������Ă����܂��B
+(({<ウィンドウクラス名>})) は、設定を行いたいウィンドウクラス名を指定します。
+ウィンドウクラス名は、付属のツール wininfo.exe で調べることができます。
+wininfo.exe を起動し (「漢直Win」は終了しておきます)、
+調べたいウィンドウをアクティブにして、((%Ctrl%))+((%\%)) キーを押すと、
+入力フォーカスを持つウィンドウのクラス名が取得されるので、
+それを書いておきます。
 
-(({<���o���b�Z�[�W>})) �ɂ́A0, 1, 2 �̂����ꂩ���w�肵�܂��B
-�O�q�̑S�ʓI�� ((<���o���b�Z�[�W>)) ��
-(({outputMethod=0})) ���w�肵���ꍇ�́A
-�����ł�(({outputMethod=1})) ���A
-�t�ɑS�ʓI�Ȏw�肪 1 �������Ƃ��́A�����ł� 0 ���w�肵�Ă݂Ă��������B
+(({<送出メッセージ>})) には、0, 1, 2 のいずれかを指定します。
+前述の全般的な ((<送出メッセージ>)) で
+(({outputMethod=0})) を指定した場合は、
+ここでは(({outputMethod=1})) を、
+逆に全般的な指定が 1 だったときは、ここでは 0 を指定してみてください。
 
-����ł��߂Ȃ�A(({outputMethod=2})) �������Ă݂Ă��������B
-(({outputMethod=2})) �ł����͂ł��Ȃ��ꍇ���A
-�u�ڍׂȃe�L�X�g�T�[�r�X���I�t�ɂ���v�Ƀ`�F�b�N������ƁA
-���͂ł���悤�ɂȂ邱�Ƃ�����܂�
-(�R���g���[���p�l����
-�u�n��ƌ���̃I�v�V�����v���u����v�^�u���u�ڍׁv���u�ڍאݒ�v�^�u)�B
-�܂��AIME �Ƃ̑���������悤�ł��B
+それでだめなら、(({outputMethod=2})) も試してみてください。
+(({outputMethod=2})) でも入力できない場合も、
+「詳細なテキストサービスをオフにする」にチェックを入れると、
+入力できるようになることがあります
+(コントロールパネルの
+「地域と言語のオプション」→「言語」タブ→「詳細」→「詳細設定」タブ)。
+また、IME との相性もあるようです。
 
 
-�t���� kanchoku.ini �ɁA�������ݒ�Ⴊ����܂��̂ŁA�Q�l�ɂ��Ă݂Ă��������B
+付属の kanchoku.ini に、いくつか設定例がありますので、参考にしてみてください。
 
-==== �\��
-�\���Ɋւ���I�v�V�����ł��B
+==== 表示
+表示に関するオプションです。
 :(({xLoc=((|n|))}))
 :(({yLoc=((|n|))}))
-  [kanchoku.ini �̃f�t�H���g: -1, -1; �ȗ���: -1, -1]
+  [kanchoku.ini のデフォルト: -1, -1; 省略時: -1, -1]
 
-  �N�����́u����Win�v�̃E�B���h�E�̏����ʒu�� x ���W�� y ���W���A
-  ���ꂼ��s�N�Z���P�ʂŎw�肵�܂��B
-  -1 �Ƃ���ƁA���Ɏw�肵�Ȃ��ݒ�ɂȂ�܂��B
+  起動時の「漢直Win」のウィンドウの初期位置の x 座標と y 座標を、
+  それぞれピクセル単位で指定します。
+  -1 とすると、特に指定しない設定になります。
 :(({offHide=((|n|))}))
-  [kanchoku.ini �̃f�t�H���g: 0; �ȗ���: 0]
+  [kanchoku.ini のデフォルト: 0; 省略時: 0]
 
-  ((|n|)) �� 1 ���w�肷��ƁAOFF ���Ɂu����Win�v�̃E�B���h�E���\���ɂ��܂��B
+  ((|n|)) に 1 を指定すると、OFF 時に「漢直Win」のウィンドウを非表示にします。
 
-  �܂� 2 ���w�肷��ƁAON ���ɂ��E�B���h�E���\���ɂ��܂��B
-  ���̏ꍇ�́A�⏕�ϊ��E���I���E�����w���v�E�q�X�g�����́E�������K[^[((<ver1.28|�ύX����>))]^]���̂݁A
-  �E�B���h�E��\�����܂��B
+  また 2 を指定すると、ON 時にもウィンドウを非表示にします。
+  この場合は、補助変換・候補選択・文字ヘルプ・ヒストリ入力・強制練習[^[((<ver1.28|変更履歴>))]^]時のみ、
+  ウィンドウを表示します。
 
 :(({followCaret=((|n|))}))
-  [kanchoku.ini �̃f�t�H���g: 0; �ȗ���: 0]
+  [kanchoku.ini のデフォルト: 0; 省略時: 0]
 
-  ((|n|)) �� 1 ���w�肷��ƁA
-  �u����Win�v�̃E�B���h�E���L�����b�g (�J�[�\��) ��
-  �Ǐ]���ē����悤�ɂȂ�܂��B
-  �������A�Ώۃ\�t�g�ɂ���Ă͓��삵�Ȃ����Ƃ�����܂��B
+  ((|n|)) に 1 を指定すると、
+  「漢直Win」のウィンドウがキャレット (カーソル) に
+  追従して動くようになります。
+  ただし、対象ソフトによっては動作しないことがあります。
 
 :(({displayHelpDelay=((|n|))}))
-  [kanchoku.ini �̃f�t�H���g: 0; �ȗ���: 0]
+  [kanchoku.ini のデフォルト: 0; 省略時: 0]
 
-  [^[((<ver1.28|�ύX����>))]^]
-  �� 1 �Ō���������Ă��牼�z���ՂɃL�[�z�u���\�������܂ł̑҂����Ԃ� ((|n|)) �� ms �P�ʂŎw�肵�܂��B
-  (({offHide=2})) �̏ꍇ�� ((|n|)) �� 0 ���w�肷��Ɩ�����̈Ӗ��ɂȂ�܂��B
-  * ver1.28 �ł͓����^�C�}�[�� 100ms �P�ʂƂ��Ă��邽�߁A���񌅂͖��� (�؂�グ) ����܂��B
+  [^[((<ver1.28|変更履歴>))]^]
+  第 1 打鍵が押されてから仮想鍵盤にキー配置が表示されるまでの待ち時間を ((|n|)) に ms 単位で指定します。
+  (({offHide=2})) の場合は ((|n|)) に 0 を指定すると無限大の意味になります。
+  * ver1.28 では内部タイマーを 100ms 単位としているため、下二桁は無視 (切り上げ) されます。
 
-==== ���̑�
-�ȉ��́A�p�b�`�쐬�҂̍D�݂ŉ�����ꂽ�I�v�V�����ł��B
-�ʏ�͎w�肷��K�v�͂Ȃ��ł��傤�B
+==== その他
+以下は、パッチ作成者の好みで加えられたオプションです。
+通常は指定する必要はないでしょう。
 :(({hardBS=((|n|))}))
-  [kanchoku.ini �̃f�t�H���g: 0; �ȗ���: 0]
+  [kanchoku.ini のデフォルト: 0; 省略時: 0]
 
-  �� 2 �Ō��Ƃ��ĉ����ꂽ ((%BackSpace%)) �L�[�́A�ʏ�A
-  �� 1 �Ō��̎������ł����A
-  ((|n|)) �� 1 ���w�肷��ƁA�u�� 1 �Ō��̎����� + �����폜�v�ɂȂ�܂��B
+  第 2 打鍵として押された ((%BackSpace%)) キーは、通常、
+  第 1 打鍵の取り消しですが、
+  ((|n|)) に 1 を指定すると、「第 1 打鍵の取り消し + 文字削除」になります。
 :(({weakBS=((|n|))}))
-  [kanchoku.ini �̃f�t�H���g: 0; �ȗ���: 0]
+  [kanchoku.ini のデフォルト: 0; 省略時: 0]
 
-  [^[((<ver1.28|�ύX����>))]^]
-  TUT-Code ���� 3 �Ō��ȏ��p������͕����ɂ����āA
-  �� 3 �Ō����Ƃ��ĉ����ꂽ ((%BackSpace%)) �L�[�́A�ʏ�A
-  �� 1 �Ō��ȍ~�̎������ł����A
-  ((|n|)) �� 1 ���w�肷��ƁA�u���O�̑Ō��݂̂̎������v�ɂȂ�܂��B
+  [^[((<ver1.28|変更履歴>))]^]
+  TUT-Code 等の 3 打鍵以上を用いる入力方式において、
+  第 3 打鍵等として押された ((%BackSpace%)) キーは、通常、
+  第 1 打鍵以降の取り消しですが、
+  ((|n|)) に 1 を指定すると、「直前の打鍵のみの取り消し」になります。
 :(({useCtrlKey=((|n|))}))
-  [kanchoku.ini �̃f�t�H���g: 0; �ȗ���: 0]
+  [kanchoku.ini のデフォルト: 0; 省略時: 0]
 
-  ((|n|)) �� 1 ���w�肷��ƁA
-  �u((%Ctrl%))+ �p���v���@�\�L�[�Ɠ��l�Ɉ����܂��B��̓I�ɂ́A
-  * ((%C-g%)) �� ((%Esc%)) ��
-  * ((%C-h%)) �� ((%BackSpace%)) ��
-  * ((%C-m%)) �� ((%C-j%)) �� ((%Enter%)) ��
-  * ((%C-i%)) �� ((%Tab%)) ��
-  ���ꂼ��A���l�Ɉ����܂��B
+  ((|n|)) に 1 を指定すると、
+  「((%Ctrl%))+ 英字」を機能キーと同様に扱います。具体的には、
+  * ((%C-g%)) を ((%Esc%)) に
+  * ((%C-h%)) を ((%BackSpace%)) に
+  * ((%C-m%)) と ((%C-j%)) を ((%Enter%)) に
+  * ((%C-i%)) を ((%Tab%)) に
+  それぞれ、同様に扱います。
 
-  [^[((<ver1.28|�ύX����>))]^]
-  ((|n|)) �� 1 ���w�肵���ꍇ�́A��Ƃ��� ((%C-h%)) �����͂��ꂽ�ꍇ�A
-  ((%BackSpace%)) �Ɠ��������������A�v���� ((%C-h%)) �𑗏o���܂����A
-  ((|n|)) �� 2 ���w�肷��Ƒ���� ((%BackSpace%)) �𑗏o����悤�ɂȂ�܂��B
+  [^[((<ver1.28|変更履歴>))]^]
+  ((|n|)) に 1 を指定した場合は、例として ((%C-h%)) が入力された場合、
+  ((%BackSpace%)) と同じ動作をした後アプリに ((%C-h%)) を送出しますが、
+  ((|n|)) に 2 を指定すると代わりに ((%BackSpace%)) を送出するようになります。
 :(({clearBufOnMove=((|n|))}))
-  [kanchoku.ini �̃f�t�H���g: 0; �ȗ���: 0]
+  [kanchoku.ini のデフォルト: 0; 省略時: 0]
 
-  �J�[�\���ړ����Ɍ�u�^�ϊ��p�̓����o�b�t�@���������邩�ǂ������w�肵�܂��B
+  カーソル移動時に後置型変換用の内部バッファを消去するかどうかを指定します。
 
-  ��u�^�őΏۂ̒������w�肵�Ȃ��������ȕϊ��̍ۂɁA
-  �J�[�\���ړ��O�ɓ��͂������e�܂őΏۂɊ܂܂�Ă��܂�����
-  ������邽�߂̃I�v�V�����ł��B
+  後置型で対象の長さを指定しないかたかな変換の際に、
+  カーソル移動前に入力した内容まで対象に含まれてしまう問題を
+  回避するためのオプションです。
 
-  �J�[�\���ړ��̌��o�̂��߁A����10�̃L�[���t�b�N���܂��B
-  ((%��%))�A((%��%))�A((%��%))�A((%��%))�A((%PageUp%))�A((%PageDown%))�A
-  ((%Home%))�A((%End%))�A((%Ctrl%))+((%��%))�A((%Ctrl%))+((%��%))
+  カーソル移動の検出のため、次の10個のキーをフックします。
+  ((%←%))、((%→%))、((%↑%))、((%↓%))、((%PageUp%))、((%PageDown%))、
+  ((%Home%))、((%End%))、((%Ctrl%))+((%←%))、((%Ctrl%))+((%→%))
 :(({win95=((|n|))}))
-  [kanchoku.ini �̃f�t�H���g: 0; �ȗ���: 0]
+  [kanchoku.ini のデフォルト: 0; 省略時: 0]
 
-  Windows95 �ŉ��z���Ղ̃t�H���g�� 1 �h�b�g�����悤�Ȃ̂ŁA���̕␳�ł��B
+  Windows95 で仮想鍵盤のフォントが 1 ドットずれるようなので、その補正です。
 =end
 :(({useTTCode=((|n|))}))
-  [kanchoku.ini �̃f�t�H���g: 0; �ȗ���: 0]
+  [kanchoku.ini のデフォルト: 0; 省略時: 0]
 
-  �����w���v���A�O���\ T-Code �X�^�C���ɂ��܂��B
-  ���Ȃ킿�A
-  �O���\ T-Code �̉E�\ (((%j%))((%f%)) ���v���t�B�b�N�X�Ƃ��� 4 �X�g���[�N) ��
-  �΂��Ă͑� 3 �Ō��Ƒ� 4 �Ō��݂̂��u���v�Ɓu���v�ŁA
-  ���\ (((%f%))((%j%)) ���v���t�B�b�N�X�Ƃ��� 4 �X�g���[�N) �ɑ΂��Ă�
-  �� 3 �Ō��Ƒ� 4 �Ō��݂̂��u���v�Ɓu���v�ŕ\�����܂��B
+  文字ヘルプを、三枚表 T-Code スタイルにします。
+  すなわち、
+  三枚表 T-Code の右表 (((%j%))((%f%)) をプレフィックスとする 4 ストローク) に
+  対しては第 3 打鍵と第 4 打鍵のみを「▲」と「○」で、
+  左表 (((%f%))((%j%)) をプレフィックスとする 4 ストローク) に対しては
+  第 3 打鍵と第 4 打鍵のみを「▽」と「○」で表示します。
 
-  [^[((<ver1.27e|�ύX����>))]^] ���̃I�v�V������ OBSOLETE �ɂȂ�܂����B
-  �����ɁA((<�e�[�u���t�@�C��>)) ��
-  ((<(({#define prefix ((|spec|))}))>)) ���g���Ă��������B
+  [^[((<ver1.27e|変更履歴>))]^] このオプションは OBSOLETE になりました。
+  かわりに、((<テーブルファイル>)) の
+  ((<(({#define prefix ((|spec|))}))>)) を使ってください。
 =begin
 :(({offResetModes=((|nnn...|))}))
-  [kanchoku.ini �̃f�t�H���g: 0; �ȗ���: 0]
+  [kanchoku.ini のデフォルト: 0; 省略時: 0]
 
-  [^[((<ver1.28|�ύX����>))]^]
-  ((|nnn...|)) �� 1 ���w�肷��ƁA����Win��OFF�ɂ����Ƃ��ɁA�u�������ȃ��[�h�v��
-  �u�S�p���[�h�v�Ɓu��Ǔ_�v�Ɓu�������K���[�h�v�Ɓu�X�g���[�N���b�N�v��
-  ������ԂɃ��Z�b�g���܂��B
+  [^[((<ver1.28|変更履歴>))]^]
+  ((|nnn...|)) に 1 を指定すると、漢直WinをOFFにしたときに、「かたかなモード」と
+  「全角モード」と「句読点」と「強制練習モード」と「ストロークロック」を
+  初期状態にリセットします。
 
-  ((|nnn...|)) �̊e���͍����珇�ɏ�L�̃��[�h�ɑΉ����Ă��܂��B
-  110 �Ǝw�肵���ꍇ�� 11000 �̏ȗ��`�Ƃ݂Ȃ���A�u�������ȃ��[�h�v�Ɓu�S�p���[�h�v
-  �����Z�b�g����܂��B��L�� 1 �Ƃ����w��� 11111 �̏ȗ��`�ł��B
+  ((|nnn...|)) の各桁は左から順に上記のモードに対応しています。
+  110 と指定した場合は 11000 の省略形とみなされ、「かたかなモード」と「全角モード」
+  がリセットされます。上記の 1 という指定は 11111 の省略形です。
 
 :(({style_base=((|00rrggbb...|))}))
 :(({style_info=((|00rrggbb...|))}))
@@ -463,120 +463,120 @@ wininfo.exe ���N���� (�u����Win�v�͏I�����Ă����܂�)�A
 :(({style_fontsize=((|n|))}))
 :(({style_padding=((|n|))}))
 
-  [^[((<ver1.28|�ύX����>))]^]
-  ���z���Ղ̔z�F�E�t�H���g�̐ݒ�ł��B�t���̃c�[�� kwstyle.exe ��p����ƁA
-  ���s���̊���Win�ł����I�ɐݒ��ύX���邱�Ƃ��ł��܂��B
+  [^[((<ver1.28|変更履歴>))]^]
+  仮想鍵盤の配色・フォントの設定です。付属のツール kwstyle.exe を用いると、
+  実行中の漢直Winでも動的に設定を変更することができます。
 
-  ����Win�Ɠ����f�B���N�g���ɒu���� kwstyle.exe ���N�����A�ݒ��ύX����
-  ((%OK%)) �܂��� ((%Apply%)) ���N���b�N����ƁAkanchoku.ini �������������A
-  ����Win�����s���̏ꍇ�ɂ͂��̐ݒ肪���f����܂��B
+  漢直Winと同じディレクトリに置いた kwstyle.exe を起動し、設定を変更して
+  ((%OK%)) または ((%Apply%)) をクリックすると、kanchoku.ini が書き換えられ、
+  漢直Winが実行中の場合にはその設定が反映されます。
 
 
-=== �L�[�{�[�h�t�@�C��
+=== キーボードファイル
 
-�L�[�{�[�h�t�@�C�� *.key �́A�L�[�{�[�h��̎��ۂ̃L�[�ƁA
-�u����Win�v�̓����Ŏg�p���� ((*�L�[�ԍ�*)) �̑Ή����L�q�����t�@�C���ł��B
+キーボードファイル *.key は、キーボード上の実際のキーと、
+「漢直Win」の内部で使用する ((*キー番号*)) の対応を記述したファイルです。
 
-�g�p����L�[�{�[�h�ɍ��킹�����̂�I�сA�����ݒ�t�@�C�� kanchoku.ini ��
-(({keyboard})) �I�v�V�����Ŏw�肵�܂��B
-�u����Win�v�̃p�b�P�[�W�Ɋ܂܂�Ă���L�[�{�[�h�t�@�C���́A���̂Ƃ���ł��B
+使用するキーボードに合わせたものを選び、初期設定ファイル kanchoku.ini の
+(({keyboard})) オプションで指定します。
+「漢直Win」のパッケージに含まれているキーボードファイルは、次のとおりです。
 
-* ((<106.key>)) �c ���{��z�� (106 �z��A109 �z��)
-* ((<101.key>)) �c �p��z�� (101 �z��A104 �z��)
-* ((<dvorak.key>)) �c Dvorak �z��
+* ((<106.key>)) … 日本語配列 (106 配列、109 配列)
+* ((<101.key>)) … 英語配列 (101 配列、104 配列)
+* ((<dvorak.key>)) … Dvorak 配列
 
-�ʏ�́A��L�̂����ꂩ����I�ԂƂ悢�ł��傤�B
+通常は、上記のいずれかから選ぶとよいでしょう。
 
-����ȃL�[�{�[�h���g�p���Ă������A�L�[���C�A�E�g��ύX���Ă�����́A
-�ȉ��� ((<�L�[�{�[�h�t�@�C���̏���>)) ���Q�l�ɁA
-�L�[�{�[�h�t�@�C�����L�q���Ă��g�����������B
+特殊なキーボードを使用している方や、キーレイアウトを変更している方は、
+以下の ((<キーボードファイルの書式>)) を参考に、
+キーボードファイルを記述してお使いください。
 
-==== �L�[�{�[�h�t�@�C���̏���
+==== キーボードファイルの書式
 
-�L�[�{�[�h�t�@�C���ɂ́A
-�u����Win�v�ŗp���� 49 �̃L�[�� ((<���z�L�[�R�[�h>)) ���A16 �i�\�L�ŁA
-�L�[�ԍ� (0 �` 48) �̏��ɋL�q���܂��B
-�e���z�L�[�R�[�h�̌��ɂ́A�R���} ((({,}))) �������܂��B
-���z�L�[�R�[�h��R���}�̊Ԃɂ́A�󔒂���s�����Ă��悢�悤�ł��B
-�R�����g���������Ƃ͂ł��܂���B
+キーボードファイルには、
+「漢直Win」で用いる 49 個のキーの ((<仮想キーコード>)) を、16 進表記で、
+キー番号 (0 ～ 48) の順に記述します。
+各仮想キーコードの後ろには、コンマ ((({,}))) を書きます。
+仮想キーコードやコンマの間には、空白や改行を入れてもよいようです。
+コメントを書くことはできません。
 
-==== �L�[�ԍ�
+==== キー番号
 
-�L�[�ԍ��́A�u����Win�v�̓����ŁA�e�L�[�����ʂ���̂ɗp������ԍ��ł��B
-T-Code �ŗp������ 40 �̃L�[�ɂ��ẮA
-�L�[�{�[�h�̍��ォ�珇�� 0 �` 39 ���A
-�܂�����ȊO�̃L�[�ɂ� 40 �` 48 �̔ԍ������蓖�ĂĂ��܂��B
+キー番号は、「漢直Win」の内部で、各キーを識別するのに用いられる番号です。
+T-Code で用いられる 40 個のキーについては、
+キーボードの左上から順に 0 ～ 39 を、
+またそれ以外のキーにも 40 ～ 48 の番号を割り当てています。
 
-�e�L�[�ԍ��̃L�[�̔z�u���A
-���ۂ̃L�[�{�[�h��̔z�u (�}��)�A�����
-�u����Win�v�̉��z���Տ�̔z�u (�}�E) �Ɏ����܂��B
-�Ȃ��A�p��L�[�{�[�h�ł́A48 �Ԃɑ�������L�[�͑��݂����A
-���p�ł��Ȃ��悤�ł��B
+各キー番号のキーの配置を、
+実際のキーボード上の配置 (図左)、および
+「漢直Win」の仮想鍵盤上の配置 (図右) に示します。
+なお、英語キーボードでは、48 番に相当するキーは存在せず、
+利用できないようです。
 
 =end
 =begin html
-<table class="figure" summary="�L�[�ԍ��̑Ή��̐}��">
-<caption>�L�[�ԍ��̑Ή��\�\���z���� (��) �Ǝ��ۂ̃L�[�{�[�h (�E)</caption>
+<table class="figure" summary="キー番号の対応の図示">
+<caption>キー番号の対応――仮想鍵盤 (左) と実際のキーボード (右)</caption>
 <tr>
 <td>
-<img src="img/tkeys_vkb.png" alt="���z����" title="���z����" />
+<img src="img/tkeys_vkb.png" alt="仮想鍵盤" title="仮想鍵盤" />
 </td>
 <td>
-<img src="img/tkeys_kb.png" alt="�L�[�{�[�h" title="�L�[�{�[�h" />
+<img src="img/tkeys_kb.png" alt="キーボード" title="キーボード" />
 </td>
 </tr>
 </table>
 =end
 =begin
 
-==== ���z�L�[�R�[�h
+==== 仮想キーコード
 
-���z�L�[�R�[�h�́AWindows �̓����ŁA�e�L�[�����ʂ���̂ɗp�����鐔�l�ł��B
+仮想キーコードは、Windows の内部で、各キーを識別するのに用いられる数値です。
 
-��ȃL�[�̉��z�L�[�R�[�h���A���̕\�Ɏ����܂��B
+主なキーの仮想キーコードを、下の表に示します。
 
-��((%�J�i%))�A((%����%))�A((%Win%)) �ȂǁA�ꕔ�̃L�[��
-�u����Win�v�ł͗��p�ł��Ȃ��悤�ł��B��
+■((%カナ%))、((%漢字%))、((%Win%)) など、一部のキーは
+「漢直Win」では利用できないようです。□
 =end
 
 
-  ����������������������������������������������������������������������
-  vkey  key       ��vkey  key       ��vkey  key       ��vkey  key
-  ����������������������������������������������������������������������
-   30    0        �� 41    A        �� 4b    K        �� 55    U
-   31    1        �� 42    B        �� 4c    L        �� 56    V
-   32    2        �� 43    C        �� 4d    M        �� 57    W
-   33    3        �� 44    D        �� 4e    N        �� 58    X
-   34    4        �� 45    E        �� 4f    O        �� 59    Y
-   35    5        �� 46    F        �� 50    P        �� 5a    Z
-   36    6        �� 47    G        �� 51    Q        ��
-   37    7        �� 48    H        �� 52    R        ��
-   38    8        �� 49    I        �� 53    S        ��
-   39    9        �� 4a    J        �� 54    T        ��
-  ����������������������������������������������������������������������
-   ba   : * (; :) �� c0   @ ` (` ~) �� 08   BS        �� 15   �J�i
-   bb   ; + (= +) �� db   [ {       �� 09   TAB       �� 19   ����
-   bc   , <       �� dc   \ |       �� 0d   RET       �� 1c   �ϊ�
-   bd   - = (- _) �� dd   ] }       �� 1b   ESC       �� 1d   ���ϊ�
-   be   . >       �� de   ^ ~ (' ") �� 20   SPC       ��
-   bf   / ?       �� e2   \ _ (�Ȃ�)��                ��
-  ����������������������������������������������������������������������
-   21   PageUp    �� 25   ��        �� 2d   Insert    �� 5b   ��Win
-   22   PageDown  �� 26   ��        �� 2e   Delete    �� 5c   �EWin
-   23   End       �� 27   ��        ��                �� 5d   �A�v��
-   24   Home      �� 28   ��        ��                ��
-  ����������������������������������������������������������������������
-                 vkey: ���z�L�[�R�[�h; key: ���ۂ̃L�[; ( ) ���͉p��z��
+  ━━━━━━━━┯━━━━━━━━┯━━━━━━━━┯━━━━━━━━
+  vkey  key       │vkey  key       │vkey  key       │vkey  key
+  ────────┼────────┼────────┼────────
+   30    0        │ 41    A        │ 4b    K        │ 55    U
+   31    1        │ 42    B        │ 4c    L        │ 56    V
+   32    2        │ 43    C        │ 4d    M        │ 57    W
+   33    3        │ 44    D        │ 4e    N        │ 58    X
+   34    4        │ 45    E        │ 4f    O        │ 59    Y
+   35    5        │ 46    F        │ 50    P        │ 5a    Z
+   36    6        │ 47    G        │ 51    Q        │
+   37    7        │ 48    H        │ 52    R        │
+   38    8        │ 49    I        │ 53    S        │
+   39    9        │ 4a    J        │ 54    T        │
+  ────────┼────────┼────────┼────────
+   ba   : * (; :) │ c0   @ ` (` ~) │ 08   BS        │ 15   カナ
+   bb   ; + (= +) │ db   [ {       │ 09   TAB       │ 19   漢字
+   bc   , <       │ dc   \ |       │ 0d   RET       │ 1c   変換
+   bd   - = (- _) │ dd   ] }       │ 1b   ESC       │ 1d   無変換
+   be   . >       │ de   ^ ~ (' ") │ 20   SPC       │
+   bf   / ?       │ e2   \ _ (なし)│                │
+  ────────┼────────┼────────┼────────
+   21   PageUp    │ 25   ←        │ 2d   Insert    │ 5b   左Win
+   22   PageDown  │ 26   ↑        │ 2e   Delete    │ 5c   右Win
+   23   End       │ 27   →        │                │ 5d   アプリ
+   24   Home      │ 28   ↓        │                │
+  ━━━━━━━━┷━━━━━━━━┷━━━━━━━━┷━━━━━━━━
+                 vkey: 仮想キーコード; key: 実際のキー; ( ) 内は英語配列
 
 
 
 =begin html
 <div class="table">
-<table class="vkeytbl0" rules="cols" summary="���z�L�[�R�[�h�Ǝ��ۂ̃L�[�̑Ή�">
-<caption>���z�L�[�R�[�h (vkey) �Ǝ��ۂ̃L�[ (key) �̑Ή� (���������͉p��z��)</caption>
+<table class="vkeytbl0" rules="cols" summary="仮想キーコードと実際のキーの対応">
+<caption>仮想キーコード (vkey) と実際のキー (key) の対応 (かっこ内は英語配列)</caption>
 <tr valign="top">
 <td>
-<table class="vkeytbl" summary="���z�L�[�R�[�h�Ǝ��ۂ̃L�[�̑Ή�">
+<table class="vkeytbl" summary="仮想キーコードと実際のキーの対応">
 <colgroup><col align="right" /><col align="left" /></colgroup>
 <thead><tr><th>vkey</th><th>key</th></tr></thead>
 <tbody>
@@ -594,7 +594,7 @@ T-Code �ŗp������ 40 �̃L�[�ɂ��ẮA
 </table>
 </td>
 <td>
-<table class="vkeytbl" summary="���z�L�[�R�[�h�Ǝ��ۂ̃L�[�̑Ή�">
+<table class="vkeytbl" summary="仮想キーコードと実際のキーの対応">
 <colgroup><col align="right" /><col align="left" /></colgroup>
 <thead><tr><th>vkey</th><th>key</th></tr></thead>
 <tbody>
@@ -615,7 +615,7 @@ T-Code �ŗp������ 40 �̃L�[�ɂ��ẮA
 </table>
 </td>
 <td>
-<table class="vkeytbl" summary="���z�L�[�R�[�h�Ǝ��ۂ̃L�[�̑Ή�">
+<table class="vkeytbl" summary="仮想キーコードと実際のキーの対応">
 <colgroup><col align="right" /><col align="left" /></colgroup>
 <thead><tr><th>vkey</th><th>key</th></tr></thead>
 <tbody>
@@ -636,7 +636,7 @@ T-Code �ŗp������ 40 �̃L�[�ɂ��ẮA
 </table>
 </td>
 <td>
-<table class="vkeytbl" summary="���z�L�[�R�[�h�Ǝ��ۂ̃L�[�̑Ή�">
+<table class="vkeytbl" summary="仮想キーコードと実際のキーの対応">
 <colgroup><col align="right" /><col align="left" /></colgroup>
 <thead><tr><th>vkey</th><th>key</th></tr></thead>
 <tbody>
@@ -651,29 +651,29 @@ T-Code �ŗp������ 40 �̃L�[�ɂ��ẮA
 <tr><td><code>dc</code></td><td><kbd>\|</kbd></td></tr>
 <tr><td><code>dd</code></td><td><kbd>]}</kbd></td></tr>
 <tr><td><code>de</code></td><td><kbd>^~</kbd> (<kbd>'&quot;</kbd>)</td></tr>
-<tr><td><code>e2</code></td><td><kbd>\_</kbd> (�Ȃ�)</td></tr>
+<tr><td><code>e2</code></td><td><kbd>\_</kbd> (なし)</td></tr>
 </tbody>
 </table>
 </td>
 <td>
-<table class="vkeytbl" summary="���z�L�[�R�[�h�Ǝ��ۂ̃L�[�̑Ή�">
+<table class="vkeytbl" summary="仮想キーコードと実際のキーの対応">
 <colgroup><col align="right" /><col align="left" /></colgroup>
 <thead><tr><th>vkey</th><th>key</th></tr></thead>
 <tbody>
 <tr><td><code>08</code></td><td><kbd>BS</kbd></td></tr>
 <tr><td><code>09</code></td><td><kbd>TAB</kbd></td></tr>
 <tr><td><code>0d</code></td><td><kbd>Enter</kbd></td></tr>
-<tr><td><code>15</code></td><td><kbd>�J�i</kbd></td></tr>
-<tr><td><code>19</code></td><td><kbd>����</kbd></td></tr>
+<tr><td><code>15</code></td><td><kbd>カナ</kbd></td></tr>
+<tr><td><code>19</code></td><td><kbd>漢字</kbd></td></tr>
 <tr><td><code>1b</code></td><td><kbd>ESC</kbd></td></tr>
-<tr><td><code>1c</code></td><td><kbd>�ϊ�</kbd></td></tr>
-<tr><td><code>1d</code></td><td><kbd>���ϊ�</kbd></td></tr>
+<tr><td><code>1c</code></td><td><kbd>変換</kbd></td></tr>
+<tr><td><code>1d</code></td><td><kbd>無変換</kbd></td></tr>
 <tr><td><code>20</code></td><td><kbd>SPC</kbd></td></tr>
 </tbody>
 </table>
 </td>
 <td>
-<table class="vkeytbl" summary="���z�L�[�R�[�h�Ǝ��ۂ̃L�[�̑Ή�">
+<table class="vkeytbl" summary="仮想キーコードと実際のキーの対応">
 <colgroup><col align="right" /><col align="left" /></colgroup>
 <thead><tr><th>vkey</th><th>key</th></tr></thead>
 <tbody>
@@ -681,14 +681,14 @@ T-Code �ŗp������ 40 �̃L�[�ɂ��ẮA
 <tr><td><code>22</code></td><td><kbd>PageDown</kbd></td></tr>
 <tr><td><code>23</code></td><td><kbd>End</kbd></td></tr>
 <tr><td><code>24</code></td><td><kbd>Home</kbd></td></tr>
-<tr><td><code>25</code></td><td><kbd>��</kbd></td></tr>
-<tr><td><code>26</code></td><td><kbd>��</kbd></td></tr>
-<tr><td><code>27</code></td><td><kbd>��</kbd></td></tr>
-<tr><td><code>28</code></td><td><kbd>��</kbd></td></tr>
+<tr><td><code>25</code></td><td><kbd>←</kbd></td></tr>
+<tr><td><code>26</code></td><td><kbd>↑</kbd></td></tr>
+<tr><td><code>27</code></td><td><kbd>→</kbd></td></tr>
+<tr><td><code>28</code></td><td><kbd>↓</kbd></td></tr>
 <tr><td><code>2d</code></td><td><kbd>Insert</kbd></td></tr>
 <tr><td><code>2e</code></td><td><kbd>Delete</kbd></td></tr>
-<tr><td><code>5b</code></td><td>��<kbd>Win</kbd></td></tr>
-<tr><td><code>5c</code></td><td>�E<kbd>Win</kbd></td></tr>
+<tr><td><code>5b</code></td><td>左<kbd>Win</kbd></td></tr>
+<tr><td><code>5c</code></td><td>右<kbd>Win</kbd></td></tr>
 <tr><td><code>5d</code></td><td><kbd>Appl</kbd></td></tr>
 </tbody>
 </table>
@@ -699,7 +699,7 @@ T-Code �ŗp������ 40 �̃L�[�ɂ��ẮA
 =end
 =begin
 
-==== �t���̃L�[�{�[�h�t�@�C��
+==== 付属のキーボードファイル
 
 + 106.key
 
@@ -710,13 +710,13 @@ T-Code �ŗp������ 40 �̃L�[�ɂ��ẮA
   20, bd, de, dc, c0, db, ba, dd, e2,
 =end
 =begin html
-<table class="figure" summary="106.key �̑Ή��̐}��">
+<table class="figure" summary="106.key の対応の図示">
 <tr>
 <td>
-<img src="img/keys_106_vkb.png" alt="���z����" title="���z����" />
+<img src="img/keys_106_vkb.png" alt="仮想鍵盤" title="仮想鍵盤" />
 </td>
 <td>
-<img src="img/keys_106_kb.png" alt="�L�[�{�[�h" title="�L�[�{�[�h" />
+<img src="img/keys_106_kb.png" alt="キーボード" title="キーボード" />
 </td>
 </tr>
 </table>
@@ -731,13 +731,13 @@ T-Code �ŗp������ 40 �̃L�[�ɂ��ẮA
   20, bd, bb, dc, db, dd, de, c0, 00,
 =end
 =begin html
-<table class="figure" summary="101.key �̑Ή��̐}��">
+<table class="figure" summary="101.key の対応の図示">
 <tr>
 <td>
-<img src="img/keys_101_vkb.png" alt="���z����" title="���z����" />
+<img src="img/keys_101_vkb.png" alt="仮想鍵盤" title="仮想鍵盤" />
 </td>
 <td>
-<img src="img/keys_101_kb.png" alt="�L�[�{�[�h" title="�L�[�{�[�h" />
+<img src="img/keys_101_kb.png" alt="キーボード" title="キーボード" />
 </td>
 </tr>
 </table>
@@ -753,25 +753,25 @@ T-Code �ŗp������ 40 �̃L�[�ɂ��ẮA
   20, db, dd, dc, bf, bb, bd, c0, e2,
 =end
 
-<table class="figure" summary="dvorak.key �̑Ή��̐}��">
+<table class="figure" summary="dvorak.key の対応の図示">
 <tr>
 <td>
-<img src="img/keys_dvorakj_vkb.png" alt="���z����" title="���z����" />
+<img src="img/keys_dvorakj_vkb.png" alt="仮想鍵盤" title="仮想鍵盤" />
 </td>
 <td>
-<img src="img/keys_dvorakj_kb.png" alt="�L�[�{�[�h" title="�L�[�{�[�h" />
+<img src="img/keys_dvorakj_kb.png" alt="キーボード" title="キーボード" />
 </td>
 </tr>
 </table>
 
 =begin html
-<table class="figure" summary="dvorak.key �̑Ή��̐}��">
+<table class="figure" summary="dvorak.key の対応の図示">
 <tr>
 <td>
-<img src="img/keys_dvorake_vkb.png" alt="���z����" title="���z����" />
+<img src="img/keys_dvorake_vkb.png" alt="仮想鍵盤" title="仮想鍵盤" />
 </td>
 <td>
-<img src="img/keys_dvorake_kb.png" alt="�L�[�{�[�h" title="�L�[�{�[�h" />
+<img src="img/keys_dvorake_kb.png" alt="キーボード" title="キーボード" />
 </td>
 </tr>
 </table>
@@ -781,28 +781,28 @@ T-Code �ŗp������ 40 �̃L�[�ɂ��ẮA
 
 
 
-=== �e�[�u���t�@�C��
+=== テーブルファイル
 
-�e�[�u���t�@�C���́A���͕��� (T-Code �� TUT-Code �Ȃ�) �̒�`
-���L�q�����t�@�C���ł��B
+テーブルファイルは、入力方式 (T-Code や TUT-Code など) の定義
+を記述したファイルです。
 
-�g�p������͕����ɍ��킹�����̂�I�сA�����ݒ�t�@�C�� kanchoku.ini ��
-(({tableFile})) �I�v�V�����Ŏw�肵�܂��B
-�u����Win�v�̃p�b�P�[�W�Ɋ܂܂�Ă���e�[�u���t�@�C���́A���̂Ƃ���ł��B
+使用する入力方式に合わせたものを選び、初期設定ファイル kanchoku.ini の
+(({tableFile})) オプションで指定します。
+「漢直Win」のパッケージに含まれているテーブルファイルは、次のとおりです。
 
-* t.tbl �c T-Code
-* tut.tbl �c TUT-Code
-* g.tbl �c G-Code
+* t.tbl … T-Code
+* tut.tbl … TUT-Code
+* g.tbl … G-Code
 
-�e�[�u���t�@�C�����J�X�^�}�C�Y����������A�Ǝ��̓��͕��������g���̕��́A
-�ȉ��� ((<�e�[�u���t�@�C���̏���>)) ���Q�l�ɁA
-�e�[�u���t�@�C�����L�q���Ă��g�����������B
+テーブルファイルをカスタマイズしたい方や、独自の入力方式をお使いの方は、
+以下の ((<テーブルファイルの書式>)) を参考に、
+テーブルファイルを記述してお使いください。
 
-==== �e�[�u���t�@�C���̏���
+==== テーブルファイルの書式
 
-�ȉ��ɁA�e�[�u���t�@�C���̏��� (����) ��������܂��B
+以下に、テーブルファイルの書式 (推測) を説明します。
 
-�e�[�u���t�@�C���́A��܂��Ɉȉ��̂悤�Ȍ`�����Ă��܂��B
+テーブルファイルは、大まかに以下のような形をしています。
 
   {
      <0> ,  <1> ,  <2> ,  <3> ,  <4> ,  <5> ,  <6> ,  <7> ,  <8> ,  <9> ,
@@ -812,227 +812,227 @@ T-Code �ŗp������ 40 �̃L�[�ɂ��ẮA
     <40> , <41> , <42> , <43> , <44> , <45> , <46> , <47> , <48>
   }
 
-���Ȃ킿�A(({<0>})) �` (({<48>})) �� 49 �́u�Ȃ�炩�̗v�f�v���A
-�R���} ((({,}))) �ŋ�؂��ĕ��ׁA
-���̑S�̂𒆂����� ((({{})) �� (({(('}'))}))) �ň͂������̂ł��B
-������A�Ȍ�A�u���b�N�ƌĂт܂��B
+すなわち、(({<0>})) ～ (({<48>})) の 49 個の「なんらかの要素」を、
+コンマ ((({,}))) で区切って並べ、
+その全体を中かっこ ((({{})) と (({(('}'))}))) で囲ったものです。
+これを、以後、ブロックと呼びます。
 
-* �u�Ȃ�炩�̗v�f�v�́A��ʂɁA�ʂ̃u���b�N�܂��͓����`�ł��B
-* �ł��O���̃u���b�N�̂��Ƃ��A((*���[�h�u���b�N*)) �ƌĂт܂��B
-* [^[((<ver1.28|�ύX����>))]^]((*���[�h�u���b�N*)) �́A������J��Ԃ����Ƃ��ł��A
-  �g��������@�\�L�[��`�𕪗����ċL�q���邱�Ƃ��ł��܂��B
-* �e�v�f�ƃR���}�A���������̊Ԃɂ́A�󔒂���s�����Ă��悢�悤�ł��B
-* (({;})) �܂��� (({#})) ����s���܂ł́A�R�����g�Ƃ��ēǂ݂Ƃ΂���܂��B
+* 「なんらかの要素」は、一般に、別のブロックまたは特殊定義です。
+* 最も外側のブロックのことを、((*モードブロック*)) と呼びます。
+* [^[((<ver1.28|変更履歴>))]^]((*モードブロック*)) は、複数回繰り返すことができ、
+  拡張部分や機能キー定義を分離して記述することができます。
+* 各要素とコンマ、中かっこの間には、空白や改行を入れてもよいようです。
+* (({;})) または (({#})) から行末までは、コメントとして読みとばされます。
 
-�u���b�N�̒��̊e�v�f (({<n>})) ���A
-���ꂼ��� ((<�L�[�ԍ�>)) �̃L�[�ɑΉ����Ă���A
-���̕����ɁA�e�L�[�̋������L�q���܂��B
+ブロックの中の各要素 (({<n>})) が、
+それぞれの ((<キー番号>)) のキーに対応しており、
+この部分に、各キーの挙動を記述します。
 
-[^[((<ver1.28|�ύX����>))]^]
-�V�t�g�Ō���p������͕����̏ꍇ�A�e�v�f��
-���ۂɂ� (�`(({,}))(({<n> / <Sn>}))(({,}))�`) �Ƃ����`����
-2�̗v�f���w�肷��悤�ɂȂ��Ă���A(({<n>})) �Œʏ�Ō����́A(({<Sn>})) ��
-�V�t�g�Ō����̋������L�q���܂��B(({/})) �ȍ~���ȗ����邱�Ƃ��ł��A�ȗ�����
-�`���̂��̂��]���̃e�[�u���t�@�C���Ɠ����ɂȂ�܂��B
-�Ȃ��A�V�t�g�Ō����g��Ȃ��L�[�̃V�t�g�Ō��͊���Win�̐��䉺�ɂȂ����߁A
-�]���̃e�[�u���t�@�C����p����Ύ����I�ɏ]���Ɠ�������ɂȂ�܂��B
+[^[((<ver1.28|変更履歴>))]^]
+シフト打鍵を用いる入力方式の場合、各要素は
+実際には (～(({,}))(({<n> / <Sn>}))(({,}))～) という形式で
+2個の要素を指定するようになっており、(({<n>})) で通常打鍵時の、(({<Sn>})) で
+シフト打鍵時の挙動を記述します。(({/})) 以降を省略することができ、省略した
+形式のものが従来のテーブルファイルと同じになります。
+なお、シフト打鍵を使わないキーのシフト打鍵は漢直Winの制御下にないため、
+従来のテーブルファイルを用いれば自動的に従来と同じ動作になります。
 
-�e�L�[�̋����Ƃ��Ďw�肷��v�f�́A���̂����ꂩ�ł��B
+各キーの挙動として指定する要素は、次のいずれかです。
 
-:���`
-  ���������Ȃ������ꍇ�́A���`�ƂȂ�܂��B
+:空定義
+  何も書かなかった場合は、空定義となります。
 
-  ���̏ꍇ�A�Y���L�[�������Ă������N���炸�A�������͂���܂���
-  (�����ɂ́A������Ԃ����Z�b�g����A�� 1 �Ō��҂��̏�ԂɂȂ�܂�)�B
-  ��������`����Ă��Ȃ��L�[�ɂ́A���`���w�肵�܂��B
+  この場合、該当キーを押しても何も起こらず、何も入力されません
+  (厳密には、内部状態がリセットされ、第 1 打鍵待ちの状態になります)。
+  文字が定義されていないキーには、空定義を指定します。
 
-  �Ȃ��A���`���w�肷��ꍇ�ł��A��؂�̃R���}�͏ȗ��ł��܂���B
+  なお、空定義を指定する場合でも、区切りのコンマは省略できません。
 
-  [^[((<ver1.28|�ύX����>))]^]���[�h�u���b�N�𕡐���J��Ԃ��ꍇ�A
-  ���̃u���b�N�Œ�`�܂��͏㏑�������������ȊO�͋��`�ɂ��Ă��������B
+  [^[((<ver1.28|変更履歴>))]^]モードブロックを複数回繰り返す場合、
+  そのブロックで定義または上書きしたい部分以外は空定義にしてください。
 
-:�u���b�N
-  49 �̗v�f���R���} ((({,}))) �ŋ�؂��ĕ��ׁA
-  �S�̂𒆂����� ((({{})) �� (({(('}'))}))) �ň͂������̂ł��B
+:ブロック
+  49 個の要素をコンマ ((({,}))) で区切って並べ、
+  全体を中かっこ ((({{})) と (({(('}'))}))) で囲ったものです。
 
-  ���̑Ō��ɑ����悤�ȃL�[�ɂ̓u���b�N���w�肵�A
-  ���̃u���b�N�̓����̊e�v�f�ɁA���̊e�Ō��̋������L�q���܂��B
+  次の打鍵に続くようなキーにはブロックを指定し、
+  そのブロックの内側の各要素に、次の各打鍵の挙動を記述します。
 
-:������
-  (({"��"})) ���邢�� (({"��"})) �Ȃǂ̂悤�ɁA
-  �_�u���N�H�[�g ((({"}))) �ň͂���
-  ���� (�̗L���̕���) �ł��B
-  ���̏ꍇ�A�Y������L�[��Ō�����ƁA�w�肵�����������͂���܂��B
+:文字列
+  (({"の"})) あるいは (({"漢"})) などのように、
+  ダブルクォート ((({"}))) で囲った
+  文字 (の有限個の並び) です。
+  この場合、該当するキーを打鍵すると、指定した文字が入力されます。
 
-  �Ȃ��A�������`���́u(({\}))�v�́A���� 1 �������G�X�P�[�v���܂��B
-  �����u"�v���`����ɂ́u(({"\""}))�v�A
-  �u\�v���`����ɂ́u(({"\\"}))�v�Ǝw�肵�Ă��������B
+  なお、文字列定義中の「(({\}))」は、続く 1 文字をエスケープします。
+  文字「"」を定義するには「(({"\""}))」、
+  「\」を定義するには「(({"\\"}))」と指定してください。
 
-  ���݂̎d�l�ł́A
-  �u(({\}))�v�͒P�Ȃ�G�X�P�[�v�ł���A�u(({\n}))�v��u(({\t}))�v��
-  ���s��^�u�ɂ͂Ȃ�܂���B
+  現在の仕様では、
+  「(({\}))」は単なるエスケープであり、「(({\n}))」や「(({\t}))」は
+  改行やタブにはなりません。
 
-:�����`
-  ���񍇐��ϊ�����������ϊ��ȂǁA
-  �e��̋@�\�ɑΉ������`�ł��B
-  (({@b})) �� (({@m})) �Ȃǂ̂悤�ɁA(({@<����>})) �Ƃ����`�������Ă��܂��B
+:特殊定義
+  部首合成変換や交ぜ書き変換など、
+  各種の機能に対応する定義です。
+  (({@b})) や (({@m})) などのように、(({@<文字>})) という形式をしています。
 
-  ��q�� ((<�����`�̈ꗗ>)) ���Q�Ƃ��Ă��������B
+  後述の ((<特殊定義の一覧>)) を参照してください。
 
-:����`
-  [^[((<ver1.28|�ύX����>))]^] (({"-26>"})) �� (({"-S12>"})) �Ȃǂ̂悤�ɁA�}�C�i�X ((({-}))) ��
-  �s���� ((({>}))) �ŃL�[�ԍ����͂������̂ł��B����`�̌��ɁA�L�[�ԍ���
-  �w�肵���Ō��̋������w�肵�܂��B���[�h�u���b�N�Ƃ��Ă����p�\�ł��B
+:矢印定義
+  [^[((<ver1.28|変更履歴>))]^] (({"-26>"})) や (({"-S12>"})) などのように、マイナス ((({-}))) と
+  不等号 ((({>}))) でキー番号を囲ったものです。矢印定義の後ろに、キー番号で
+  指定した打鍵の挙動を指定します。モードブロックとしても利用可能です。
 
-  �V�t�g�Ō��� (({"S12"})) �̂悤�� (({"S"})) �����Ďw�肵�܂��B
+  シフト打鍵は (({"S12"})) のように (({"S"})) をつけて指定します。
 
-���Ƃ��� T-Code �̏ꍇ�ł́A
-���[�h�u���b�N�� 0 �` 39 �Ԃ̗v�f (�� 1 �Ō��ɑΉ�) �Ƀu���b�N���w�肵�A
-���̊e�u���b�N�̒��� 0 �` 39 �Ԃ̗v�f (�� 2 �Ō��ɑΉ�) �ɕ������
-�w�肷�邱�ƂɂȂ�܂��B
-���ɁA
-���[�h�u���b�N�̒��� 26 �Ԃ̃u���b�N�̒��� 23 �Ԃ̗v�f�ɂ�
-���񍇐��ϊ� (({@b})) ���A
-�܂� 23 �Ԃ̃u���b�N�̒��� 26 �Ԃ̗v�f�ɂ�
-���������ϊ� (({@m})) ���w�肷�邱�Ƃ�
-�Ȃ�܂��B
+たとえば T-Code の場合では、
+モードブロックの 0 ～ 39 番の要素 (第 1 打鍵に対応) にブロックを指定し、
+その各ブロックの中の 0 ～ 39 番の要素 (第 2 打鍵に対応) に文字列を
+指定することになります。
+特に、
+モードブロックの中の 26 番のブロックの中の 23 番の要素には
+部首合成変換 (({@b})) を、
+また 23 番のブロックの中の 26 番の要素には
+交ぜ書き変換 (({@m})) を指定することに
+なります。
 
-TUT-Code �� T-Code �̏ꍇ�Ɠ��l�ł����A
-3 �X�g���[�N�� 4 �X�g���[�N�̕����ɑ΂��ẮA
-���[�h�u���b�N���̊Y������v�f�ɁA2 �d���邢�� 3 �d�̓���q�̃u���b�N��
-�w�肷�邱�ƂɂȂ�ł��傤�B
+TUT-Code も T-Code の場合と同様ですが、
+3 ストロークや 4 ストロークの文字に対しては、
+モードブロック内の該当する要素に、2 重あるいは 3 重の入れ子のブロックを
+指定することになるでしょう。
 
-[^[((<ver1.28|�ύX����>))]^]
-����`��p����΁A�u���b�N������q�ɂȂ邱�Ɠ�������邱�Ƃ��ł��A
-�ǂ݂₷���������₷���e�[�u���t�@�C�����L�q���邱�Ƃ��\�ɂȂ�܂��B
+[^[((<ver1.28|変更履歴>))]^]
+矢印定義を用いれば、ブロックが入れ子になること等を避けることができ、
+読みやすく改造しやすいテーブルファイルを記述することが可能になります。
 
-���Ƃ��ΐ�قǂ� T-Code �̗�́A����`��p����΁A�Ɨ��������[�h�u���b�N�Ƃ���
+たとえば先ほどの T-Code の例は、矢印定義を用いれば、独立したモードブロックとして
 
   -23>-26>@m
   -26>-23>@b
 
-��2�s�ŋL�q�ł��܂��B
+の2行で記述できます。
 
-==== �����`�̈ꗗ
+==== 特殊定義の一覧
 
-�����`�Ɏw��ł�����̂��A�ȉ��ɗ񋓂��܂��B
-[ ] ���͉��z���Ղł̕\�����A
-( ) ���́u����Win�v�̓����ł̖��O��\���Ă��܂��B
+特殊定義に指定できるものを、以下に列挙します。
+[ ] 内は仮想鍵盤での表示を、
+( ) 内は「漢直Win」の内部での名前を表しています。
 
-+ ���[�h�ނ̓����`
-:(({@Z})) [((%�S%))] (((|F_HANZEN|)))
-  ((<�S�p���[�h>)) �̐؂�ւ��ł��B
-  �S�p���[�h�ł́A
-  �e�[�u���Œ�`���ꂽ�����̂����A
-  ���p���� (ASCII ����) �ƑΉ�����S�p���������ݕϊ�����ē��͂���܂��B
-  [:del:]�Ȃ��A���p���Ȃɂ͑Ή����Ă��܂���B[:/del:]
-  ((<�����ݒ�t�@�C��>)) �� (({enableHankakuKana=1})) �I�v�V�������w�肷��ƁA
-  ���p���Ȃɂ��Ή����܂��B[^[((<ver1.27f|�ύX����>))]^]
-:(({@K})) [((%�A%))] (((|F_HIRAKATA|)))
-  ((<�������ȃ��[�h>)) �̐؂�ւ��ł��B
-  �������ȃ��[�h�ł́A
-  �e�[�u���Œ�`���ꂽ�����̂����A
-  �Ђ炪�ȂƂ������Ȃ����ݕϊ�����ē��͂���܂��B
-:(({@s})) [((%��%))] (((|F_SWITCH_MODE|)))
-  (({@K})) �Ɠ����Ӗ��ɂȂ�܂��B
-:(({@p})) [((%��%))] (((|F_PUNCT|)))
-  ((<��Ǔ_�̐؂�ւ�>)) �ł��B
-  �e�[�u���Œ�`���ꂽ�����̂����A�u�A�B�v�Ɓu�C�D�v��
-  ���ݕϊ�����ē��͂���܂��B
-:(({@g})) [((%�K%))] (((|F_MAZE2GG|)))
-  [^[((<ver1.28|�ύX����>))]^] ((<�������K���[�h>)) �̐؂�ւ��ł��B
-  ���������ϊ��ɂ����āA���̈ꗗ����I������W�����[�h�ƃK�C�h�\���ɏ]����
-  ���ړ��͂��鋭�����K���[�h��؂�ւ��܂��B
-:(({@w})) [((%��%))] (((|F_SHOWWIN|)))
-  [^[((<ver1.28|�ύX����>))]^] (({offHide=1})) �� (({offHide=2})) �̊ԂŃg�O�����܂��B
++ モード類の特殊定義
+:(({@Z})) [((%全%))] (((|F_HANZEN|)))
+  ((<全角モード>)) の切り替えです。
+  全角モードでは、
+  テーブルで定義された文字のうち、
+  半角文字 (ASCII 文字) と対応する全角文字が相互変換されて入力されます。
+  [:del:]なお、半角かなには対応していません。[:/del:]
+  ((<初期設定ファイル>)) で (({enableHankakuKana=1})) オプションを指定すると、
+  半角かなにも対応します。[^[((<ver1.27f|変更履歴>))]^]
+:(({@K})) [((%ア%))] (((|F_HIRAKATA|)))
+  ((<かたかなモード>)) の切り替えです。
+  かたかなモードでは、
+  テーブルで定義された文字のうち、
+  ひらがなとかたかなが相互変換されて入力されます。
+:(({@s})) [((%替%))] (((|F_SWITCH_MODE|)))
+  (({@K})) と同じ意味になります。
+:(({@p})) [((%句%))] (((|F_PUNCT|)))
+  ((<句読点の切り替え>)) です。
+  テーブルで定義された文字のうち、「、。」と「，．」が
+  相互変換されて入力されます。
+:(({@g})) [((%習%))] (((|F_MAZE2GG|)))
+  [^[((<ver1.28|変更履歴>))]^] ((<強制練習モード>)) の切り替えです。
+  交ぜ書き変換において、候補の一覧から選択する標準モードとガイド表示に従って
+  直接入力する強制練習モードを切り替えます。
+:(({@w})) [((%窓%))] (((|F_SHOWWIN|)))
+  [^[((<ver1.28|変更履歴>))]^] (({offHide=1})) と (({offHide=2})) の間でトグルします。
 
-+ �O�u�^�̕ϊ��̓����`
-:(({@b})) [((%��%))] (((|F_BUSHU_PRE|)))
-  �O�u�^�� ((<���񍇐��ϊ�>)) ���J�n���܂��B
-:(({@m})) [((%��%))] (((|F_MAZE_PRE|)))
-  �O�u�^�� ((<���������ϊ�>)) ���J�n���܂��B
-:(({@!})) [((%��%))] (((|F_HIST|)))
-  ((<�q�X�g������>)) ���[�h�ɓ���܂��B
++ 前置型の変換の特殊定義
+:(({@b})) [((%◆%))] (((|F_BUSHU_PRE|)))
+  前置型の ((<部首合成変換>)) を開始します。
+:(({@m})) [((%◇%))] (((|F_MAZE_PRE|)))
+  前置型の ((<交ぜ書き変換>)) を開始します。
+:(({@!})) [((%◎%))] (((|F_HIST|)))
+  ((<ヒストリ入力>)) モードに入ります。
 
-+ ����̓����`
-:(({@q})) [((%�~%))] (((|F_QUIT|)))
-  ���񍇐��ϊ����[�h����������ϊ����[�h�𒆒f���A
-  �ʏ�̓��̓��[�h�ɖ߂�܂�
++ 取消の特殊定義
+:(({@q})) [((%×%))] (((|F_QUIT|)))
+  部首合成変換モードや交ぜ書き変換モードを中断し、
+  通常の入力モードに戻ります
 
-+ ��u�^�̕ϊ��̓����`
-:(({@B})) [((%��%))] (((|F_BUSHU_POST|)))
-  ((<��u�^�̕��񍇐��ϊ�>)) �ł��B
-:(({@1})) �` (({@9})) [((%��%))] (((|F_MAZE_POST1|)) �` ((|F_MAZE_POST9|)))
-  ���ꂼ��A�ǂ݂̒����� 1 ���� �` 9 ������ ((<��u�^�̌��������ϊ�>)) �ł��B
-:(({@-})) [((%�J%))] (((|F_KATA_POST0|)))
-  �A������Ђ炪�Ȃ�u�[�v��ΏۂƂ��� ((<��u�^�̂������ȕϊ�>)) �ł��B
-:(({@Q})) �` (({@Y})) [((%�J%))] (((|F_KATA_POST1|)) �` ((|F_KATA_POST9|)))
-  ���ꂼ��A�Ώۂ̒����� 1 ���� �` 9 ������ ((<��u�^�̂������ȕϊ�>)) �ł��B
-:(({@)})) (({@(})) (({@'})) (({@&})) (({@%})) (({@$})) [((%��%))] (((|F_KATA_POSTH1|)) �` ((|F_KATA_POSTH6|)))
-  �A������Ђ炪�Ȃ�u�[�v��ΏۂƂ��� ((<��u�^�̂������ȕϊ�>)) �ɂ����āA
-  �ϊ����珜�O���镶���̒��������ꂼ��A1 ���� �` 6 �����Ǝw�肵�ĕϊ����܂��B
-:(({@@})) (({@[})) (({@;})) (({@:})) (({@]})) [((%��%))] (((|F_KATA_POSTS1|)) �` ((|F_KATA_POSTS5|)))
-  ���O�� ((<��u�^�̂������ȕϊ�>)) �ŕϊ������������ȕ�������A
-  ���ꂼ�� 1 ���� �` 5 �����k�߂܂��B
-:(({@D})) [((%�J%))] (((|F_DAKUTEN|)))
-  ��u�^�̑��_�ł��B
-:(({@P})) [((%�K%))] (((|F_HANDAKUTEN|)))
-  ��u�^�̔����_�ł��B
++ 後置型の変換の特殊定義
+:(({@B})) [((%部%))] (((|F_BUSHU_POST|)))
+  ((<後置型の部首合成変換>)) です。
+:(({@1})) ～ (({@9})) [((%変%))] (((|F_MAZE_POST1|)) ～ ((|F_MAZE_POST9|)))
+  それぞれ、読みの長さが 1 文字 ～ 9 文字の ((<後置型の交ぜ書き変換>)) です。
+:(({@-})) [((%カ%))] (((|F_KATA_POST0|)))
+  連続するひらがなや「ー」を対象とする ((<後置型のかたかな変換>)) です。
+:(({@Q})) ～ (({@Y})) [((%カ%))] (((|F_KATA_POST1|)) ～ ((|F_KATA_POST9|)))
+  それぞれ、対象の長さが 1 文字 ～ 9 文字の ((<後置型のかたかな変換>)) です。
+:(({@)})) (({@(})) (({@'})) (({@&})) (({@%})) (({@$})) [((%ヵ%))] (((|F_KATA_POSTH1|)) ～ ((|F_KATA_POSTH6|)))
+  連続するひらがなや「ー」を対象とする ((<後置型のかたかな変換>)) において、
+  変換から除外する文字の長さをそれぞれ、1 文字 ～ 6 文字と指定して変換します。
+:(({@@})) (({@[})) (({@;})) (({@:})) (({@]})) [((%か%))] (((|F_KATA_POSTS1|)) ～ ((|F_KATA_POSTS5|)))
+  直前の ((<後置型のかたかな変換>)) で変換したかたかな文字列を、
+  それぞれ 1 文字 ～ 5 文字縮めます。
+:(({@D})) [((%゛%))] (((|F_DAKUTEN|)))
+  後置型の濁点です。
+:(({@P})) [((%゜%))] (((|F_HANDAKUTEN|)))
+  後置型の半濁点です。
 
-+ �����w���v�̓����`
-:(({@h})) [((%��%))] (((|F_HELP_BACKW|)))
-  ���O�� ((<�����w���v>)) ���ĕ\�����܂��B
-  �����Ď��s����ƁA�w���v�����������̂ڂ��ĕ\�����܂��B
-:(({@H})) [((%��%))] (((|F_HELP_FORW|)))
-  ���O�� ((<�����w���v>)) ���ĕ\�����܂��B
-  �����Ď��s����ƁA(({@h})) �̋t�����ɕ\�����܂��B
++ 文字ヘルプの特殊定義
+:(({@h})) [((%≪%))] (((|F_HELP_BACKW|)))
+  直前の ((<文字ヘルプ>)) を再表示します。
+  続けて実行すると、ヘルプ履歴をさかのぼって表示します。
+:(({@H})) [((%≫%))] (((|F_HELP_FORW|)))
+  直前の ((<文字ヘルプ>)) を再表示します。
+  続けて実行すると、(({@h})) の逆方向に表示します。
 
-+ �L�[���͂̓����`
-:(({@v})) [((%�E%))] (((|F_VERB_FIRST|)))
-  �ŏ��̃X�g���[�N�̃L�[����͂��܂��B
-  T-Code �̑� 2 �Ō��� ((%Space%)) �Ɏw�肷��Ƃ悢�ł��傤�B
-  �Ȃ��A�� 1 �Ō��Ƃ��Ďw�肳�ꂽ�ꍇ�́A���̑Ō����̂��̂���͂��܂��B
-:(({@^})) [((%�E%))] (((|F_VERB_THIS|)))
-  [^[((<ver1.28|�ύX����>))]^] �����͂����X�g���[�N�̃L�[����͂��܂��B
++ キー入力の特殊定義
+:(({@v})) [((%・%))] (((|F_VERB_FIRST|)))
+  最初のストロークのキーを入力します。
+  T-Code の第 2 打鍵の ((%Space%)) に指定するとよいでしょう。
+  なお、第 1 打鍵として指定された場合は、その打鍵そのものを入力します。
+:(({@^})) [((%・%))] (((|F_VERB_THIS|)))
+  [^[((<ver1.28|変更履歴>))]^] 今入力したストロークのキーを入力します。
 
 
 
-==== ���͕����ɌŗL�̐ݒ�
+==== 入力方式に固有の設定
 
-[^[((<ver1.27e|�ύX����>))]^]
-�u(({#define ((|...|))}))�v�̌`���̍s�w��ŁA
-���͕����ɌŗL�̐ݒ���s�����Ƃ��ł��܂��B
-���݁A�ȉ��̃I�v�V�������ݒ�\�ł��B
+[^[((<ver1.27e|変更履歴>))]^]
+「(({#define ((|...|))}))」の形式の行指定で、
+入力方式に固有の設定を行うことができます。
+現在、以下のオプションが設定可能です。
 
 :(({#define table-name "((|name|))"}))
-  ���͕����̖��O���A
-  (({"T"})), (({"TUT"})), (({"G"}))�Ȃǂ̂悤�Ɏw�肵�܂��B
-  �w�肵�����O�́A�u����Win�v�̃^�C�g���o�[�ɕ\������܂��B
+  入力方式の名前を、
+  (({"T"})), (({"TUT"})), (({"G"}))などのように指定します。
+  指定した名前は、「漢直Win」のタイトルバーに表示されます。
 
 :(({#define prefix ((|spec|))}))
-  Try-Code �� TT-Code �Ȃǂ́A�v���t�B�b�N�X�g���^�̓��͕����ɂ�����A
-  �����w���v�̕\���w��ł��B
-  * Try-Code �̏ꍇ
-      #define prefix /��/40/����/��/
-  * TT-Code �̏ꍇ
-      #define prefix /��/26,23/����/��/:/��/23,26/����/��/
-  �u�g���\���\���镶�� (�������ŗ��p�����)�v
-  �u�g���v���t�B�b�N�X�̃L�[�ԍ� (�R���}��؂�)�v
-  �u((*base stroke*))
-  (�g���v���t�B�b�N�X�������������̊e�Ō�) ��\������ (���ł��珇�ɕ��ׂ�)�v
-  �ubase stroke �ł̓�d�Ō��� (���������) �O�d�Ō���\������ (���ׂ�)�v
-  ���A�X���b�V���ŋ�؂��Ďw�肵�܂��B
-  �w�肪��������ꍇ�́A�R�����ŋ�؂��ĕ��ׂ܂��B
+  Try-Code や TT-Code などの、プレフィックス拡張型の入力方式における、
+  文字ヘルプの表示指定です。
+  * Try-Code の場合
+      #define prefix /■/40/■□/回/
+  * TT-Code の場合
+      #define prefix /▲/26,23/▲○/▲/:/▽/23,26/▽○/▽/
+  「拡張表を代表する文字 (漢索窓で利用される)」
+  「拡張プレフィックスのキー番号 (コンマ区切り)」
+  「((*base stroke*))
+  (拡張プレフィックスを除いた部分の各打鍵) を表す文字 (初打から順に並べる)」
+  「base stroke での二重打鍵と (もしあれば) 三重打鍵を表す文字 (並べる)」
+  を、スラッシュで区切って指定します。
+  指定が複数ある場合は、コロンで区切って並べます。
 
-  [^[((<ver1.28|�ύX����>))]^]�V�t�g�Ō��� (({"S12"})) �̂悤�� (({"S"})) �����Ďw�肵�܂��B
+  [^[((<ver1.28|変更履歴>))]^]シフト打鍵は (({"S12"})) のように (({"S"})) をつけて指定します。
 
 
 :(({#define defguide "((|string|))"}))
-  ((<�����ݒ�t�@�C��>)) �� ((<(({defg=((|string|))}))>)) �Ɠ��l�ł��B
-  ���Ƃ��΁Aphoenix �z���((*�z���ē�*))�͎��̂悤�Ɏw�肵�܂��B
-    #define defguide "����t���M���ۋU����|������G���֏Y����y�őW�������Փw���J�������ʖj���B����"
-  (({defg=((|string|))})) �Ɠ����Ɏw�肳�ꂽ�ꍇ�́A
-  (({defg=((|string|))})) �̐ݒ肪�D�悳��܂��B
+  ((<初期設定ファイル>)) の ((<(({defg=((|string|))}))>)) と同様です。
+  たとえば、phoenix 配列の((*配字案内*))は次のように指定します。
+    #define defguide "亜域液牡凱梶丸偽漁吟芸元鯉剛坐雑事蛇什傷上笥税糎促濁中鍔努峠寧函備侮別頬脈唯乱令"
+  (({defg=((|string|))})) と同時に指定された場合は、
+  (({defg=((|string|))})) の設定が優先されます。
 
 
 =end

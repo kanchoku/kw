@@ -1,6 +1,6 @@
 =begin
 
-= Š¿’¼Win 1.28
+= æ¼¢ç›´Win 1.28
 =end
 =begin html
 <div class="version">

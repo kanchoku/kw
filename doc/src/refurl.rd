@@ -1,45 +1,45 @@
 =begin
 
-== �֘A URL
+== 関連 URL
 
-=== �I���W�i���ł̊���Win
+=== オリジナル版の漢直Win
 
-* ((<"T-code�C�s�� �������ړ��͂̂�����"|URL:http://t.pos.to/tc/>)) 
-  �c �I���W�i���́u����Win�v�̍�҂̓����G������̃y�[�W�B
-  �I���W�i���ł� ((<"����Win"|URL:http://t.pos.to/tc/kanchoku.html>)) ��A
-  �o���\�t�g��
-  ((<"������"|URL:http://t.pos.to/tc/kansaku.html>))
-  �����J����Ă��܂��B
+* ((<"T-code修行中 漢字直接入力のすすめ"|URL:http://t.pos.to/tc/>)) 
+  … オリジナルの「漢直Win」の作者の徳岡宏樹さんのページ。
+  オリジナル版の ((<"漢直Win"|URL:http://t.pos.to/tc/kanchoku.html>)) や、
+  姉妹ソフトの
+  ((<"漢索板"|URL:http://t.pos.to/tc/kansaku.html>))
+  が公開されています。
 
 
 
-=== �e���͕���
+=== 各入力方式
 
 * ((<"Home of T-Code"|URL:http://openlab.jp/tcode/>)) 
-  �c T-Code �̖{�ƃy�[�W T-Code Laboratory�B
-  T-Code �̏Љ�A�֘A�\�t�g�̔z�z�AT-Code ���[�����O���X�g�̎Q�����@�ȂǁB
+  … T-Code の本家ページ T-Code Laboratory。
+  T-Code の紹介、関連ソフトの配布、T-Code メーリングリストの参加方法など。
 
 * ((<"Creative Workspace (CreW) - TUT-Code Web Site"|URL:http://plone.crew.sfc.keio.ac.jp/groups/tut-code>)) 
-  �c TUT-Code �̖{�ƃy�[�W�B
-  TUT-Code �̏Љ�A���K�e�L�X�g�̔z�z�A
-  TUT-Code ���[�����O���X�g�̎Q�����@�ȂǁB
+  … TUT-Code の本家ページ。
+  TUT-Code の紹介、練習テキストの配布、
+  TUT-Code メーリングリストの参加方法など。
 
 * ((<"m(as)m home position"|URL:http://www.asahi-net.or.jp/~QX5S-MSMR/>)) 
-  �c
+  …
   ((<"G-Code"|URL:http://www.asahi-net.or.jp/~QX5S-MSMR/renkin/gcode/index.html>))
-  �̍�҂̑������Ⴓ��̃y�[�W�B
-  �������ړ��͖@�S�ʂ̏�񂪏[�����Ă��܂��B
+  の作者の増村成吾さんのページ。
+  漢字直接入力法全般の情報が充実しています。
 
 
 
-=== ���ړ��̓\�t�g
+=== 直接入力ソフト
 
-* ((<"T�R�[�h���͊�tc2"|URL:http://openlab.jp/tcode/tc2/index.html>))
-  �c �k���ł���� tc2 �̃y�[�W�B
-  tc2 �� Emacs �p�̒��ړ��͊��ŁA
-  T-Code �� TUT-Code ���g�����Ƃ��ł��܂��B
+* ((<"Tコード入力環境tc2"|URL:http://openlab.jp/tcode/tc2/index.html>))
+  … 北嶋暁さんの tc2 のページ。
+  tc2 は Emacs 用の直接入力環境で、
+  T-Code と TUT-Code を使うことができます。
 
-  �u����Win 1.27�v�̕��񍇐��ϊ������E���������ϊ������́A
-  tc2 �̃p�b�P�[�W�Ɋ܂܂��t�@�C������쐬����Ă��܂��B
+  「漢直Win 1.27」の部首合成変換辞書・交ぜ書き変換辞書は、
+  tc2 のパッケージに含まれるファイルから作成されています。
 
 =end
