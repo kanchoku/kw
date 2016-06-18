@@ -1,40 +1,40 @@
 =begin
 
-== ŽÓŽ«
+== è¬è¾ž
 
-((<"ƒIƒŠƒWƒiƒ‹”ÅŠ¿’¼Win"|URL:http://t.pos.to/tc/kanchoku.html>))
-‚ÌìŽÒ‚Å‚ ‚é
-“¿‰ªGŽ÷
-‚³‚ñA
+((<"ã‚ªãƒªã‚¸ãƒŠãƒ«ç‰ˆæ¼¢ç›´Win"|URL:http://t.pos.to/tc/kanchoku.html>))
+ã®ä½œè€…ã§ã‚ã‚‹
+å¾³å²¡å®æ¨¹
+ã•ã‚“ã€
 
-‚©‚½‚©‚È‚Ì ((<ƒVƒtƒg‘ÅŒ®‚É‚æ‚é“ü—Í>)) ‚ÉŠÖ‚·‚éƒpƒbƒ`‚ð‚Í‚¶‚ßA
-”X‚Ì•Œ¾‚ð—^‚¦‚Ä‚­‚¾‚³‚Á‚½
-–ØŒ´‰pl
-‚³‚ñA
+ã‹ãŸã‹ãªã® ((<ã‚·ãƒ•ãƒˆæ‰“éµã«ã‚ˆã‚‹å…¥åŠ›>)) ã«é–¢ã™ã‚‹ãƒ‘ãƒƒãƒã‚’ã¯ã˜ã‚ã€
+æ•°ã€…ã®åŠ©è¨€ã‚’ä¸Žãˆã¦ãã ã•ã£ãŸ
+æœ¨åŽŸè‹±äºº
+ã•ã‚“ã€
 
-((<"1.26eb ”Å‚ðƒpƒbƒP[ƒWƒ“ƒO"|URL:http://openlab.jp/tcode/soft.html>))
-‚µ‚Ä‚­‚¾‚³‚Á‚½
-–k“ˆ‹Å
-‚³‚ñA
+((<"1.26eb ç‰ˆã‚’ãƒ‘ãƒƒã‚±ãƒ¼ã‚¸ãƒ³ã‚°"|URL:http://openlab.jp/tcode/soft.html>))
+ã—ã¦ãã ã•ã£ãŸ
+åŒ—å¶‹æš
+ã•ã‚“ã€
 
-((<"ƒLƒƒƒŒƒbƒg’Ç]‹@”\"|followCaret=n>)) ‚ÌƒR[ƒh‚ð‘‚¢‚Ä‚­‚¾‚³‚Á‚½
-u((<"yŒ´—zT-Code˜AKƒ}ƒ‰ƒ\ƒ“yŽå‹`z"|URL:http://pc.2ch.net/test/read.cgi/unix/1014523030/>))v‚Ì
+((<"ã‚­ãƒ£ãƒ¬ãƒƒãƒˆè¿½å¾“æ©Ÿèƒ½"|followCaret=n>)) ã®ã‚³ãƒ¼ãƒ‰ã‚’æ›¸ã„ã¦ãã ã•ã£ãŸ
+ã€Œ((<"ã€åŽŸç†ã€‘T-Codeé€£ç¿’ãƒžãƒ©ã‚½ãƒ³ã€ä¸»ç¾©ã€‘"|URL:http://pc.2ch.net/test/read.cgi/unix/1014523030/>))ã€ã®
 816
-‚³‚ñA
+ã•ã‚“ã€
 
-((<nŒêƒKƒCƒh>)) ‹@”\‚ÌƒR[ƒh‚ð‚Í‚¶‚ßA
-‘½‚­‚ÌƒR[ƒh‚ð‘‚¢‚Ä‚­‚¾‚³‚Á‚½
-ŽR•Ó
-‚³‚ñA
+((<ç†Ÿèªžã‚¬ã‚¤ãƒ‰>)) æ©Ÿèƒ½ã®ã‚³ãƒ¼ãƒ‰ã‚’ã¯ã˜ã‚ã€
+å¤šãã®ã‚³ãƒ¼ãƒ‰ã‚’æ›¸ã„ã¦ãã ã•ã£ãŸ
+å±±è¾º
+ã•ã‚“ã€
 
-((<1.27d ”Å|•ÏX—š—ð>))‚ÌƒR[ƒh‚âƒhƒLƒ…ƒƒ“ƒg‚ð‘‚¢‚Ä‚­‚¾‚³‚Á‚½
-‰ªrs‚³‚ñA
+((<1.27d ç‰ˆ|å¤‰æ›´å±¥æ­´>))ã®ã‚³ãƒ¼ãƒ‰ã‚„ãƒ‰ã‚­ãƒ¥ãƒ¡ãƒ³ãƒˆã‚’æ›¸ã„ã¦ãã ã•ã£ãŸ
+å²¡ä¿Šè¡Œã•ã‚“ã€
 
-ƒoƒOƒŒƒ|[ƒg‚â—lX‚ÈƒAƒhƒoƒCƒX‚ð—^‚¦‚Ä‚­‚¾‚³‚Á‚½A
-T-Code ƒ[ƒŠƒ“ƒOƒŠƒXƒg‚âu˜AKƒXƒŒv‚Ì‚Ý‚È‚³‚ÜA
+ãƒã‚°ãƒ¬ãƒãƒ¼ãƒˆã‚„æ§˜ã€…ãªã‚¢ãƒ‰ãƒã‚¤ã‚¹ã‚’ä¸Žãˆã¦ãã ã•ã£ãŸã€
+T-Code ãƒ¡ãƒ¼ãƒªãƒ³ã‚°ãƒªã‚¹ãƒˆã‚„ã€Œé€£ç¿’ã‚¹ãƒ¬ã€ã®ã¿ãªã•ã¾ã€
 
-‚»‚µ‚ÄAuŠ¿’¼Winv‚ðŽg‚Á‚Ä‚­‚¾‚³‚Á‚Ä‚¢‚é‚Ý‚È‚³‚ÜA
+ãã—ã¦ã€ã€Œæ¼¢ç›´Winã€ã‚’ä½¿ã£ã¦ãã ã•ã£ã¦ã„ã‚‹ã¿ãªã•ã¾ã€
 
-‚ÉAS‚©‚çŠ´ŽÓ‚¢‚½‚µ‚Ü‚·B
+ã«ã€å¿ƒã‹ã‚‰æ„Ÿè¬ã„ãŸã—ã¾ã™ã€‚
 
 =end

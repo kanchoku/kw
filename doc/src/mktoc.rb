@@ -1,4 +1,5 @@
 #!/usr/local/bin/ruby
+# encoding: utf-8
 #
 # usage: mkidx.rb *.rd > idx.rd
 
@@ -9,7 +10,7 @@ puts "<!-- mktoc: toc begin -->"	# do not change! (see mkframe.rb)
 puts "<div class=\"toc\">"
 puts "=end"
 puts "=begin"
-puts "‚à‚­‚¶"
+puts "ã‚‚ãã˜"
 
 while line = gets do
   line.chomp!

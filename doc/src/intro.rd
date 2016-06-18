@@ -1,82 +1,82 @@
 =begin
 
-== �͂��߂�
+== はじめに
 
-=== �u����Win�v�Ƃ�
+=== 「漢直Win」とは
 
-�u����Win�v�́AWindows ���((*�������ړ���*))���s�����߂̃c�[���ł��B
-((<�����G��|URL:http://t.pos.to/tc/>)) ����ɂ���č쐻����A
-���݂̓z�X�e�B���O�T�[�r�X Google Code �Ȃǂɂ����ĉ��ǂ��������Ă��܂��B
+「漢直Win」は、Windows 上で((*漢字直接入力*))を行うためのツールです。
+((<徳岡宏樹|URL:http://t.pos.to/tc/>)) さんによって作製され、
+現在はホスティングサービス Google Code などにおいて改良が加えられています。
 
-���̃h�L�������g�ł́A�u����Win�v�o�[�W���� 1.28 �ɂ��ĉ�����܂��B
+このドキュメントでは、「漢直Win」バージョン 1.28 について解説します。
 
-�u����Win 1.28�v�̎�ȓ����́A���̂Ƃ���ł��B
+「漢直Win 1.28」の主な特徴は、次のとおりです。
 
-* T-Code, TUT-Code, G-Code ���g���܂��B
-* Shift �𕹗p����Ō��ɑΉ����A�u���v���ɂ��Ή��\�ł��B[^[((<ver1.28|�ύX����>))]^]
-* ((<���񍇐��ϊ�>))�A((<���������ϊ�>))�A((<�q�X�g������>))
-  �Ȃǂ̕⏕���͂��g���܂��B�ċA�I�ɑg�ݍ��킹�邱�Ƃ��\�ł��B
-* �⏕���͂��������̃R�[�h��\������((<�����w���v>))�����p�ł��܂��B
-* ((<�n��K�C�h>))�̓��͕⏕�����p�ł��܂��B[^[((<ver1.27a|�ύX����>))]^]
-* ((<���͂̓��v>))���L�^���邱�Ƃ��ł��܂��B[^[((<ver1.27f|�ύX����>))]^]
+* T-Code, TUT-Code, G-Code が使えます。
+* Shift を併用する打鍵に対応し、「き」等にも対応可能です。[^[((<ver1.28|変更履歴>))]^]
+* ((<部首合成変換>))、((<交ぜ書き変換>))、((<ヒストリ入力>))
+  などの補助入力が使えます。再帰的に組み合わせることも可能です。
+* 補助入力した文字のコードを表示する((<文字ヘルプ>))が利用できます。
+* ((<熟語ガイド>))の入力補助が利用できます。[^[((<ver1.27a|変更履歴>))]^]
+* ((<入力の統計>))を記録することができます。[^[((<ver1.27f|変更履歴>))]^]
 
-�Ȃ��A�����ł͊������ړ��͂��̂��̂ɂ��Ă͐G��܂���B
-�������ړ��͂ɂ��ẮA((<�֘A URL>)) ���Q�Ƃ��Ă��������B
+なお、ここでは漢字直接入力そのものについては触れません。
+漢字直接入力については、((<関連 URL>)) を参照してください。
 
-=== �����
+=== 動作環境
 
-Windows95 �ȍ~�� Windows �œ��삷����̂Ǝv���܂��B�ꕔ�̋@�\��
-Windows 95/98/Me �ւ̑Ή�������ł�����̂�����܂��B
+Windows95 以降の Windows で動作するものと思われます。一部の機能は
+Windows 95/98/Me への対応が困難であるものもあります。
 
-=== ��������
+=== 制限事項
 
-�u����Win�v�́A�܂��Ƃ��� IME �ł͂Ȃ��A
-WM_CHAR �Ȃǂ̃��b�Z�[�W�𑗂���邱�Ƃŕ�������͂���
-�Ƃ������@���Ƃ��Ă��܂��B
-���������āA���̂悤�ȃ��b�Z�[�W�ɑΉ����Ă��Ȃ��\�t�g�ł́A
-�u����Win�v�𗘗p���邱�Ƃ͂ł��܂���B
+「漢直Win」は、まっとうな IME ではなく、
+WM_CHAR などのメッセージを送りつけることで文字を入力する
+という方法をとっています。
+したがって、このようなメッセージに対応していないソフトでは、
+「漢直Win」を利用することはできません。
 
-���Ƃ��΁A�R�}���h�v�����v�g (MS-DOS �v�����v�g) �ł́A
-���͂��s�����Ƃ��ł��܂���B
+たとえば、コマンドプロンプト (MS-DOS プロンプト) では、
+入力を行うことができません。
 
-���ɁAWindows 95/98/Me �Ȃǂ� MS-DOS �v�����v�g�ł́A
-�u����Win�v�œ��͂��悤�Ƃ���ƁA
-�R���s���[�^�����΂炭���͂��󂯂��Ȃ��Ȃ邱�Ƃ�����܂��B
-((*((*MS-DOS �v�����v�g���g�p���鎞�́A
-�K���u����Win�v�� OFF �� ���Ă��������B*))*))
-MS-DOS �v�����v�g�ł́A
-�u����Win�v�̃g�O���L�[ (((%Ctrl%))+((%\%))) ���g���܂���̂ŁA
-�u����Win�v�̃E�B���h�E���N���b�N���� OFF �ɂ��Ă��������B
+特に、Windows 95/98/Me などの MS-DOS プロンプトでは、
+「漢直Win」で入力しようとすると、
+コンピュータがしばらく入力を受けつけなくなることがあります。
+((*((*MS-DOS プロンプトを使用する時は、
+必ず「漢直Win」を OFF に してください。*))*))
+MS-DOS プロンプトでは、
+「漢直Win」のトグルキー (((%Ctrl%))+((%\%))) も使えませんので、
+「漢直Win」のウィンドウをクリックして OFF にしてください。
 
-=== �g�p����
+=== 使用条件
 
-���̃\�t�g��((*����*))�A((*���ۏ�*))�ł��B
+このソフトは((*無償*))、((*無保証*))です。
 
-�u����Win�v�o�[�W���� 1.27 �̌��^�ł���A
-�I���W�i���ł́u����Win�v�o�[�W���� 1.26
-(((<�����G��|URL:http://t.pos.to/tc/>)) ����� web �y�[�W������\�� 
-kanwin126.zip) �̎g�p�����́A
-���p�b�P�[�W�Ɋ܂܂��h�L�������g kanchoku.txt �ɂ��ƁA
-�ȉ��̂悤�Ȃ��̂ł��B
+「漢直Win」バージョン 1.27 の原型である、
+オリジナル版の「漢直Win」バージョン 1.26
+(((<徳岡宏樹|URL:http://t.pos.to/tc/>)) さんの web ページより入手可能の 
+kanwin126.zip) の使用条件は、
+同パッケージに含まれるドキュメント kanchoku.txt によると、
+以下のようなものです。
 
 kanchoku.txt
-  ���\�t�g�̎g�p����
-    ���̃\�t�g�͎g�p���z�z�����R�ł����A���̃\�t�g���g�p�������Ƃɂ����
-  ������肪�������Ă��A��҂��֌W�҂��Ȃ��ӔC�𕉂��܂���B���ȐӔC��
-  �g�p���Ă��������B
+  ●ソフトの使用条件
+    このソフトは使用も配布も自由ですが、このソフトを使用したことによって
+  何か問題が発生しても、作者も関係者もなんら責任を負いません。自己責任で
+  使用してください。
 
-����A�u����Win�v�o�[�W���� 1.27 �̕��񍇐��ϊ��̃R�[�h 
-(bushu_dic.c) �́A
-((<"tserv-0.2"|URL:http://www.tcp-ip.or.jp/~tagawa/archive/>)) �� comp.c 
-�Ɋ�Â����̂ł���A
-����ɂ��� comp.c �́A
+一方、「漢直Win」バージョン 1.27 の部首合成変換のコード 
+(bushu_dic.c) は、
+((<"tserv-0.2"|URL:http://www.tcp-ip.or.jp/~tagawa/archive/>)) の comp.c 
+に基づくものであり、
+さらにこの comp.c は、
 ((<"GNU GPL"|URL:http://www.gnu.org/licenses/gpl.html>))
-���C�Z���X�� tc.el �����^�Ƃ��Ă���Ƃ���܂��B
+ライセンスの tc.el を原型としているとあります。
 
 bushu_dic.c
   /*
-    ���̃v���O�����̌��^��, tc.el �������܂���.  tc.el �� Copyright
-    �͈ȉ��̒ʂ�ł�.
+    このプログラムの原型は, tc.el から作られました.  tc.el の Copyright
+    は以下の通りです.
   ;;
   ;; T-Code frontend for Nemacs.
   ;; Author : Yasushi Saito (yasushi@is.s.u-tokyo.ac.jp)
@@ -103,8 +103,8 @@ bushu_dic.c
   ;; Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
   */
 
-�ȏ�̂��Ƃ���A���ʂƂ��āA�u����Win�v1.27 �̗��p�́A
-((<"GNU GPL"|URL:http://www.gnu.org/licenses/gpl.html>)) ��
-�]���ׂ����̂ƍl�����܂��B
+以上のことから、結果として、「漢直Win」1.27 の利用は、
+((<"GNU GPL"|URL:http://www.gnu.org/licenses/gpl.html>)) に
+従うべきものと考えられます。
 
 =end
