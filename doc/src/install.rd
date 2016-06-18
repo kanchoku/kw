@@ -1,36 +1,36 @@
 =begin
 
-== �C���X�g�[��
+== インストール
 
-�C���X�g�[������ɂ́A
-�u����Win�v�̃p�b�P�[�W�Ɋ܂܂�Ă���ȉ��̃t�@�C�����A
-�����t�H���_�ɒu���Ă��������B
-* kanchoku.exe �c �u����Win�v�{��
-* kansaku.exe �c �u((<������>))�v�{��
-* kanchoku.ini �c ((<�����ݒ�t�@�C��>)) 
-* 106.key, 101.key, dvorak.key �c((<�L�[�{�[�h�t�@�C��>))
-* t.tbl, tut.tbl, g.tbl �c ((<�e�[�u���t�@�C��>))
-* kwbushu.rev �c ((<���񍇐��ϊ�����>))
-* kwmaze.dic �c ((<���������ϊ�����>))
-* kwgg.dic �c ((<�n��K�C�h����>)) [^[((<ver1.27a|�ύX����>))]^]
-* kanchar.dll �c �⏕ DLL [^[((<ver1.27f|�ύX����>))]^]
-* wininfo.exe �c �E�B���h�E�N���X�������c�[�� [^[((<ver1.27f|�ύX����>))]^]
-* kwstyle.exe �c �z�F�E�t�H���g�J�X�^�}�C�Y�c�[�� [^[((<ver1.28|�ύX����>))]^]
+インストールするには、
+「漢直Win」のパッケージに含まれている以下のファイルを、
+同じフォルダに置いてください。
+* kanchoku.exe … 「漢直Win」本体
+* kansaku.exe … 「((<漢索窓>))」本体
+* kanchoku.ini … ((<初期設定ファイル>)) 
+* 106.key, 101.key, dvorak.key …((<キーボードファイル>))
+* t.tbl, tut.tbl, g.tbl … ((<テーブルファイル>))
+* kwbushu.rev … ((<部首合成変換辞書>))
+* kwmaze.dic … ((<交ぜ書き変換辞書>))
+* kwgg.dic … ((<熟語ガイド辞書>)) [^[((<ver1.27a|変更履歴>))]^]
+* kanchar.dll … 補助 DLL [^[((<ver1.27f|変更履歴>))]^]
+* wininfo.exe … ウィンドウクラス名調査ツール [^[((<ver1.27f|変更履歴>))]^]
+* kwstyle.exe … 配色・フォントカスタマイズツール [^[((<ver1.28|変更履歴>))]^]
 
-�ʏ�́A�A�[�J�C�u (kw128*.zip) ���𓀂����t�H���_���A
-�K���ȏꏊ�ɐݒu����΂悢�ł��傤�B
-�K�v�ɉ����āA���s�t�@�C���̃V���[�g�J�b�g���쐬���Ă����ƕ֗��ł��B
+通常は、アーカイブ (kw128*.zip) を解凍したフォルダを、
+適当な場所に設置すればよいでしょう。
+必要に応じて、実行ファイルのショートカットを作成しておくと便利です。
 
-== �A���C���X�g�[��
+== アンインストール
 
-�A���C���X�g�[���́A�C���X�g�[�������t�@�C�����폜���邾���ł��B
+アンインストールは、インストールしたファイルを削除するだけです。
 
-�⏕ DLL (kanchar.dll) ���폜�ł����ɁA�c���Ă��܂��ꍇ�́A
-Windows ���ċN��������ɂ�����x�폜���Ă݂Ă��������B
+補助 DLL (kanchar.dll) が削除できずに、残ってしまう場合は、
+Windows を再起動した後にもう一度削除してみてください。
 
-�u����Win�v�Ɠ����t�H���_�ɐ�������� kwrecord.txt, kwstat.txt �́A
-((<���͂̓��v>))���L�^�����t�@�C���ł��B�K�v���Ȃ���΍폜���Ă����܂��܂���B
+「漢直Win」と同じフォルダに生成される kwrecord.txt, kwstat.txt は、
+((<入力の統計>))を記録したファイルです。必要がなければ削除してもかまいません。
 
-�Ȃ��A�u����Win�v�́A���W�X�g�����g�p���܂���B
+なお、「漢直Win」は、レジストリを使用しません。
 
 =end

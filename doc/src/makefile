@@ -1,9 +1,9 @@
-###RUBYROOT	= c:\programs\ruby-1.6.2-i386-mingw32\usr\local
-RUBYROOT	= c:\programs\ruby-1.8.4-i386-mingw32\usr\local
-RUBY	= $(RUBYROOT)\bin\ruby -Ks
+###RUBYROOT	= c:\programs\ruby-1.8.4-i386-mingw32\usr\local
+RUBYROOT	= c:\Ruby22
+RUBY	= $(RUBYROOT)\bin\ruby -Ku
 RD2	= $(RUBYROOT)\bin\rd2 -r rd/rd2html-lib.rb 
 RD2OPTS	= --with-css=style/kanchoku.css --with-part=html:include \
-	  --html-title=kw128 --html-lang=ja --html-charset=Shift_JIS
+	  --html-title=kw128 --html-lang=ja --html-charset=UTF-8
 
 RD_SRC	= intro.rd install.rd usage.rd auxil.rd customize.rd \
 	  history.rd changes.rd \

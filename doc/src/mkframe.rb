@@ -67,12 +67,12 @@ end # fsrc
 
 open($framefile, "w") do |fframe|
   fframe.puts <<"EOH"
-<?xml version="1.0" encoding="Shift_JIS"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Frameset//EN"
  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-frameset.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="ja" lang="ja">
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=Shift_JIS" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 <title>kw127</title>
 <link href="style/kanchoku.css" type="text/css" rel="stylesheet" />
 </head>
@@ -81,7 +81,7 @@ open($framefile, "w") do |fframe|
  <frame src="#{$contentfile}" title="#{$contentname}" id="#{$contentname}" name="#{$contentname}" />
  <noframes>
   <body>
-  <a href="#{$srcfile}">#{$srcfile} をご覧ください。</a>
+  <a href="#{$srcfile}">#{$srcfile} 繧偵＃隕ｧ縺上□縺輔＞縲�</a>
   </body>
  </noframes>
 </frameset>
