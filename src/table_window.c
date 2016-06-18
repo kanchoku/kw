@@ -688,7 +688,7 @@ int TableWindow::handlePaint() {
         drawFrameOFF(hdc);
         if (tc->OPT_softKeyboard) {
             MojiBuffer mb(4);
-            mb.clear(); mb.pushSoft("BR漢E"); // BS, RET, ON/OFF, ESC
+            mb.clear(); mb.pushSoft("EB漢S"); // ESC, BS, ON/OFF, Shift
             drawMiniBuffer(hdc, 4, COL_OFF_M1, &mb);
         }
         drawVKBOFF(hdc);
@@ -759,7 +759,7 @@ int TableWindow::handlePaint() {
             drawMiniBuffer(hdc, 4, COL_ON_K1, &work);
         } else if (tc->OPT_softKeyboard) {
             MojiBuffer mb(4);
-            mb.clear(); mb.pushSoft("BR漢E"); // BS, RET, ON/OFF, ESC
+            mb.clear(); mb.pushSoft("EB漢S"); // ESC, BS, ON/OFF, Shift
             drawMiniBuffer(hdc, 4, COL_ON_M1, &mb);
         }
         drawVKB50(hdc, tc->isAnyShiftSeq || tc->OPT_shiftLockStroke);
@@ -2972,11 +2972,13 @@ int TableWindow::getFromVKB50(int x, int y) {
         rcClick.left = MARGIN_SIZE + BLOCK_SIZE * 5 + 1;
         rcClick.right = rcClick.left + BLOCK_SIZE;
         switch (j) {
-            case 0: return BS_KEY;
-            case 1: return RET_KEY;
+            case 0: return ESC_KEY;
+            case 1: return BS_KEY;
             case 2: return (tc->mode == TCode::OFF) ? ACTIVE_KEY : INACTIVE_KEY;
             case 3:
-            default: return ESC_KEY;
+            default:
+                isSoftKbdShift = !isSoftKbdShift;
+                return VK_LSHIFT; // キー番号とかぶるのでVK_SHIFT(16)は使わない
         }
     } else if (BLOCK_SIZE * 6 <= tmp) {
         tmp -= BLOCK_SIZE; // 柱のBLOCK分を引く
@@ -3000,8 +3002,7 @@ int TableWindow::getFromVKB50(int x, int y) {
 
     int k = j * 10 + i; // キー番号
     if (k == 49) {
-        isSoftKbdShift = !isSoftKbdShift;
-        return VK_LSHIFT; // キー番号とかぶるのでVK_SHIFT(16)は使わない
+        return RET_KEY;
     }
     if (isSoftKbdShift) {
         isSoftKbdShift = false;
@@ -3025,15 +3026,15 @@ int TableWindow::getFromVKB10(int x, int y) {
         rcClick.right = rcClick.left + BLOCK_SIZE;
         rcClick.bottom = rcClick.top + BLOCK_SIZE;
         if (j <= 0) {
-            return BS_KEY;
+            return ESC_KEY;
         } else if (j == 1) {
-            return RET_KEY;
+            return BS_KEY;
         } else if (j == 2) {
             return (tc->mode == TCode::OFF) ? ACTIVE_KEY : INACTIVE_KEY;
         } else if (j == 3) {
-            return LT_KEY;
-        } else {
             return GT_KEY;
+        } else {
+            return RET_KEY;
         }
     } else if (BLOCK_SIZE * 6 <= tmp) {
         tmp -= BLOCK_SIZE;
