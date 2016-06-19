@@ -20,6 +20,8 @@
 
 #define table-name "TUT"
 #define key-layout QWERTY-JIS
+;; softKeyboard用にガイド表示
+#define defguide "1234567890 -^\\@[:]_あかさたなはまやらわ歳度校銀転化下回歴係若記委入実論値路装働"
 
 {
     @v,  @v,  @v,  @v,  @v,  @v,  @v,  @v,  @v,  @v,
