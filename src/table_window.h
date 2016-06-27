@@ -28,6 +28,7 @@ using namespace std;
 
 #ifndef MAPVK_VK_TO_VSC
 #define MAPVK_VK_TO_VSC (0)
+#define MAPVK_VK_TO_CHAR (2)
 #endif
 #ifndef WM_UNICHAR
 #define WM_UNICHAR 0x0109
@@ -251,6 +252,11 @@ private:
     // Timeout判定用
     int deciSecAfterStroke;
 
+    // ソフトキーボードとしての動作関係
+    bool isSoftKbdClicked; // ソフトキーボードがクリックされた場合
+    RECT rcClick; // ソフトキーボードクリック時反転表示
+    bool isSoftKbdShift; // ソフトキーボード上シフトキーがオン
+
     // スタイル設定
     COLORREF styleCol[20];
     char styleFontName[LF_FACESIZE];
@@ -292,13 +298,15 @@ private:
     // メッセージハンドラ
     int handleCreate();         // WM_CREATE
     int handleDestroy();        // WM_DESTROY
-    int handleLButtonDown();    // WM_LBUTTONDOWN
     int handlePaint();          // WM_PAINT
     int handleTimer();          // WM_TIMER
     int handleNotifyVKPROCESSKEY(); // WM_KANCHOKU_NOTIFYVKPROCESSKEY
     int handleNotifyIMEStatus();    // WM_KANCHOKU_NOTIFYIMESTATUS
     int handleForeground(HWND);     // EVENT_SYSTEM_FOREGROUND
+    int handleAsSoftKbd();      // WM_LBUTTONUP
     int handleHotKey();         // WM_HOTKEY
+
+    int showVersionDialog();    // バージョン情報ダイアログを表示
 
     // T-Code 関連
     void initTC();              // T-Code 変換器の初期化
@@ -308,10 +316,15 @@ private:
     void drawFrameOFF(HDC hdc); // OFF 時の仮想鍵盤の枠
     void drawFrame50(HDC hdc);  // 通常時の仮想鍵盤の枠
     void drawFrame10(HDC hdc);  // 少数候補選択時の仮想鍵盤の枠
+    void drawVKBOFF(HDC hdc);   // OFF時の仮想鍵盤
     void drawVKB50(HDC hdc, bool isWithBothSide = false);        // 通常時の仮想鍵盤
     void drawVKB10(HDC);        // 少数候補選択時の仮想鍵盤
     void drawMiniBuffer(HDC, int, COLORREF, MojiBuffer *);
                                 // ミニバッファ
+
+    // 仮想鍵盤上のクリック位置をもとに、対応するキーを返す
+    int getFromVKB50(int x, int y);
+    int getFromVKB10(int x, int y);
 
     // エラー処理
     void error(char *);         // エラーを表示し、終了
@@ -319,6 +332,7 @@ private:
 
     void readTargetWindowSetting(char *); // 出力先ウィンドウごとの設定の読込
     int getOutputMethod(HWND);  // 指定したウィンドウに対するoutputMethodを取得
+    char toAscii(UINT vk, bool isShift); // VK_XXXに対応する表示用文字を返す
 
     void makeStyle();
     void readStyleSetting();

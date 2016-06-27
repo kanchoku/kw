@@ -5,6 +5,7 @@
 #endif          //</OKA>
 #include "table_window.h"
 #include "debug.h"
+#include <windowsx.h>
 // -------------------------------------------------------------------
 
 //BOOL CALLBACK CtlProc(HWND, UINT, WPARAM, LPARAM);
@@ -80,13 +81,12 @@ int TableWindow::wndProc(HWND w, UINT msg, WPARAM wp, LPARAM lp) {
     case WM_PAINT:
         return handlePaint();
 
-    case WM_LBUTTONUP:          // 左クリックで ON/OFF
-        wParam = ACTIVE_KEY;
-        return handleHotKey();
+    case WM_LBUTTONUP:          // 左クリックでソフトキーボード相当動作
+        return handleAsSoftKbd();
 
-    case WM_RBUTTONUP:          // 右クリックでバージョン情報
-                                // 名前とくい違ってるけど
-        return handleLButtonDown();
+    case WM_RBUTTONUP:          // 右クリックで ON/OFF
+        wParam = (tc->mode == TCode::OFF) ? ACTIVE_KEY : INACTIVE_KEY;
+        return handleHotKey();
 
     case WM_DESTROY:
         KillTimer(w, ID_MYTIMER);
@@ -103,13 +103,18 @@ int TableWindow::wndProc(HWND w, UINT msg, WPARAM wp, LPARAM lp) {
 
     case KANCHOKU_ICONCLK:
         if (lParam == WM_LBUTTONDOWN) {
-            wParam = ACTIVE_KEY;
+            wParam = (tc->mode == TCode::OFF) ? ACTIVE_KEY : INACTIVE_KEY;
             return handleHotKey();
+        } else if (lParam == WM_RBUTTONDOWN) { // 右クリックでバージョン情報
+            return showVersionDialog();
         }
         return 0;
 
     case WM_HOTKEY:
         return handleHotKey();
+
+    case WM_MOUSEACTIVATE:
+        return MA_NOACTIVATE;
     }
 
     return DefWindowProc(hwnd, msg, wParam, lParam);
@@ -465,6 +470,12 @@ int TableWindow::handleCreate() {
 }
 
 void TableWindow::makeStyle() {
+    if (tc->OPT_softKeyboard) { // ソフトキーボードとして使う->WS_EX_NOACTIVATE
+        LONG exs = GetWindowLong(hwnd, GWL_EXSTYLE);
+        SetWindowLong(hwnd, GWL_EXSTYLE, exs | WS_EX_NOACTIVATE);
+        SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE | SWP_FRAMECHANGED);
+    }
+
     // 外枠の大きさを取得
     RECT winRect;
     GetWindowRect(hwnd, &winRect);
@@ -559,6 +570,25 @@ void TableWindow::makeStyle() {
 int TableWindow::handleDestroy() {
 	if (!tc) return 0;
 
+    if (tc->OPT_saveXYLoc) { // ウィンドウ位置をkanchoku.iniに保存する
+        RECT winRect;
+        if (GetWindowRect(hwnd, &winRect)) {
+            // たまたま値が-1の場合、初期位置指定無しとして扱われるので0に
+            int x = (winRect.left == -1) ? 0 : winRect.left;
+            int y = (winRect.top == -1) ? 0 : winRect.top;
+            if (x != tc->OPT_xLoc || y != tc->OPT_yLoc) {
+                char iniFile[MAX_PATH + 1];
+                GetCurrentDirectory(sizeof(iniFile), iniFile);
+                strcat(iniFile, "\\kanchoku.ini");
+                char val[20];
+                sprintf(val, "%d", x);
+                WritePrivateProfileString("kanchoku", "xloc", val, iniFile);
+                sprintf(val, "%d", y);
+                WritePrivateProfileString("kanchoku", "yloc", val, iniFile);
+            }
+        }
+    }
+
     inactivate();               // 待機状態にする
     //<OKA> support unmodified hot key
     if (tc->OPT_hotKey)
@@ -605,8 +635,8 @@ int TableWindow::handleDestroy() {
 }
 
 // -------------------------------------------------------------------
-// WM_LBUTTONDOWN
-int TableWindow::handleLButtonDown() {
+// バージョン情報ダイアログを表示
+int TableWindow::showVersionDialog() {
     char s[1024];
     sprintf(s,
             "漢直窓 %s\n"
@@ -656,6 +686,12 @@ int TableWindow::handlePaint() {
     // OFF 時
     if (tc->mode == TCode::OFF) {
         drawFrameOFF(hdc);
+        if (tc->OPT_softKeyboard) {
+            MojiBuffer mb(4);
+            mb.clear(); mb.pushSoft("EB漢S"); // ESC, BS, ON/OFF, Shift
+            drawMiniBuffer(hdc, 4, COL_OFF_M1, &mb);
+        }
+        drawVKBOFF(hdc);
         goto END_PAINT;
     }
 
@@ -721,6 +757,10 @@ int TableWindow::handlePaint() {
             work.pushSoft(tc->explicitGG);
             work.popN(work.length()-tc->ittaku);
             drawMiniBuffer(hdc, 4, COL_ON_K1, &work);
+        } else if (tc->OPT_softKeyboard) {
+            MojiBuffer mb(4);
+            mb.clear(); mb.pushSoft("EB漢S"); // ESC, BS, ON/OFF, Shift
+            drawMiniBuffer(hdc, 4, COL_ON_M1, &mb);
         }
         drawVKB50(hdc, tc->isAnyShiftSeq || tc->OPT_shiftLockStroke);
         goto END_PAINT;
@@ -742,6 +782,10 @@ int TableWindow::handlePaint() {
 // WM_TIMER
 int TableWindow::handleTimer() {
     bool isShiftNow, trigDisp;
+    if (isSoftKbdClicked) {
+        isSoftKbdClicked = false;
+        InvalidateRect(hwnd, NULL, FALSE);
+    }
     // 計時
         if (deciSecAfterStroke < 1024) deciSecAfterStroke++;
     // kanchoku time out
@@ -771,7 +815,11 @@ int TableWindow::handleTimer() {
                 InvalidateRect(hwnd, NULL, FALSE);
             }
         }
-        isShiftNow = !!(GetKeyState(VK_SHIFT) & 0x8000);  // GetAsyncKeyState じゃなくて大丈夫なのだろうか
+        if (tc->OPT_softKeyboard && isSoftKbdShift) {
+            isShiftNow = isSoftKbdShift;
+        } else {
+            isShiftNow = !!(GetKeyState(VK_SHIFT) & 0x8000);  // GetAsyncKeyState じゃなくて大丈夫なのだろうか
+        }
         if ((tc->mode == TCode::NORMAL || tc->mode == TCode::CAND1)
             && !tc->helpMode 
             && IsWindowVisible(hwnd)
@@ -921,7 +969,7 @@ int TableWindow::handleNotifyVKPROCESSKEY() {
     //<v127c>
     // [連習スレ2:517] キーリピート時の問題
     //RedrawWindow(hwnd, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ERASE);
-    InvalidateRect(hwnd, NULL, TRUE);
+    InvalidateRect(hwnd, (tc->OPT_softKeyboard && isSoftKbdClicked) ? &rcClick : NULL, TRUE);
     //</v127c>
     return 0;
 }
@@ -955,6 +1003,110 @@ int TableWindow::handleForeground(HWND w) {
 }
 
 // -------------------------------------------------------------------
+// WM_LBUTTONUP
+// 左クリックでソフトキーボード相当動作
+int TableWindow::handleAsSoftKbd() {
+    isSoftKbdClicked = true;
+    int x = GET_X_LPARAM(lParam);
+    int y = GET_Y_LPARAM(lParam);
+
+    // OFF 時
+    if (tc->mode == TCode::OFF) {
+        int vk = -1;
+        wParam = getFromVKB50(x, y);
+        if (wParam < TC_NKEYS) {
+            vk = tc->vkey[wParam];
+        } else if (TC_ISSHIFTED(wParam)) {
+            vk = tc->vkey[TC_UNSHIFT(wParam)];
+        } else {
+            switch (wParam) {
+            case ACTIVE_KEY:
+            case INACTIVE_KEY:
+                return handleHotKey();
+            case ESC_KEY:   vk = VK_ESCAPE; break;
+            case BS_KEY:    vk = VK_BACK;   break;
+            case RET_KEY:   vk = VK_RETURN; break;
+            case LEFT_KEY:  vk = VK_LEFT;   break;
+            case RIGHT_KEY: vk = VK_RIGHT;  break;
+            case VK_LSHIFT: vk = VK_SHIFT;  break;
+            //XXX: getFromVKB50()からこれら以外のキーを返す場合は追加要
+            }
+        }
+        if (vk != -1) {
+            if (vk != VK_SHIFT) {
+                int ssc = 0;
+                if (TC_ISSHIFTED(wParam)) {
+                    ssc = MapVirtualKey(VK_SHIFT, MAPVK_VK_TO_VSC);
+                    keybd_event(VK_SHIFT, ssc, 0, NULL);
+                }
+                int sc = MapVirtualKey(vk, MAPVK_VK_TO_VSC);
+                keybd_event(vk, sc, 0, NULL);
+                keybd_event(vk, sc, KEYEVENTF_KEYUP, NULL);
+                if (TC_ISSHIFTED(wParam)) {
+                    keybd_event(VK_SHIFT, ssc, KEYEVENTF_KEYUP, NULL);
+                }
+            }
+
+            // どのキーが押されたと認識されたかを一瞬背景色を変えて表示
+            InvalidateRect(hwnd, &rcClick, FALSE);
+            SetTimer(hwnd, ID_MYTIMER, 100, NULL);
+            deciSecAfterStroke = 0;
+        }
+        return 0;
+    }
+
+    // 文字ヘルプ表示モード
+    if (tc->helpMode) {
+        wParam = getFromVKB50(x, y);
+        if (wParam == VK_LSHIFT) {
+            return 0;
+        }
+        return handleHotKey();
+    }
+
+    // ヒストリ入力モード
+    if (tc->mode == TCode::HIST) {
+        wParam = getFromVKB10(x, y);
+        return handleHotKey();
+    }
+
+    // 唯一候補表示モード
+    if (tc->mode == TCode::CAND1) {
+        wParam = getFromVKB50(x, y);
+        if (wParam == VK_LSHIFT) {
+            return 0;
+        }
+        return handleHotKey();
+    }
+
+    // 少数候補表示モード
+    if (tc->mode == TCode::CAND && tc->currentCand->size() <= 10) {
+        wParam = getFromVKB10(x, y);
+        return handleHotKey();
+    }
+
+    // 多数候補表示モード
+    if (tc->mode == TCode::CAND && 10 < tc->currentCand->size()) {
+        wParam = getFromVKB50(x, y);
+        if (wParam == VK_LSHIFT) {
+            return 0;
+        }
+        return handleHotKey();
+    }
+
+    // 通常入力モード
+    if (tc->mode == TCode::NORMAL) {
+        wParam = getFromVKB50(x, y);
+        if (wParam == VK_LSHIFT) {
+            return 0;
+        }
+        return handleHotKey();
+    }
+    isSoftKbdClicked = false;
+    return 0;
+}
+
+// -------------------------------------------------------------------
 // WM_HOTKEY
 int TableWindow::handleHotKey() {
     int key = wParam;
@@ -967,6 +1119,7 @@ int TableWindow::handleHotKey() {
     // ON/OFF
     if (key == ACTIVE_KEY || key == ACTIVE2_KEY || key == ACTIVEIME_KEY || key == INACTIVE_KEY || key == INACTIVE2_KEY) {
         tc->reset();
+        isSoftKbdShift = false;
         if (tc->mode != TCode::OFF && (key != ACTIVEIME_KEY || !bKeepBuffer)) {  // 明示的OFF時のみバッファクリア
             tc->resetBuffer();
             int i = 0;
@@ -1117,12 +1270,16 @@ int TableWindow::handleHotKey() {
     //<v127c>
     // [連習スレ2:517] キーリピート時の問題
     //RedrawWindow(hwnd, NULL, NULL, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ERASE);
-    InvalidateRect(hwnd, NULL, TRUE);
+    InvalidateRect(hwnd, (tc->OPT_softKeyboard && isSoftKbdClicked) ? &rcClick : NULL, TRUE);
     //</v127c>
 
-    if (tc->mode != TCode::OFF) {
+    if (tc->mode != TCode::OFF || tc->OPT_softKeyboard) {
         SetTimer(hwnd, ID_MYTIMER, 100, NULL);
-        isShift = isShiftPrev = !!(GetKeyState(VK_SHIFT) & 0x8000);
+        if (isSoftKbdClicked) {
+            isShift = isShiftPrev = isSoftKbdShift;
+        } else {
+            isShift = isShiftPrev = !!(GetKeyState(VK_SHIFT) & 0x8000);
+        }
         deciSecAfterStroke = 0;
     }
 
@@ -1423,9 +1580,12 @@ void TableWindow::initTC() {
     // xLoc, yLoc
     int OPT_xLoc = GetPrivateProfileInt("kanchoku", "xloc", -1, iniFile);
     int OPT_yLoc = GetPrivateProfileInt("kanchoku", "yloc", -1, iniFile);
+    int OPT_saveXYLoc = GetPrivateProfileInt("kanchoku", "savexyloc", 0, iniFile);
 
     // displayHelpDelay
     int OPT_displayHelpDelay = GetPrivateProfileInt("kanchoku", "displayHelpDelay", 0, iniFile);
+
+    int OPT_softKeyboard = GetPrivateProfileInt("kanchoku", "softKeyboard", 0, iniFile);
 
     // style
     readStyleSetting();
@@ -1652,7 +1812,9 @@ void TableWindow::initTC() {
     tc->OPT_offHide = OPT_offHide;
     tc->OPT_xLoc = OPT_xLoc;
     tc->OPT_yLoc = OPT_yLoc;
+    tc->OPT_saveXYLoc = OPT_saveXYLoc;
     tc->OPT_displayHelpDelay = OPT_displayHelpDelay;
+    tc->OPT_softKeyboard = OPT_softKeyboard;
     tc->OPT_hardBS = OPT_hardBS;
     tc->OPT_weakBS = OPT_weakBS;
     tc->OPT_useCtrlKey = OPT_useCtrlKey;
@@ -2461,6 +2623,66 @@ void TableWindow::drawFrame10(HDC hdc) {
 }
 
 // -------------------------------------------------------------------
+// 仮想鍵盤のキー (OFF 時)
+void TableWindow::drawVKBOFF(HDC hdc) {
+    if (!tc->OPT_softKeyboard) {
+        return;
+    }
+
+    HBRUSH brCL = CreateSolidBrush(COL_OFF_LN); // for isSoftKbdClicked
+
+    HGDIOBJ brSave = SelectObject(hdc, GetStockObject(NULL_BRUSH));
+    HGDIOBJ pnSave = SelectObject(hdc, GetStockObject(NULL_PEN));
+    HGDIOBJ fnSave = SelectObject(hdc, hFont);
+
+    SetBkMode(hdc, TRANSPARENT);
+    if (isSoftKbdClicked) {
+        SelectObject(hdc, brCL);
+        Rectangle(hdc, rcClick.left, rcClick.top, rcClick.right, rcClick.bottom);
+    }
+    for (int y = 0; y < 5; y++) {
+        int py = MARGIN_SIZE + BLOCK_SIZE * y;
+        for (int x = 0; x < 10; x++) {
+            int k = y * 10 + x;
+            if (TC_NKEYS <= k) { goto END; }
+
+            int px = MARGIN_SIZE + BLOCK_SIZE * x;
+            if (y == 4) { px += BLOCK_SIZE / 2; }
+            else if (5 <= x) { px += BLOCK_SIZE; }
+
+            SelectObject(hdc, GetStockObject(NULL_BRUSH));
+            Rectangle(hdc, px + 2, py + 2, px + BLOCK_SIZE, py + BLOCK_SIZE);
+
+            char ch = toAscii(tc->vkey[k], isSoftKbdShift);
+            if (ch) {
+                int dx = tc->OPT_win95 ? 0 : 1;
+                RECT rctmp = { 0, 0, CHAR_SIZE, CHAR_SIZE };
+                int dy = (CHAR_SIZE-DrawText(hdc, "亜", 2, &rctmp, DT_CALCRECT))/3;
+                TextOut(hdc, px + stylePadding*3/2 + dx + (CHAR_SIZE / 4), py + stylePadding*3/2 + dy, &ch, 1);
+            }
+        }
+    }
+ END:
+    SelectObject(hdc, brSave);
+    SelectObject(hdc, pnSave);
+    SelectObject(hdc, fnSave);
+
+    DeleteObject(brCL);
+}
+
+// -------------------------------------------------------------------
+// VK_XXXに対応する表示用文字を返す
+char TableWindow::toAscii(UINT vk, bool shift) {
+    static BYTE keystate[256];
+    WORD ch[2] = {0, 0};
+    keystate[VK_SHIFT] = shift ? 0x80 : 0;
+    if (::ToAscii(vk, 0, keystate, ch, 0) > 0) {
+        return ch[0];
+    }
+    return 0;
+}
+
+// -------------------------------------------------------------------
 // 仮想鍵盤のキー (50 鍵)
 void TableWindow::drawVKB50(HDC hdc, bool isWithBothSide) {
     HBRUSH brR = CreateSolidBrush(COL_LT_RED);
@@ -2473,12 +2695,17 @@ void TableWindow::drawVKB50(HDC hdc, bool isWithBothSide) {
     HBRUSH brSP = CreateSolidBrush(COL_DK_CYAN);
     HBRUSH brGG = CreateSolidBrush(COL_DK_MAGENTA);
     HBRUSH brNO = CreateSolidBrush(COL_BLACK);
+    HBRUSH brCL = CreateSolidBrush(COL_OFF_LN); // for isSoftKbdClicked
 
     HGDIOBJ brSave = SelectObject(hdc, GetStockObject(NULL_BRUSH));
     HGDIOBJ pnSave = SelectObject(hdc, GetStockObject(NULL_PEN));
     HGDIOBJ fnSave = SelectObject(hdc, hFont);
 
     SetBkMode(hdc, TRANSPARENT);
+    if (isSoftKbdClicked) {
+        SelectObject(hdc, brCL);
+        Rectangle(hdc, rcClick.left, rcClick.top, rcClick.right, rcClick.bottom);
+    }
     for (int y = 0; y < 5; y++) {
         int py = MARGIN_SIZE + BLOCK_SIZE * y;
         for (int x = 0; x < 10; x++) {
@@ -2605,6 +2832,7 @@ void TableWindow::drawVKB50(HDC hdc, bool isWithBothSide) {
     DeleteObject(brSP);
     DeleteObject(brGG);
     DeleteObject(brNO);
+    DeleteObject(brCL);
 }
 
 // -------------------------------------------------------------------
@@ -2718,6 +2946,115 @@ void TableWindow::drawMiniBuffer(HDC hdc, int height, COLORREF col,
     SelectObject(hdc, fnSave);
 
     DeleteObject(br);
+}
+
+// -------------------------------------------------------------------
+// 仮想鍵盤上のクリック位置をもとに、対応するキーを返す (50 鍵)
+int TableWindow::getFromVKB50(int x, int y) {
+    // drawFrameOFF()の逆
+    int j = (y - MARGIN_SIZE) / BLOCK_SIZE;
+    if (j < 0) { j = 0; }
+    else if (j > 4) { j = 4; }
+
+    rcClick.top = MARGIN_SIZE + BLOCK_SIZE * j + 1;
+    rcClick.left = 1;
+    rcClick.right = rcClick.left + BLOCK_SIZE;
+    rcClick.bottom = rcClick.top + BLOCK_SIZE;
+
+    int tmp = x - MARGIN_SIZE;
+    if (j == 4) {
+        tmp -= BLOCK_SIZE / 2;
+        if (tmp < 0) {
+            rcClick.right = rcClick.left + MARGIN_SIZE + BLOCK_SIZE / 2;
+            return LEFT_KEY;
+        }
+    } else if (j < 4 && BLOCK_SIZE * 5 <= tmp && tmp < BLOCK_SIZE * 6) { // 柱
+        rcClick.left = MARGIN_SIZE + BLOCK_SIZE * 5 + 1;
+        rcClick.right = rcClick.left + BLOCK_SIZE;
+        switch (j) {
+            case 0: return ESC_KEY;
+            case 1: return BS_KEY;
+            case 2: return (tc->mode == TCode::OFF) ? ACTIVE_KEY : INACTIVE_KEY;
+            case 3:
+            default:
+                isSoftKbdShift = !isSoftKbdShift;
+                return VK_LSHIFT; // キー番号とかぶるのでVK_SHIFT(16)は使わない
+        }
+    } else if (BLOCK_SIZE * 6 <= tmp) {
+        tmp -= BLOCK_SIZE; // 柱のBLOCK分を引く
+    }
+    if (tmp < 0) {
+        rcClick.right = rcClick.left + MARGIN_SIZE;
+        return LEFT_KEY;
+    }
+    int i = tmp / BLOCK_SIZE;
+
+    rcClick.left = MARGIN_SIZE + BLOCK_SIZE * i + 1;
+    if (j == 4) { rcClick.left += BLOCK_SIZE / 2; }
+    else if (4 < i) { rcClick.left += BLOCK_SIZE; }
+    rcClick.right = rcClick.left + BLOCK_SIZE;
+
+    if (i > 9) {
+        rcClick.right = rcClick.left + MARGIN_SIZE;
+        if (j == 4) { rcClick.right += BLOCK_SIZE / 2; }
+        return RIGHT_KEY;
+    }
+
+    int k = j * 10 + i; // キー番号
+    if (k == 49) {
+        return RET_KEY;
+    }
+    if (isSoftKbdShift) {
+        isSoftKbdShift = false;
+        return TC_SHIFT(k);
+    }
+    return k;
+}
+
+// 仮想鍵盤上のクリック位置をもとに、対応するキーを返す (10 鍵)
+int TableWindow::getFromVKB10(int x, int y) {
+    rcClick.top = MARGIN_SIZE + 1;
+    rcClick.left = 1;
+    rcClick.right = rcClick.left + BLOCK_SIZE;
+    rcClick.bottom = rcClick.top + BLOCK_SIZE * 5;
+
+    int tmp = x - MARGIN_SIZE;
+    if (BLOCK_SIZE * 5 <= tmp && tmp < BLOCK_SIZE * 6) { // 柱
+        int j = (y - MARGIN_SIZE) / BLOCK_SIZE;
+        rcClick.left = MARGIN_SIZE + BLOCK_SIZE * 5 + 1;
+        rcClick.top = MARGIN_SIZE + BLOCK_SIZE * j + 1;
+        rcClick.right = rcClick.left + BLOCK_SIZE;
+        rcClick.bottom = rcClick.top + BLOCK_SIZE;
+        if (j <= 0) {
+            return ESC_KEY;
+        } else if (j == 1) {
+            return BS_KEY;
+        } else if (j == 2) {
+            return (tc->mode == TCode::OFF) ? ACTIVE_KEY : INACTIVE_KEY;
+        } else if (j == 3) {
+            return GT_KEY;
+        } else {
+            return RET_KEY;
+        }
+    } else if (BLOCK_SIZE * 6 <= tmp) {
+        tmp -= BLOCK_SIZE;
+    }
+    if (tmp < 0) {
+        rcClick.right = rcClick.left + MARGIN_SIZE;
+        return LEFT_KEY;
+    }
+    int i = tmp / BLOCK_SIZE;
+
+    rcClick.left = MARGIN_SIZE + BLOCK_SIZE * i + 1;
+    if (i > 4) { rcClick.left += BLOCK_SIZE; }
+    rcClick.right = rcClick.left + BLOCK_SIZE;
+
+    if (i > 9) {
+        rcClick.right = rcClick.left + MARGIN_SIZE;
+        return RIGHT_KEY;
+    }
+
+    return 20 + i; // 20:ホームポジションの段のキー番号
 }
 
 /* -------------------------------------------------------------------

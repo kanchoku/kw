@@ -126,9 +126,11 @@ public:
 
     int OPT_xLoc;               // ウィンドウ初期位置
     int OPT_yLoc;               // 〃
+    int OPT_saveXYLoc;          // 終了時にウィンドウ位置をkanchoku.iniに保存
     int OPT_offHide;            // OFF 時にウィンドウ非表示
     int OPT_followCaret;        // カーソル追従
     int OPT_displayHelpDelay;   // 仮想鍵盤表示待ち時間(ms)
+    int OPT_softKeyboard;       // ソフトキーボードとして使用
 
     int OPT_hardBS;             // BS で常に文字を消去
     int OPT_weakBS;             // BS で1ストロークだけ戻る
